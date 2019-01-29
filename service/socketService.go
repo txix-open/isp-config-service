@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"time"
 
 	"isp-config-service/entity"
@@ -70,19 +69,4 @@ func GetConfig(instanceUuid string, moduleName string) (*entity.Config, error) {
 		return nil, errors.New(errorMessage)
 	}
 	return config, nil
-}
-
-func ParseParameters(queryRaw string) (instanceUUID string, moduleName string, error error) {
-	parsedParams, _ := url.ParseQuery(queryRaw)
-	moduleName = parsedParams.Get("module_name")
-	instanceUuid := parsedParams.Get("instance_uuid")
-	if moduleName == "" || instanceUuid == "" || !utils.IsValidUUID(instanceUuid) {
-		err := fmt.Sprintf("SocketIO not received all parameters, module_name: %s, instance_uuid: %s",
-			moduleName,
-			instanceUuid,
-		)
-		logger.Debug(err)
-		return "", "", errors.New(err)
-	}
-	return instanceUuid, moduleName, nil
 }

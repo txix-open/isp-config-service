@@ -1,11 +1,11 @@
 -- +goose Up
-set migration.db_host = 'msk-pgsql.isp.mobi';
+set migration.db_host = 'isp-pgsql';
 set migration.db_port = '5432';
-set migration.db_dbname = 'isp-alpha';
-set migration.db_user = 'isp-alpha';
-set migration.db_pass = 'JxY96xLF8zfh3g8EWvSDtLUBw';
+set migration.db_dbname = 'isp-test';
+set migration.db_user = 'isp-test';
+set migration.db_pass = '123321';
 
-set migration.redis_host = '10.250.9.117';
+set migration.redis_host = 'isp-redis';
 set migration.redis_port = '6379';
 
 -- user
@@ -54,7 +54,7 @@ INSERT INTO configs VALUES (8, 8, NULL, 't', NULL, NULL, '{
     "backends": [
       {
         "id": "450e754f-aafb-4a9c-8d87-23c6a2da9833",
-        "url": "http://{{ cname }}-nginx.isp.mobi:18888/ru.isp.starter.awip.backend.ws/backend?wsdl",
+        "url": "http://{{ cname }}-nginx.{{ main_domain }}:18888/ru.isp.starter.awip.backend.ws/backend?wsdl",
         "name": "citymatica_user_new",
         "wrapList": true,
         "createDate": "2018-09-07T09:41:03.853Z",
@@ -64,7 +64,7 @@ INSERT INTO configs VALUES (8, 8, NULL, 't', NULL, NULL, '{
       },
       {
         "id": "74d76314-b28b-11e8-96f8-529269fb1459",
-        "url": "http://{{ cname }}-nginx.isp.mobi:18880/ru.mp.storage.backend.ws/backend?wsdl",
+        "url": "http://{{ cname }}-nginx.{{ main_domain }}:18880/ru.mp.storage.backend.ws/backend?wsdl",
         "name": "citymatica_user_old",
         "wrapList": true,
         "createDate": "2018-09-07T09:41:03.853Z",
@@ -74,7 +74,7 @@ INSERT INTO configs VALUES (8, 8, NULL, 't', NULL, NULL, '{
       },
       {
         "id": "74d7659e-b28b-11e8-96f8-529269fb1459",
-        "url": "http://{{ cname }}-nginx.isp.mobi:18890/ru.isp.starter.awip.backend.ws/backend?wsdl",
+        "url": "http://{{ cname }}-nginx.{{ main_domain }}:18890/ru.isp.starter.awip.backend.ws/backend?wsdl",
         "name": "citymatica_user_object_storage",
         "wrapList": true,
         "createDate": "2018-09-07T09:41:03.853Z",
@@ -84,7 +84,7 @@ INSERT INTO configs VALUES (8, 8, NULL, 't', NULL, NULL, '{
       },
       {
         "id": "74d75cc0-b28b-11e8-96f8-529269fb1459",
-        "url": "http://{{ cname }}-nginx.isp.mobi:18891/ru.isp.starter.awip.backend.ws/backend?wsdl",
+        "url": "http://{{ cname }}-nginx.{{ main_domain }}:18891/ru.isp.starter.awip.backend.ws/backend?wsdl",
         "name": "citymatica_user_events",
         "wrapList": true,
         "createDate": "2018-09-07T09:41:03.853Z",
@@ -94,7 +94,7 @@ INSERT INTO configs VALUES (8, 8, NULL, 't', NULL, NULL, '{
       },
       {
         "id": "d5575047-6588-46d9-be58-b487d42d217c",
-        "url": "http://{{ cname }}-nginx.isp.mobi:18889/ru.isp.starter.awip.backend.ws/backend?wsdl",
+        "url": "http://{{ cname }}-nginx.{{ main_domain }}:18889/ru.isp.starter.awip.backend.ws/backend?wsdl",
         "name": "citymatica_operator",
         "wrapList": true,
         "createDate": "2018-09-07T09:41:03.853Z",
@@ -104,7 +104,7 @@ INSERT INTO configs VALUES (8, 8, NULL, 't', NULL, NULL, '{
       },
       {
         "id": "74d76094-b28b-11e8-96f8-529269fb1459",
-        "url": "http://{{ cname }}-nginx.isp.mobi:18895/ru.isp.starter.awip.backend.ws/backend?wsdl",
+        "url": "http://{{ cname }}-nginx.{{ main_domain }}:18895/ru.isp.starter.awip.backend.ws/backend?wsdl",
         "name": "citymatica_operator_metrics",
         "wrapList": true,
         "createDate": "2018-09-07T09:41:03.853Z",

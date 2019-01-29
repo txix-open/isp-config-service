@@ -1,11 +1,11 @@
 -- +goose Up
-set migration.db_host = 'msk-pgsql.isp.mobi';
+set migration.db_host = 'isp-pgsql';
 set migration.db_port = '5432';
-set migration.db_dbname = 'isp-alpha';
-set migration.db_user = 'isp-alpha';
-set migration.db_pass = 'JxY96xLF8zfh3g8EWvSDtLUBw';
+set migration.db_dbname = 'isp-test';
+set migration.db_user = 'isp-test';
+set migration.db_pass = '123321';
 
-set migration.redis_host = '10.250.9.117';
+set migration.redis_host = 'isp-redis';
 set migration.redis_port = '6379';
 
 -- auth
@@ -27,14 +27,14 @@ INSERT INTO configs VALUES (3, 3, NULL, 't', NULL, NULL, ('{"database": {' ||
         '"metrics": {"gc": true, "memory": true, "address": {"ip": "0.0.0.0", "path": "/metrics", "port": "9554"}}' ||
          '}')::jsonb);
 -- system
-INSERT INTO configs VALUES (4, 4, NULL, 't', NULL, NULL, ('{"db": {' ||
+INSERT INTO configs VALUES (4, 4, NULL, 't', NULL, NULL, ('{"dB": {' ||
  '"port": "' || current_setting('migration.db_port') || '", ' ||
   '"schema": "system_service", ' ||
    '"address": "' || current_setting('migration.db_host') || '", ' ||
     '"database": "' || current_setting('migration.db_dbname') || '", ' ||
      '"password": "' || current_setting('migration.db_pass') || '", ' ||
       '"username": "' || current_setting('migration.db_user') || '", ' ||
-       '"createSchema": true}, "RedisAddress": {' ||
+       '"createSchema": true}, "redisAddress": {' ||
         '"ip": "' || current_setting('migration.redis_host') || '", ' ||
          '"port": "' || current_setting('migration.redis_port') || '"' ||
           '}, ' ||

@@ -1,5 +1,5 @@
 -- +goose Up
-set migration.nats_host = '10.250.9.117';
+set migration.nats_host = 'isp-nats';
 set migration.nats_port = '4223';
 set migration.nats_cluster_id = 'test-cluster';
 

@@ -34,6 +34,14 @@
   version = "v2.1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:b0ddbad880d26589b9de3934e4d149ef8e0db27b4aab873304dd17350818f29d"
+  name = "github.com/doublerebel/bellows"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f177d92a03d33226a1e1777e4b3a5d824bd2598f"
+
+[[projects]]
   digest = "1:abeb38ade3f32a92943e5be54f55ed6d6e3b6602761d74b4aab4c9dd45c18abd"
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
@@ -172,7 +180,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:900583da99fb5a30a9c3b829bab8acca29a9474d5b40a5c3cb28e7bc7cd27788"
+  digest = "1:59adaaaf705df30cbc3fb1826cf29c37c213b35d776e72aa91a6793b62ef8bfa"
   name = "github.com/integration-system/isp-lib"
   packages = [
     "backend",
@@ -191,7 +199,7 @@
     "utils",
   ]
   pruneopts = "UT"
-  revision = "0f71aaf83133a59c9fc143faecbd38b86ed068e2"
+  revision = "8c2f9ca5385d13b666ab280d9004f51926566d3e"
 
 [[projects]]
   branch = "master"

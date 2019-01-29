@@ -30,7 +30,7 @@ func onError(so socketio.Socket, err error) {
 
 func onDisconnect(so socketio.Socket) {
 	logger.Debugf("onDisconnect: %s", so.Id())
-	instanceUuid, moduleName, err := service.ParseParameters(so.Request().URL.RawQuery)
+	instanceUuid, moduleName, err := utils.ParseParameters(so.Request().URL.RawQuery)
 	if err != nil {
 		logger.Warn(err)
 		return
@@ -52,7 +52,7 @@ func onDisconnect(so socketio.Socket) {
 func onConnect(so socketio.Socket) {
 	logger.Debugf("onConnect: %s", so.Id())
 
-	instanceUuid, moduleName, err := service.ParseParameters(so.Request().URL.RawQuery)
+	instanceUuid, moduleName, err := utils.ParseParameters(so.Request().URL.RawQuery)
 	if err != nil {
 		_ = so.Emit(utils.ConfigError, err.Error())
 		return
@@ -76,7 +76,7 @@ func onConnect(so socketio.Socket) {
 func onReceivedModuleRequirements(so socketio.Socket, msg string) {
 	logger.Debugf("onReceivedModuleRequirements: %s %s", so.Id(), msg)
 
-	instanceUuid, _, err := service.ParseParameters(so.Request().URL.RawQuery)
+	instanceUuid, _, err := utils.ParseParameters(so.Request().URL.RawQuery)
 	if err != nil {
 		_ = so.Emit(utils.ErrorConnection, map[string]string{"error": err.Error()})
 		return
@@ -113,7 +113,7 @@ func onReceiveRoutesUpdate(so socketio.Socket, msg string) {
 func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) {
 	logger.Debugf("onReceiveRemoteConfigSchema: %s %s", so.Id(), msg)
 
-	instanceUuid, moduleName, err := service.ParseParameters(so.Request().URL.RawQuery)
+	instanceUuid, moduleName, err := utils.ParseParameters(so.Request().URL.RawQuery)
 	if err != nil {
 		logger.Warn(err)
 		return
@@ -141,13 +141,18 @@ func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) {
 	}
 	if len(res) > 0 {
 		schema := &res[0]
-		if s.Version > schema.Version {
+		schema.Schema = s.Schema
+		schema.Version = s.Version
+		if _, err := model.SchemaRep.UpdateConfigSchema(schema); err != nil {
+			logger.Warn(err)
+		}
+		/*if s.Version > schema.Version {
 			schema.Version = s.Version
 			schema.Schema = s.Schema
 			if _, err := model.SchemaRep.UpdateConfigSchema(schema); err != nil {
 				logger.Warn(err)
 			}
-		}
+		}*/
 	} else {
 		cs := &entity.ConfigSchema{
 			Version:  s.Version,
@@ -161,7 +166,7 @@ func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) {
 }
 
 func handleModuleDeclaration(so socketio.Socket, msg string) {
-	instanceUuid, moduleName, err := service.ParseParameters(so.Request().URL.RawQuery)
+	instanceUuid, moduleName, err := utils.ParseParameters(so.Request().URL.RawQuery)
 	if err != nil {
 		_ = so.Emit(utils.ErrorConnection, map[string]string{"error": err.Error()})
 		return
@@ -191,7 +196,7 @@ func handleModuleDeclaration(so socketio.Socket, msg string) {
 func onRequestConfig(so socketio.Socket) {
 	logger.Debugf("onRequestConfig: %s", so.Id())
 
-	instanceUuid, moduleName, err := service.ParseParameters(so.Request().URL.RawQuery)
+	instanceUuid, moduleName, err := utils.ParseParameters(so.Request().URL.RawQuery)
 	if err != nil {
 		_ = so.Emit(utils.ErrorConnection, map[string]string{"error": err.Error()})
 		return

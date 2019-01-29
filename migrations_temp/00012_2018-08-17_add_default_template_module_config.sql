@@ -1,10 +1,9 @@
 -- +goose Up
-set migration.db_host = 'msk-pgsql.isp.mobi';
+set migration.db_host = 'isp-pgsql';
 set migration.db_port = '5432';
-set migration.db_dbname = 'isp-alpha';
-set migration.db_user = 'isp-alpha';
-set migration.db_pass = 'JxY96xLF8zfh3g8EWvSDtLUBw';
-
+set migration.db_dbname = 'isp-test';
+set migration.db_user = 'isp-test';
+set migration.db_pass = '123321';
 WITH moduleVar AS (
     INSERT INTO modules (instance_id, name, active) VALUES (1, 'template', 't') RETURNING id
 )

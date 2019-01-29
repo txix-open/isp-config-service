@@ -13,7 +13,7 @@ CREATE TABLE config_schemas (
 CREATE TRIGGER update_schema_create_time
   BEFORE INSERT OR UPDATE
   ON config_schemas
-  FOR EACH ROW EXECUTE PROCEDURE update_created_column_date();
+  FOR EACH ROW EXECUTE PROCEDURE update_created_modified_column_date();
 
 CREATE INDEX IX_schemes_moduleId
   ON config_schemas

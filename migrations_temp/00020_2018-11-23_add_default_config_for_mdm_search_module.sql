@@ -1,10 +1,10 @@
 -- +goose Up
-set rabbit.host = '10.250.9.117';
-set rabbit.port = '5672';
-set rabbit.user = 'guest';
-set rabbit.password = 'guest';
+set "rabbit.host" = 'isp-rabbit';
+set "rabbit.port" = '5672';
+set "rabbit.user" = 'guest';
+set "rabbit.password" = 'guest';
 
-set elastic.url = 'http://10.250.9.48:9200';
+set elastic.url = 'http://isp-elastic:9200';
 
 WITH moduleVar AS (
     INSERT INTO modules (instance_id, name, active) VALUES (1, 'mdm-search', 't') RETURNING id
@@ -48,7 +48,8 @@ INSERT INTO configs (module_id, active, data) VALUES (
     "addresses",
     "escredentials",
     "users"
-  ]
+  ],
+  "elasticDynamicDateFormats": ["yyyy-MM-dd HH:mm:ss.SSS"]
 }', current_setting('rabbit.user'),
     current_setting('rabbit.host'),
     current_setting('rabbit.port'),
