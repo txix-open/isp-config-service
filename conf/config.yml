@@ -1,0 +1,30 @@
+database:
+  address: "127.0.0.1"
+  schema: "config_service"
+  database: "isp"
+  port: "5432"
+  username: "isp"
+  password: "isp_password"
+  createSchema: true
+
+moduleName: "config"
+grpcOuterAddress:
+  ip: 127.0.0.1
+  port: 9001
+
+ws:
+  rest:
+    port: "9001"
+    ip: "0.0.0.0"
+  grpc:
+    port: "9002"
+    ip: "0.0.0.0"
+
+metrics:
+  gc: true
+  memory: true
+  address:
+    addressConfiguration:
+      ip: "0.0.0.0"
+      port: "9551"
+    path: "/metrics"
