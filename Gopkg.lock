@@ -34,14 +34,6 @@
   version = "v2.1.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:b0ddbad880d26589b9de3934e4d149ef8e0db27b4aab873304dd17350818f29d"
-  name = "github.com/doublerebel/bellows"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "f177d92a03d33226a1e1777e4b3a5d824bd2598f"
-
-[[projects]]
   digest = "1:abeb38ade3f32a92943e5be54f55ed6d6e3b6602761d74b4aab4c9dd45c18abd"
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
@@ -155,6 +147,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:7edb99b124d77ae909910e2ba563fbe652e9596f5798bd10f67fd66ba0fa9c82"
+  name = "github.com/integration-system/bellows"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3f9681649fb950d5ccbb9e90843ef860696e78d0"
+
+[[projects]]
+  branch = "master"
   digest = "1:1b1d9534e35d61e861a7356f7f2d766e57e2777dbf79be60e1ac56bbd60adf51"
   name = "github.com/integration-system/go-cmp"
   packages = [
@@ -180,7 +180,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:59adaaaf705df30cbc3fb1826cf29c37c213b35d776e72aa91a6793b62ef8bfa"
+  digest = "1:abd0cd78d6d27a98080f2b2a7fd39bb2f3d3eef6aa20c720093129f04fb41d78"
+  name = "github.com/integration-system/gowsdl"
+  packages = ["soap"]
+  pruneopts = "UT"
+  revision = "368713356c71961354e09ab9b734740ebdd94784"
+
+[[projects]]
+  branch = "master"
+  digest = "1:acb8e35b2c18122597b45d6a82e8859f40d38f8bf55050e0ee1c22074779e0dc"
   name = "github.com/integration-system/isp-lib"
   packages = [
     "backend",
@@ -199,7 +207,7 @@
     "utils",
   ]
   pruneopts = "UT"
-  revision = "8c2f9ca5385d13b666ab280d9004f51926566d3e"
+  revision = "4f5aa9f12547ebda8cc31b6d0447b5dfda474981"
 
 [[projects]]
   branch = "master"
