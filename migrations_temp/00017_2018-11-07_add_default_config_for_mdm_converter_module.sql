@@ -40,6 +40,11 @@ INSERT INTO configs (module_id, active, data) VALUES (
       "availableFields": [
         "*"
       ]
+    },
+    "10": {
+      "availableFields": [
+        "*"
+      ]
     }
   },
   "metrics": {
@@ -105,7 +110,8 @@ INSERT INTO configs (module_id, active, data) VALUES (
     }
   }
 }
-')::jsonb);
+'
+)::jsonb);
 
 -- +goose Down
 
