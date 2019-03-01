@@ -63,7 +63,8 @@ INSERT INTO configs (module_id, active, data) VALUES (
     "schema": "mdm_service",
     "address": "%s",
     "database": "%s"
-  }
+  },
+  "externalIdListLimit": 10000
 }', current_setting('rabbit.user'),
     current_setting('rabbit.host'),
     current_setting('rabbit.port'),
