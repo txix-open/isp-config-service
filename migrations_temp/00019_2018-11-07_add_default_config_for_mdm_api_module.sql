@@ -21,6 +21,12 @@ INSERT INTO configs (module_id, active, data) VALUES (
     "enable": false,
     "exchange": "external"
   },
+  "appConfigurations": [],
+  "limits": {
+      "defaultRecordsLimit": 1000,
+      "defaultPackageSizeLimit": 1000,
+      "defaultAsyncWorkersLimit": 2
+  },
   "syncLogger": {
       "enable": false,
       "filename": "/opt/isp/isp-mdm-api-service/events/events.log.gz"
