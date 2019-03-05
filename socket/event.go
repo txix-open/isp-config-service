@@ -20,6 +20,11 @@ const (
 	routesSubscribers = ":routes_subs"
 )
 
+var (
+	okMsg    = "ok"
+	errorMsg = "error"
+)
+
 func RoutesSubscribersRoom(instanceUuid string) string {
 	return instanceUuid + routesSubscribers
 }
@@ -110,34 +115,34 @@ func onReceiveRoutesUpdate(so socketio.Socket, msg string) {
 	handleModuleDeclaration(so, msg)
 }
 
-func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) {
+func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) string {
 	logger.Debugf("onReceiveRemoteConfigSchema: %s %s", so.Id(), msg)
 
 	instanceUuid, moduleName, err := utils.ParseParameters(so.Request().URL.RawQuery)
 	if err != nil {
 		logger.Warn(err)
-		return
+		return errorMsg
 	}
 
 	module, err := model.ModulesRep.GetModulesByInstanceUuidAndName(instanceUuid, moduleName)
 	if err != nil {
 		logger.Warn(err)
-		return
+		return errorMsg
 	}
 	if module == nil {
 		logger.Warnf("Module '%s' in instance '%s' not found", moduleName, instanceUuid)
-		return
+		return errorMsg
 	}
 
 	s := new(schema.ConfigSchema)
 	if err := json.Unmarshal([]byte(msg), s); err != nil {
 		logger.Warn(err)
-		return
+		return errorMsg
 	}
 	res, err := model.SchemaRep.GetSchemasByModulesId([]int32{module.Id})
 	if err != nil {
 		logger.Warn(err)
-		return
+		return errorMsg
 	}
 	if len(res) > 0 {
 		schema := &res[0]
@@ -145,6 +150,7 @@ func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) {
 		schema.Version = s.Version
 		if _, err := model.SchemaRep.UpdateConfigSchema(schema); err != nil {
 			logger.Warn(err)
+			return errorMsg
 		}
 		/*if s.Version > schema.Version {
 			schema.Version = s.Version
@@ -161,8 +167,11 @@ func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) {
 		}
 		if _, err := model.SchemaRep.InsertConfigSchema(cs); err != nil {
 			logger.Warn(err)
+			return errorMsg
 		}
 	}
+
+	return okMsg
 }
 
 func handleModuleDeclaration(so socketio.Socket, msg string) {
