@@ -590,6 +590,7 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "e58e780e1378aa4df5dc705364ff5ae9a4dd1e04"
+  source = "https://github.com/mellium/sasl.git"
   version = "v0.2.1"
 
 [solve-meta]
@@ -602,6 +603,7 @@
     "github.com/go-pg/pg/orm",
     "github.com/golang/protobuf/proto",
     "github.com/golang/protobuf/ptypes/struct",
+    "github.com/googollee/go-engine.io",
     "github.com/googollee/go-socket.io",
     "github.com/grpc-ecosystem/grpc-gateway/runtime",
     "github.com/grpc-ecosystem/grpc-gateway/utilities",
@@ -613,7 +615,6 @@
     "github.com/integration-system/isp-lib/database",
     "github.com/integration-system/isp-lib/logger",
     "github.com/integration-system/isp-lib/metric",
-    "github.com/integration-system/isp-lib/socket",
     "github.com/integration-system/isp-lib/structure",
     "github.com/integration-system/isp-lib/utils",
     "github.com/valyala/fasthttp",

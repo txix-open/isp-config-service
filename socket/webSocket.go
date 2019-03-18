@@ -5,7 +5,6 @@ import (
 	"github.com/googollee/go-socket.io"
 	"github.com/integration-system/isp-lib/config"
 	"github.com/integration-system/isp-lib/logger"
-	sck "github.com/integration-system/isp-lib/socket"
 	str "github.com/integration-system/isp-lib/structure"
 	"github.com/integration-system/isp-lib/utils"
 	"isp-config-service/conf"
@@ -17,7 +16,7 @@ import (
 var (
 	server                          *socketio.Server
 	br                              *broadcaster
-	socketRoomStats                 = sck.NewRoomStats()
+	socketRoomStats                 = service.NewRoomStats()
 	backendRoutes                   = &service.RouterTables{}
 	ConfigServiceBackendDeclaration = &str.BackendDeclaration{}
 )
@@ -27,7 +26,7 @@ func init() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	sessionStore := sck.NewSessionStore(sck.WithOnRemoveCallback(func(id string) {
+	sessionStore := service.NewSessionStore(service.WithOnRemoveCallback(func(id string) {
 		socketRoomStats.RemoveSocketConn(id)
 	}))
 	newServer.SetSessionManager(sessionStore)
@@ -76,7 +75,7 @@ func GetModuleConnectionIdMapByInstanceId(instanceId string) map[string][]string
 	return socketRoomStats.GetModuleConnectionMap()[instanceId]
 }
 
-func GetConnectionById(instanceId, sockId string) (*sck.SocketConn, bool) {
+func GetConnectionById(instanceId, sockId string) (*service.SocketConn, bool) {
 	return socketRoomStats.GetConnection(instanceId, sockId)
 }
 
