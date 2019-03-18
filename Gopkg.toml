@@ -29,8 +29,8 @@
   unused-packages = true
 
 [[override]]
-   name = "mellium.im/sasl"
-   source = "github.com/mellium/sasl"
+  name = "mellium.im/sasl"
+  source = "https://github.com/mellium/sasl.git"
 
 [[constraint]]
   name = "github.com/grpc-ecosystem/grpc-gateway"
