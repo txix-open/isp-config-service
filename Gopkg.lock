@@ -53,19 +53,22 @@
   version = "v1.2.1"
 
 [[projects]]
-  digest = "1:e7f1117ec9d37b59ba6d70bbd8feaa9cd2d1c6f676dc88ee152f5a57908fea4b"
+  digest = "1:4a2afeeef6b563c6fe8b66893c434a4b2cb57fe443c13e7d85d68f4de535cf45"
   name = "github.com/go-pg/pg"
   packages = [
     ".",
     "internal",
+    "internal/iszero",
     "internal/parser",
     "internal/pool",
+    "internal/struct_filter",
+    "internal/tag",
     "orm",
     "types",
   ]
   pruneopts = "UT"
-  revision = "514bed76d8f579d6ff8d40294fa77e476a5c1b3f"
-  version = "v6.15.0"
+  revision = "3aa3c0bd0a7e1567ffe8735b10fb012759870261"
+  version = "v8.0.2"
 
 [[projects]]
   digest = "1:fa5e9e1af8a8645086811ec5ab003806026babc57c8bb3a6f7e1ab34b80e2ff1"
@@ -180,15 +183,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:abd0cd78d6d27a98080f2b2a7fd39bb2f3d3eef6aa20c720093129f04fb41d78"
-  name = "github.com/integration-system/gowsdl"
-  packages = ["soap"]
-  pruneopts = "UT"
-  revision = "368713356c71961354e09ab9b734740ebdd94784"
-
-[[projects]]
-  branch = "master"
-  digest = "1:acb8e35b2c18122597b45d6a82e8859f40d38f8bf55050e0ee1c22074779e0dc"
+  digest = "1:9cb616c58368ad80423d3a303e3c475dd10144f8c49f9c363cabff99626731dc"
   name = "github.com/integration-system/isp-lib"
   packages = [
     "backend",
@@ -197,7 +192,6 @@
     "config/schema",
     "controller",
     "database",
-    "http",
     "logger",
     "metric",
     "proto/stubs",
@@ -207,7 +201,7 @@
     "utils",
   ]
   pruneopts = "UT"
-  revision = "4f5aa9f12547ebda8cc31b6d0447b5dfda474981"
+  revision = "d1d6c58deec482f2419c5e47c3940e1f28ddf785"
 
 [[projects]]
   branch = "master"
@@ -454,14 +448,6 @@
   revision = "1d2d99cba311e04b8d58f5d113ee07086c3e64f6"
 
 [[projects]]
-  branch = "master"
-  digest = "1:c83590426ecf1362e77a9054afed570b201de1a353398a6157ecce06583ea024"
-  name = "github.com/vmihailenco/sasl"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "2f13c189728a02f8cc31b3b9cc06047b383c21cc"
-
-[[projects]]
   digest = "1:39a425f98fb19427061a693fe6bf0683c9bddec4b25b17067e34fdb465e39cb9"
   name = "github.com/x-cray/logrus-prefixed-formatter"
   packages = ["."]
@@ -597,6 +583,14 @@
   pruneopts = "UT"
   revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
   version = "v2.2.2"
+
+[[projects]]
+  digest = "1:999d566ad1ae4303c456af5a155f7b42401cca4fd33552567ed9dd997b107a08"
+  name = "mellium.im/sasl"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e58e780e1378aa4df5dc705364ff5ae9a4dd1e04"
+  version = "v0.2.1"
 
 [solve-meta]
   analyzer-name = "dep"

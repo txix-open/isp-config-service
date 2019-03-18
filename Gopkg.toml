@@ -28,6 +28,10 @@
   go-tests = true
   unused-packages = true
 
+[[override]]
+   name = "mellium.im/sasl"
+   source = "github.com/mellium/sasl"
+
 [[constraint]]
   name = "github.com/grpc-ecosystem/grpc-gateway"
   revision = "e8bd377da7395186f2f042ee6b366fa5a11d2b39"
