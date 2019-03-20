@@ -22,7 +22,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/integration-system/isp-lib/backend"
 	"github.com/integration-system/isp-lib/config"
-	"github.com/integration-system/isp-lib/controller"
 	"github.com/integration-system/isp-lib/database"
 	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/metric"
@@ -150,10 +149,10 @@ func createRestServer(opts ...runtime.ServeMuxOption) {
 	mux.Handle("/socket.io/", socket.Get())
 
 	// === REST ===
-	mux.Handle("/swagger/", controller.StaticHandler(
-		http.StripPrefix(
-			"/swagger/", http.FileServer(
-				http.Dir(path.Join(executableFileDir, "static", "swagger-ui"))))))
+	/*mux.Handle("/swagger/", controller.StaticHandler(
+	http.StripPrefix(
+		"/swagger/", http.FileServer(
+			http.Dir(path.Join(executableFileDir, "static", "swagger-ui"))))))*/
 
 	gw, err := newGateway(ctx, opts...)
 	if err != nil {

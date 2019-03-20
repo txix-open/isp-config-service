@@ -32,6 +32,19 @@
   name = "mellium.im/sasl"
   source = "https://github.com/mellium/sasl.git"
 
+[[override]]
+  name = "github.com/valyala/fasthttp"
+  branch = "master"
+
+[[override]]
+  name = "github.com/googollee/go-socket.io"
+  revision = "c8aeb1ed9b49d7de8fef8662efb18f1d289c5f2e"
+
+[[override]]
+  name = "github.com/googollee/go-engine.io"
+  revision = "e2f255711dcb2ea41e42c6d9d98c172d7edf6509"
+
 [[constraint]]
   name = "github.com/grpc-ecosystem/grpc-gateway"
   revision = "e8bd377da7395186f2f042ee6b366fa5a11d2b39"
+
