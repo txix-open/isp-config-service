@@ -40,15 +40,6 @@ INSERT INTO configs (module_id, active, data) VALUES (
     "gc": true,
     "memory": true
   },
-  "isFieldsListWhite": false,
-  "fieldsList": [
-    "documents",
-    "citizen_relatives",
-    "contacts",
-    "addresses",
-    "escredentials",
-    "users"
-  ],
   "elasticDynamicDateFormats": ["yyyy-MM-dd HH:mm:ss.SSS"]
 }', current_setting('rabbit.user'),
     current_setting('rabbit.host'),
