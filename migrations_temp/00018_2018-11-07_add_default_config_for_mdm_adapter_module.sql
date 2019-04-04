@@ -16,6 +16,7 @@ INSERT INTO configs (module_id, active, data) VALUES (
   (SELECT id FROM moduleVar),
   't',
   ('{
+  "currentMode": "default"
   "syncLogger": {
     "filename": "/opt/isp/isp-mdm-adapter-service/events/events.log",
     "enable": true
