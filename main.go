@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
-	rn "runtime"
 	"time"
 
 	"isp-config-service/conf"
@@ -37,11 +35,10 @@ const (
 )
 
 var (
-	configData        *conf.Configuration
-	echoEndpoint      *string
-	executableFileDir string
-	version           = "0.1.0"
-	date              = "undefined"
+	configData   *conf.Configuration
+	echoEndpoint *string
+	version      = "0.1.0"
+	date         = "undefined"
 )
 
 func init() {
@@ -55,15 +52,6 @@ func init() {
 }
 
 func main() {
-	ex, err := os.Executable()
-	executableFileDir = path.Dir(ex)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	if utils.DEV {
-		_, filename, _, _ := rn.Caller(0)
-		executableFileDir = path.Dir(filename)
-	}
 	metric.InitCollectors(configData.Metrics, structure.MetricConfiguration{})
 	metric.InitStatusChecker("routers", checkRouters)
 	metric.InitStatusChecker("converters", checkConverters)

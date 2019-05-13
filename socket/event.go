@@ -139,6 +139,7 @@ func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) string {
 		logger.Warn(err)
 		return errorMsg
 	}
+
 	res, err := model.SchemaRep.GetSchemasByModulesId([]int32{module.Id})
 	if err != nil {
 		logger.Warn(err)
@@ -170,6 +171,36 @@ func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) string {
 			return errorMsg
 		}
 	}
+
+	if len(s.DefaultConfig) == 0 {
+		return okMsg
+	}
+
+	configs, err := model.ConfigRep.GetConfigByInstanceUUIDAndModuleName(instanceUuid, moduleName)
+	if err != nil {
+		logger.Warn(err)
+		return errorMsg
+	}
+	if configs != nil {
+		return okMsg
+	}
+	config := entity.Config{
+		ModuleId: module.Id,
+		Name:     module.Name,
+		Data:     s.DefaultConfig,
+		Active:   true,
+		Version:  1,
+	}
+	_, err = model.ConfigRep.CreateConfig(&config)
+	if err != nil {
+		logger.Warn(err)
+		return errorMsg
+	}
+	_ = so.Emit(
+		utils.ConfigSendConfigWhenConnected, config.Data.ToJSON(), func(so socketio.Socket, data string) {
+			logger.Debug("Client ACK with data: ", data)
+		},
+	)
 
 	return okMsg
 }
