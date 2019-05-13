@@ -43,11 +43,3 @@
 [[override]]
   name = "github.com/googollee/go-engine.io"
   revision = "e2f255711dcb2ea41e42c6d9d98c172d7edf6509"
-
-[[constraint]]
-  name = "github.com/grpc-ecosystem/grpc-gateway"
-  revision = "e8bd377da7395186f2f042ee6b366fa5a11d2b39"
-
-[[override]]
-  name = "github.com/integration-system/isp-lib"
-  branch = "master"

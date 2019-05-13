@@ -201,6 +201,7 @@ func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) string {
 			logger.Debug("Client ACK with data: ", data)
 		},
 	)
+
 	return okMsg
 }
 
