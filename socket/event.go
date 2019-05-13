@@ -145,9 +145,8 @@ func onReceiveRemoteConfigSchema(so socketio.Socket, msg string) string {
 		logger.Warn(err)
 		return errorMsg
 	}
-	var schema *entity.ConfigSchema
 	if len(res) > 0 {
-		schema = &res[0]
+		schema := &res[0]
 		schema.Schema = s.Schema
 		schema.Version = s.Version
 		if _, err := model.SchemaRep.UpdateConfigSchema(schema); err != nil {
