@@ -48,3 +48,6 @@
   name = "github.com/grpc-ecosystem/grpc-gateway"
   revision = "e8bd377da7395186f2f042ee6b366fa5a11d2b39"
 
+[[override]]
+  name = "github.com/integration-system/isp-lib"
+  branch = "master"

@@ -180,7 +180,8 @@
   revision = "5959fcea049facd9441fff9de976191accd3cf9f"
 
 [[projects]]
-  digest = "1:89d46f00b9433a69fb5a0fd2f57b3e7073f8ee326ad58d3ac7b2387fac4480d3"
+  branch = "master"
+  digest = "1:0bdf657bbf0ecebb68dd69296c3344eed6136044a46e608e73a3ccc9d1f2b967"
   name = "github.com/integration-system/isp-lib"
   packages = [
     "backend",
@@ -197,8 +198,7 @@
     "utils",
   ]
   pruneopts = "UT"
-  revision = "e6053608330af7e64499d696a720ecf6ef0bea23"
-  version = "v1.0.1"
+  revision = "b9d4753188c313e0d0d87fcfaee878dc392334df"
 
 [[projects]]
   branch = "master"
@@ -572,14 +572,6 @@
   pruneopts = "UT"
   revision = "2fdaae294f38ed9a121193c51ec99fecd3b13eb7"
   version = "v1.19.0"
-
-[[projects]]
-  digest = "1:c805e517269b0ba4c21ded5836019ed7d16953d4026cb7d00041d039c7906be9"
-  name = "gopkg.in/natefinch/lumberjack.v2"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "a96e63847dc3c67d17befa69c303767e2f84e54f"
-  version = "v2.1"
 
 [[projects]]
   digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
