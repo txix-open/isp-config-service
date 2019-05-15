@@ -36,7 +36,7 @@ INSERT INTO configs VALUES (1, 1, NULL, 't', NULL, NULL, (format('{
 }',
     current_setting('migration.admin_token_secret'),
     current_setting('migration.redis_host'),
-    current_setting('migration.redis_port'),
+    current_setting('migration.redis_port')
 ))::jsonb);
 -- converter
 INSERT INTO configs VALUES (2, 2, NULL, 't', NULL, NULL, ('{"metrics": {"gc": true, "memory": true, "address": {"ip": "0.0.0.0", "path": "/metrics", "port": "9553"}}}')::jsonb);
