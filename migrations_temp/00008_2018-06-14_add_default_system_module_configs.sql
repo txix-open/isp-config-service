@@ -5,6 +5,9 @@ set migration.db_dbname = 'isp-test';
 set migration.db_user = 'isp-test';
 set migration.db_pass = '123321';
 
+set migration.redis_host = 'isp-redis}';
+set migration.redis_port = '5672';
+
 set migration.admin_token_secret = 'secret';
 
 -- auth
