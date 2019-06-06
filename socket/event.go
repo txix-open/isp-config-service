@@ -44,7 +44,7 @@ func onDisconnect(so socketio.Socket) {
 	must(so.Leave(instanceUuid + moduleName))
 	must(so.Leave(instanceUuid))
 	must(so.Leave(RoutesSubscribersRoom(instanceUuid)))
-	must(service.Disonnect(instanceUuid, moduleName))
+	_ = service.Disonnect(instanceUuid, moduleName)
 
 	discoverer := getOrRegisterDiscoverer(instanceUuid)
 	discoverer.OnDisconnection(so.Id())
@@ -63,19 +63,24 @@ func onConnect(so socketio.Socket) {
 		return
 	}
 
-	config, err := service.NewConnection(instanceUuid, moduleName)
+	err = service.NewConnection(instanceUuid, moduleName)
 	if err != nil {
 		_ = so.Emit(utils.ConfigError, err.Error())
 		return
 	}
-
 	must(so.Join(instanceUuid + moduleName))
 	must(so.Join(instanceUuid))
-	_ = so.Emit(
-		utils.ConfigSendConfigWhenConnected, config.Data.ToJSON(), func(so socketio.Socket, data string) {
-			logger.Debug("Client ACK with data: ", data)
-		},
-	)
+
+	config, err := service.GetConfig(instanceUuid, moduleName)
+	if err != nil {
+		_ = so.Emit(utils.ConfigError, err.Error())
+	} else {
+		_ = so.Emit(
+			utils.ConfigSendConfigWhenConnected, config.Data.ToJSON(), func(so socketio.Socket, data string) {
+				logger.Debug("Client ACK with data: ", data)
+			},
+		)
+	}
 }
 
 func onReceivedModuleRequirements(so socketio.Socket, msg string) {

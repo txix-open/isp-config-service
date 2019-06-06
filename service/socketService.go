@@ -21,20 +21,19 @@ func Disonnect(instanceUuid string, moduleName string) error {
 	return nil
 }
 
-func NewConnection(instanceUuid string, moduleName string) (*entity.Config, error) {
-
+func NewConnection(instanceUuid string, moduleName string) error {
 	instance, err := model.InstanceRep.GetInstanceByUuid(instanceUuid)
 	if err != nil {
 		logger.Error(err)
-		return nil, errors.New(utils.ServiceError)
+		return errors.New(utils.ServiceError)
 	}
 	if instance.Id == 0 {
-		return nil, errors.New(fmt.Sprintf("The instance with uuid: %s not found", instanceUuid))
+		return errors.New(fmt.Sprintf("The instance with uuid: %s not found", instanceUuid))
 	}
 	module, err := model.ModulesRep.GetModuleByInstanceIdAndName(instance.Id, moduleName)
 	if err != nil {
 		logger.Error(err)
-		return nil, errors.New(utils.ServiceError)
+		return errors.New(utils.ServiceError)
 	}
 	if module.Id == 0 {
 		module.Name = moduleName
@@ -43,18 +42,18 @@ func NewConnection(instanceUuid string, moduleName string) (*entity.Config, erro
 		module, err = model.ModulesRep.CreateModule(module)
 		if err != nil {
 			logger.Error(err)
-			return nil, errors.New(utils.ServiceError)
+			return errors.New(utils.ServiceError)
 		}
+		return nil
 	} else {
 		module.LastConnectedAt = time.Now()
 		module, err = model.ModulesRep.UpdateModule(module)
 		if err != nil {
 			logger.Error(err)
-			return nil, errors.New(utils.ServiceError)
+			return errors.New(utils.ServiceError)
 		}
+		return nil
 	}
-
-	return GetConfig(instanceUuid, moduleName)
 }
 
 func GetConfig(instanceUuid string, moduleName string) (*entity.Config, error) {
