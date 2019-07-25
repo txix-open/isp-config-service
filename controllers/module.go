@@ -24,6 +24,10 @@ func GetModules(identities []int32) ([]st.Module, error) {
 	return modules, nil
 }
 
+func GetSchemaByModuleId(moduleId int32) (*st.ConfigSchema, error) {
+	return model.SchemaRep.GetSchemaByModuleId(moduleId)
+}
+
 func GetModulesAggregatedInfo(i structure.Isolation) ([]*domain.ModuleInfo, error) {
 	instanceId, err := i.GetInstanceId()
 	if err != nil {

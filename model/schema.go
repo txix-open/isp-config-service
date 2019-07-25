@@ -28,3 +28,16 @@ func (r *SchemaRepository) GetSchemasByModulesId(modulesId []int32) ([]entity.Co
 	}
 	return res, nil
 }
+
+func (r *SchemaRepository) GetSchemaByModuleId(moduleId int32) (*entity.ConfigSchema, error) {
+	var model entity.ConfigSchema
+	if err := r.DB.Model(&model).Where("module_id = ?", moduleId).Select(); err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	} else {
+		return &model, nil
+	}
+}

@@ -15,6 +15,7 @@ type Handlers struct {
 
 	// ===== MODULE =====
 	GetModules          func(identities []int32) ([]entity.Module, error)         `method:"get_modules" group:"module" inner:"true"`
+	GetSchemaByModuleId func(moduleId int32) (*entity.ConfigSchema, error)        `method:"get_schema" group:"module" inner:"true"`
 	GetActiveModules    func() ([]entity.Module, error)                           `method:"get_active_modules" group:"module" inner:"true"`
 	GetConnectedModules func() (map[string]interface{}, error)                    `method:"get_connected_modules" group:"module" inner:"true"`
 	CreateUpdateModule  func(module entity.Module) (*entity.Module, error)        `method:"create_update_module" group:"module" inner:"true"`
@@ -40,6 +41,7 @@ func GetHandlers() *Handlers {
 		DeleteInstance:       controllers.DeleteInstance,
 
 		GetModules:          controllers.GetModules,
+		GetSchemaByModuleId: controllers.GetSchemaByModuleId,
 		GetActiveModules:    controllers.GetActiveModules,
 		GetConnectedModules: controllers.GetConnectedModules,
 		CreateUpdateModule:  controllers.CreateUpdateModule,

@@ -31,6 +31,12 @@ func (r *ModulesRepository) GetModules(identities []int32) ([]entity.Module, err
 	return modules, err
 }
 
+func (r *ModulesRepository) GetModule(identity int32) (*entity.Module, error) {
+	var module entity.Module
+	var err = r.DB.Model(&module).Where("id = ?", identity).Select()
+	return &module, err
+}
+
 func (r *ModulesRepository) GetActiveModules() ([]entity.Module, error) {
 	var modules []entity.Module
 	err := r.DB.Model(&modules).
