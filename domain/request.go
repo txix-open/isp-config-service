@@ -13,3 +13,7 @@ type ConfigInstanceModuleName struct {
 	InstanceUuid string                 `valid:"required~Required"`
 	ConfigData   map[string]interface{} `valid:"required~Required"`
 }
+
+type GetByModuleIdRequest struct {
+	ModuleId int32 `valid:"required~Required"`
+}
