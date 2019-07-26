@@ -223,7 +223,7 @@ func handleModulesRequest(ctx *fasthttp.RequestCtx) {
 		result[i.Uuid] = info
 	}
 
-	if bytes, err := utils.ConvertInterfaceToBytes(result, nil); err != nil {
+	if bytes, err := utils.ConvertGoToBytes(result); err != nil {
 		logger.Warn(err)
 		ctx.Error("internal server error", http.StatusInternalServerError)
 	} else {
