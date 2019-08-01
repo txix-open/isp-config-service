@@ -11,6 +11,15 @@ type Configuration struct {
 	WS               struct {
 		Rest structure.AddressConfiguration `valid:"required~Required"`
 		Grpc structure.AddressConfiguration `valid:"required~Required"`
+		Raft structure.AddressConfiguration `valid:"required~Required"`
 	}
 	Metrics structure.MetricConfiguration
+	Cluster ClusterConfiguration `valid:"required~Required"`
+}
+
+type ClusterConfiguration struct {
+	InMemory     bool
+	DataDir      string   `valid:"required~Required"`
+	Peers        []string `valid:"required~Required"`
+	OuterAddress string   `valid:"required~Required"`
 }

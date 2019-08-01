@@ -1,8 +1,6 @@
 package entity
 
-import (
-	"time"
-)
+import "time"
 
 type Instance struct {
 	Id   int32  `json:"id"`

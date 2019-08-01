@@ -19,6 +19,9 @@ ws:
   grpc:
     port: "9002"
     ip: "0.0.0.0"
+  raft:
+    port: "9003"
+    ip: "0.0.0.0"
 
 metrics:
   gc: true
@@ -28,3 +31,10 @@ metrics:
       ip: "0.0.0.0"
       port: "9551"
     path: "/metrics"
+
+cluster:
+  dataDir: ./data
+  inMemory: true
+  outerAddress: 127.0.0.1:9003
+  peers:
+    - 127.0.0.1:9003
