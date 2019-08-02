@@ -83,7 +83,7 @@ func (r *Raft) listenLeader() {
 	}
 }
 
-func NewRaft(bind string, configuration conf.ClusterConfiguration) (*Raft, error) {
+func NewRaft(bind string, configuration conf.ClusterConfiguration, state raft.FSM) (*Raft, error) {
 	logStore, store, snapshotStore, err := makeStores(configuration)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func NewRaft(bind string, configuration conf.ClusterConfiguration) (*Raft, error
 
 	cfg := raft.DefaultConfig()
 	cfg.LocalID = raft.ServerID(configuration.OuterAddress)
-	r, err := raft.NewRaft(cfg, nil, logStore, store, snapshotStore, trans)
+	r, err := raft.NewRaft(cfg, state, logStore, store, snapshotStore, trans)
 	if err != nil {
 		return nil, errors.WithMessage(err, "create raft")
 	}

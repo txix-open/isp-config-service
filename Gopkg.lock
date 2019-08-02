@@ -57,31 +57,25 @@
   version = "v1.3.2"
 
 [[projects]]
-  digest = "1:6b7e9b1e2f944a0c84f29943f705954d2d8cfbf6477c37a10d0c80acdbc2445f"
+  digest = "1:324591cd9122f94cc39a87bd44ec71153672c239e2cff5743bfad96b60be3749"
   name = "github.com/googollee/go-engine.io"
   packages = [
     ".",
-    "base",
-    "packet",
-    "payload",
+    "message",
+    "parser",
+    "polling",
     "transport",
-    "transport/polling",
-    "transport/websocket",
+    "websocket",
   ]
   pruneopts = "UT"
-  revision = "cc5b8c07e074e97f6bc6f4c6dbc03cf06267e6e0"
-  version = "v1.4.1"
+  revision = "e2f255711dcb2ea41e42c6d9d98c172d7edf6509"
 
 [[projects]]
-  digest = "1:25fa43cb2f30c0ab54aaabf05167c56c7e385635b3651015c5726ecb737a905e"
+  digest = "1:3eb026ba34d6dd12b45bb6abd63b4e917ebca8d8f3022a139c0881d900ad1bee"
   name = "github.com/googollee/go-socket.io"
-  packages = [
-    ".",
-    "parser",
-  ]
+  packages = ["."]
   pruneopts = "UT"
-  revision = "96da97a7c8f269421388fbb0dca12aa3c0699088"
-  version = "v1.4.1"
+  revision = "c8aeb1ed9b49d7de8fef8662efb18f1d289c5f2e"
 
 [[projects]]
   digest = "1:7b5c6e2eeaa9ae5907c391a91c132abfd5c9e8a784a341b5625e750c67e6825d"

@@ -1,35 +1,71 @@
 package ws
 
 import (
-	socketio "github.com/googollee/go-socket.io"
 	"sync"
+)
+
+const (
+	idsRoom = "__id"
 )
 
 type RoomStore struct {
 	mu    sync.RWMutex
-	rooms map[string]map[string]socketio.Conn
+	rooms map[string]map[string]Conn
 }
 
-func (s *RoomStore) Join(conn socketio.Conn, rooms ...string) {
+func (s *RoomStore) GetOrJoinById(id string, new Conn) Conn {
+	s.mu.RLock()
+	var (
+		conn Conn
+		ok   bool
+	)
+	idRoom, roomExist := s.rooms[idsRoom]
+	if roomExist {
+		conn, ok = idRoom[id]
+	}
+	s.mu.RUnlock()
+	if ok {
+		return conn
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	idRoom, roomExist = s.rooms[idsRoom]
+	if roomExist {
+		conn, ok = idRoom[id]
+	}
+	if ok {
+		return conn
+	}
+	conn = new
+	if !roomExist {
+		s.rooms[idsRoom] = map[string]Conn{conn.Id(): conn}
+		return conn
+	}
+	idRoom[conn.Id()] = conn
+	return conn
+}
+
+func (s *RoomStore) Join(conn Conn, rooms ...string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for _, room := range rooms {
 		if conns, ok := s.rooms[room]; ok {
-			conns[conn.ID()] = conn
+			conns[conn.Id()] = conn
 		} else {
-			s.rooms[room] = map[string]socketio.Conn{conn.ID(): conn}
+			s.rooms[room] = map[string]Conn{conn.Id(): conn}
 		}
 	}
 }
 
-func (s *RoomStore) Leave(conn socketio.Conn, rooms ...string) {
+func (s *RoomStore) Leave(conn Conn, rooms ...string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for _, room := range rooms {
 		if conns, ok := s.rooms[room]; ok {
-			delete(conns, conn.ID())
+			delete(conns, conn.Id())
 			if len(conns) == 0 {
 				delete(s.rooms, room)
 			}
@@ -37,15 +73,15 @@ func (s *RoomStore) Leave(conn socketio.Conn, rooms ...string) {
 	}
 }
 
-func (s *RoomStore) ToBroadcast(except socketio.Conn, rooms ...string) []socketio.Conn {
+func (s *RoomStore) ToBroadcast(except Conn, rooms ...string) []Conn {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	result := make([]socketio.Conn, 0)
+	result := make([]Conn, 0)
 	for _, room := range rooms {
 		if conns, ok := s.rooms[room]; ok {
 			for id, conn := range conns {
-				if id != except.ID() {
+				if id != except.Id() {
 					result = append(result, conn)
 				}
 			}
@@ -58,6 +94,6 @@ func (s *RoomStore) ToBroadcast(except socketio.Conn, rooms ...string) []socketi
 func NewRoomStore() *RoomStore {
 	return &RoomStore{
 		mu:    sync.RWMutex{},
-		rooms: make(map[string]map[string]socketio.Conn),
+		rooms: make(map[string]map[string]Conn),
 	}
 }

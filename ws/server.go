@@ -2,6 +2,8 @@ package ws
 
 import (
 	"github.com/googollee/go-socket.io"
+	gosocketio "github.com/integration-system/golang-socketio"
+	"github.com/integration-system/isp-lib/logger"
 	"net/http"
 )
 
@@ -11,7 +13,7 @@ type WebsocketServer struct {
 }
 
 func (s *WebsocketServer) Close() error {
-	return s.s.Close()
+	return nil
 }
 
 func (s *WebsocketServer) ServeHttp(w http.ResponseWriter, r *http.Request) {
@@ -22,10 +24,57 @@ func (s *WebsocketServer) Rooms() *RoomStore {
 	return s.roomStore
 }
 
-func (s *WebsocketServer) Broadcast(except socketio.Conn, room string, msg string, v ...interface{}) error {
+func (s *WebsocketServer) OnWithAck(event string, f func(conn Conn, data []byte) string) *WebsocketServer {
+	must(s.s.On(event, func(conn socketio.Socket, data []byte) string {
+		logger.Debugf("[%s]:$s:%s", conn.Request().RemoteAddr, event, string(data))
+
+		return f(s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn}), data)
+	}))
+	return s
+}
+
+func (s *WebsocketServer) On(event string, f func(conn Conn, data []byte)) *WebsocketServer {
+	must(s.s.On(event, func(conn socketio.Socket, data []byte) {
+		logger.Debugf("[%s]:$s:%s", conn.Request().RemoteAddr, event, string(data))
+
+		f(s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn}), data)
+	}))
+	return s
+}
+
+func (s *WebsocketServer) OnConnect(f func(Conn)) *WebsocketServer {
+	must(s.s.On(gosocketio.OnConnection, func(conn socketio.Socket) {
+		logger.Debugf("[%s]:$s", conn.Request().RemoteAddr, gosocketio.OnConnection)
+
+		f(s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn}))
+	}))
+	return s
+}
+
+func (s *WebsocketServer) OnDisconnect(f func(Conn)) *WebsocketServer {
+	must(s.s.On(gosocketio.OnDisconnection, func(conn socketio.Socket) {
+		logger.Debugf("[%s]:$s", conn.Request().RemoteAddr, gosocketio.OnDisconnection)
+
+		c := s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn})
+		f(c)
+		s.roomStore.Leave(c, idsRoom)
+	}))
+	return s
+}
+
+func (s *WebsocketServer) OnError(f func(Conn, error)) *WebsocketServer {
+	must(s.s.On(gosocketio.OnError, func(conn socketio.Socket, err error) {
+		logger.Debugf("[%s]:$s:%v", conn.Request().RemoteAddr, gosocketio.OnError, err)
+
+		f(s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn}), err)
+	}))
+	return s
+}
+
+func (s *WebsocketServer) Broadcast(except Conn, room string, msg string, v ...interface{}) error {
 	conns := s.roomStore.ToBroadcast(except, room)
 	for _, conn := range conns {
-		conn.Emit(msg, v...)
+		_ = conn.Emit(msg, v...)
 	}
 	return nil
 }
@@ -35,8 +84,6 @@ func NewWebsocketServer() (*WebsocketServer, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	go server.Serve()
 
 	return &WebsocketServer{
 		s:         server,

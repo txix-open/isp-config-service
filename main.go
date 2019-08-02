@@ -12,6 +12,8 @@ import (
 	"isp-config-service/helper"
 	"isp-config-service/holder"
 	"isp-config-service/raft"
+	"isp-config-service/state"
+	"isp-config-service/subs"
 	"isp-config-service/ws"
 	"net/http"
 	"os"
@@ -35,8 +37,8 @@ func init() {
 func main() {
 	cfg := config.Get().(*conf.Configuration)
 
-	initWebsocket(cfg.WS.Rest.GetAddress())
-	initRaft(cfg.WS.Raft.GetAddress(), cfg.Cluster)
+	client, store := initRaft(cfg.WS.Raft.GetAddress(), cfg.Cluster)
+	initWebsocket(cfg.WS.Rest.GetAddress(), client, store)
 	initGrpc(cfg.WS.Grpc)
 
 	ctx := context.Background()
@@ -47,11 +49,13 @@ func main() {
 	<-shutdownChan
 }
 
-func initWebsocket(bindAddress string) {
+func initWebsocket(bindAddress string, clusterClint *cluster.ClusterClient, store *state.Store) {
 	socket, err := ws.NewWebsocketServer()
 	if err != nil {
 		logger.Fatal(err)
 	}
+	subs.NewSocketEventHandler(socket, clusterClint, store).SubscribeAll()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/socket.io/", socket.ServeHttp)
 	httpServer := &http.Server{Addr: bindAddress, Handler: mux}
@@ -66,16 +70,20 @@ func initWebsocket(bindAddress string) {
 	logger.Infof("socket.IO server start on %s", bindAddress)
 }
 
-func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration) {
-	r, err := raft.NewRaft(bindAddress, clusterCfg)
+func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration) (*cluster.ClusterClient, *state.Store) {
+	store := state.NewStateStore()
+	r, err := raft.NewRaft(bindAddress, clusterCfg, store)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	holder.ClusterClient = cluster.NewRaftClusterClient(r)
+	clusterClient := cluster.NewRaftClusterClient(r)
+	holder.ClusterClient = clusterClient
 
 	_ = r.BootstrapCluster() // err can be ignored
 
 	logger.Infof("raft server start on %s", bindAddress)
+
+	return clusterClient, store
 }
 
 func initGrpc(bindAddress structure.AddressConfiguration) {

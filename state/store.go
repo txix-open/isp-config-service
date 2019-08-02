@@ -1,4 +1,4 @@
-package cluster
+package state
 
 import (
 	"github.com/hashicorp/raft"
@@ -14,7 +14,7 @@ var (
 )
 
 type Store struct {
-	state State
+	state state
 	lock  sync.Mutex
 }
 
@@ -29,14 +29,14 @@ func (f *Store) Snapshot() (raft.FSMSnapshot, error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
-	copied := deepcopy.Copy(f.state).(State)
+	copied := deepcopy.Copy(f.state).(state)
 
 	return &fsmSnapshot{copied}, nil
 }
 
 // Restore stores the key-value store to a previous state.
 func (f *Store) Restore(rc io.ReadCloser) error {
-	s := State{}
+	s := state{}
 
 	if err := json.NewDecoder(rc).Decode(&s); err != nil {
 		return errors.WithMessage(err, "unmarshal state")
@@ -48,7 +48,7 @@ func (f *Store) Restore(rc io.ReadCloser) error {
 }
 
 type fsmSnapshot struct {
-	state State
+	state state
 }
 
 func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
@@ -73,3 +73,9 @@ func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
 }
 
 func (f *fsmSnapshot) Release() {}
+
+func NewStateStore() *Store {
+	return &Store{
+		state: newState(),
+	}
+}

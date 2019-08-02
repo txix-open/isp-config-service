@@ -11,6 +11,7 @@ import (
 var (
 	ErrNoLeader                   = errors.New("no leader in cluster")
 	ErrLeaderClientNotInitialized = errors.New("leader client not initialized")
+	ErrNotLeader                  = errors.New("node is not a leader")
 )
 
 const (
@@ -27,12 +28,20 @@ type ClusterClient struct {
 }
 
 func (client *ClusterClient) Shutdown() error {
+	client.leaderMu.Lock()
+	defer client.leaderMu.Unlock()
+
+	if client.leaderClient != nil {
+		client.leaderClient.Close()
+		client.leaderClient = nil
+	}
+
 	return client.r.GracefulShutdown()
 }
 
 func (client *ClusterClient) SyncApply(command []byte) (interface{}, error) {
 	client.leaderMu.RLock()
-	defer client.leaderMu.Unlock()
+	defer client.leaderMu.RUnlock()
 
 	if !client.leaderState.leaderElected {
 		return nil, ErrNoLeader
@@ -46,6 +55,17 @@ func (client *ClusterClient) SyncApply(command []byte) (interface{}, error) {
 		}
 		return client.leaderClient.Send(command, defaultApplyTimeout)
 	}
+}
+
+func (client *ClusterClient) SyncApplyOnLeader(command []byte) (interface{}, error) {
+	client.leaderMu.RLock()
+	defer client.leaderMu.RUnlock()
+
+	if !client.leaderState.isLeader {
+		return nil, ErrNotLeader
+	}
+
+	return client.r.SyncApply(command)
 }
 
 func (client *ClusterClient) listenLeader() {

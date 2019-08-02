@@ -14,13 +14,13 @@ grpcOuterAddress:
 
 ws:
   rest:
-    port: "9001"
+    port: "9011"
     ip: "0.0.0.0"
   grpc:
-    port: "9002"
+    port: "9022"
     ip: "0.0.0.0"
   raft:
-    port: "9003"
+    port: "9004"
     ip: "0.0.0.0"
 
 metrics:
@@ -35,6 +35,7 @@ metrics:
 cluster:
   dataDir: ./data
   inMemory: true
-  outerAddress: 127.0.0.1:9003
+  outerAddress: 127.0.0.1:9004
   peers:
-    - 127.0.0.1:9003
+    #- 127.0.0.1:9003
+    - 127.0.0.1:9004

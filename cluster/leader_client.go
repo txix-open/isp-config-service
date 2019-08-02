@@ -3,9 +3,7 @@ package cluster
 import (
 	"github.com/cenkalti/backoff"
 	gosocketio "github.com/integration-system/golang-socketio"
-	"github.com/integration-system/isp-lib/config"
 	"github.com/integration-system/isp-lib/logger"
-	"isp-config-service/conf"
 	"net"
 	"time"
 )
@@ -15,7 +13,7 @@ type SocketLeaderClient struct {
 }
 
 func (c *SocketLeaderClient) Send(data []byte, timeout time.Duration) (string, error) {
-	return c.c.Ack(applyCommandEvent, data, timeout)
+	return c.c.Ack(ApplyCommandEvent, data, timeout)
 }
 
 func (c *SocketLeaderClient) Dial(timeout time.Duration) error {
@@ -29,7 +27,7 @@ func (c *SocketLeaderClient) Close() {
 }
 
 func NewSocketLeaderClient(address string) *SocketLeaderClient {
-	socketIoAddress := getSocketIoAddress(address)
+	socketIoAddress := getSocketIoUrl(address)
 	client := gosocketio.NewClientBuilder().
 		EnableReconnection().
 		ReconnectionTimeout(1 * time.Second).
@@ -42,12 +40,20 @@ func NewSocketLeaderClient(address string) *SocketLeaderClient {
 	}
 }
 
-func getSocketIoAddress(address string) string {
+func getSocketIoUrl(address string) string {
 	addr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		panic(err) //must never occured
 	}
 
-	cfg := config.Get().(*conf.Configuration)
-	return net.JoinHostPort(addr.IP.String(), cfg.WS.Rest.Port)
+	/*cfg := config.Get().(*conf.Configuration)
+	port, err := strconv.Atoi(cfg.WS.Rest.Port)
+	if err != nil {
+		panic(err)
+	}*/
+
+	return gosocketio.GetUrl(addr.IP.String(), 9001, false, map[string]string{
+		ClusterParam: "true",
+	}) //TODO for test
+
 }

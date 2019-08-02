@@ -1,5 +1,8 @@
 package cluster
 
 const (
-	applyCommandEvent = "CONFIG_CLUSTER:APPLY_COMMAND"
+	ApplyCommandEvent = "CONFIG_CLUSTER:APPLY_COMMAND"
+
+	TokenParam   = "token"
+	ClusterParam = "cluster"
 )
