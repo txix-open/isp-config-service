@@ -15,6 +15,15 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+// GetModules godoc
+// @Summary Метод получени объектов модулей по идентификаторам
+// @Description Возвращает массив модулей по запрошенным идентификаторам (все, если массив пустой)
+// @Accept  json
+// @Produce  json
+// @Param body body []int false "массив идентификаторов модулей"
+// @Success 200 {array} entity.Module
+// @Failure 500 {object} structure.GrpcError
+// @Router /config/get_modules [POST]
 func GetModules(identities []int32) ([]st.Module, error) {
 	modules, err := model.ModulesRep.GetModules(identities)
 	if err != nil {
@@ -24,6 +33,15 @@ func GetModules(identities []int32) ([]st.Module, error) {
 	return modules, nil
 }
 
+// GetModulesAggregatedInfo godoc
+// @Summary Метод получения полной информации о состоянии модуля
+// @Description Возвращает полное состояние всех модулей в кластере (конфигурация, схема конфигурации, подключенные экземпляры)
+// @Accept  json
+// @Produce  json
+// @Param x-instance-identity header string true "идентификатор кластера"
+// @Success 200 {array} domain.ModuleInfo
+// @Failure 500 {object} structure.GrpcError
+// @Router /config/get_modules_info [POST]
 func GetModulesAggregatedInfo(i structure.Isolation) ([]*domain.ModuleInfo, error) {
 	instanceId, err := i.GetInstanceId()
 	if err != nil {

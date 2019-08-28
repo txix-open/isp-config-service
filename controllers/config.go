@@ -13,6 +13,15 @@ import (
 	"isp-config-service/domain"
 )
 
+// GetConfigs godoc
+// @Summary Метод получения объектов конфигурации по идентификаторам
+// @Description Возвращает массив конфиграций по запрошенным идентификаторам (все, если массив пустой)
+// @Accept  json
+// @Produce  json
+// @Param body body []int false "Массив идентификаторов конфигураций"
+// @Success 200 {array} entity.Config
+// @Failure 500 {object} structure.GrpcError
+// @Router /config/get_configs [POST]
 func GetConfigs(identities []int64) ([]st.Config, error) {
 	configs, err := model.ConfigRep.GetConfigs(identities)
 	if err != nil {
@@ -21,6 +30,16 @@ func GetConfigs(identities []int64) ([]st.Config, error) {
 	return configs, nil
 }
 
+// GetConfigByInstanceUUIDAndModuleName godoc
+// @Summary Метод получени объекта конфигурации по названию модуля
+// @Description Возвращает конфиграцию по названию модуля и идентификатору инстанса
+// @Accept  json
+// @Produce  json
+// @Param body body entity.ModuleInstanceIdentity true "название модуля и id кластера"
+// @Success 200 {object} entity.Config
+// @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
+// @Failure 500 {object} structure.GrpcError
+// @Router /config/get_config_by_instance_uuid_and_module_name [POST]
 func GetConfigByInstanceUUIDAndModuleName(request st.ModuleInstanceIdentity) (*st.Config, error) {
 	config, err := model.ConfigRep.GetConfigByInstanceUUIDAndModuleName(request.Uuid, request.Name)
 	if err != nil {
@@ -33,6 +52,17 @@ func GetConfigByInstanceUUIDAndModuleName(request st.ModuleInstanceIdentity) (*s
 	return config, nil
 }
 
+// CreateUpdateConfig godoc
+// @Summary Метод обновления конфигурации
+// @Description Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
+// В случае обновления рассылает все подключенным модулям актуальную конфигурацию
+// @Accept  json
+// @Produce  json
+// @Param body body entity.Config true "объект для сохранения"
+// @Success 200 {object} entity.Config
+// @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
+// @Failure 500 {object} structure.GrpcError
+// @Router /config/create_update_config [POST]
 func CreateUpdateConfig(config st.Config) (*st.Config, error) {
 	var err error
 	var cfg *st.Config
@@ -69,6 +99,16 @@ func CreateUpdateConfig(config st.Config) (*st.Config, error) {
 	return cfg, nil
 }
 
+// UpdateActiveConfigByInstanceUUIDAndModuleName godoc
+// @Summary Метод обновления конфигурации по названию модуля
+// @Description Обновляет объект конфиграции для модуля, рассылает подключенным модулям обновленную конфигурацию
+// @Accept  json
+// @Produce  json
+// @Param body body domain.ConfigInstanceModuleName true "объект для сохранения"
+// @Success 200 {object} entity.Config "объект для сохранения"
+// @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
+// @Failure 500 {object} structure.GrpcError
+// @Router /config/update_active_config_by_instance_uuid_and_module_name [POST]
 func UpdateActiveConfigByInstanceUUIDAndModuleName(configReq domain.ConfigInstanceModuleName) (*st.Config, error) {
 	config, err := model.ConfigRep.GetConfigByInstanceUUIDAndModuleName(configReq.InstanceUuid, configReq.ModuleName)
 	if err != nil || config == nil {

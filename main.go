@@ -51,6 +51,12 @@ func init() {
 	module.Version = version
 }
 
+// @title ISP configuration service
+// @version 1.2.0
+// @description Сервис управления конфигурацией модулей ISP кластера
+
+// @host localhost:9003
+// @BasePath /api/config
 func main() {
 	metric.InitCollectors(configData.Metrics, structure.MetricConfiguration{})
 	metric.InitStatusChecker("routers", checkRouters)

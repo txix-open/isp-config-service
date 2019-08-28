@@ -27,7 +27,7 @@ type Config struct {
 	Active      bool       `json:"active" sql:",null"`
 	CreatedAt   time.Time  `json:"createdAt" sql:",null"`
 	UpdatedAt   time.Time  `json:"updatedAt" sql:",null"`
-	Data        ConfigData `json:"data" sql:",notnull"`
+	Data        ConfigData `json:"data" sql:",notnull"` // Объект конфигурации
 }
 
 type ConfigSchema struct {
