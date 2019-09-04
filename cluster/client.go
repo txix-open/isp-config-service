@@ -70,7 +70,7 @@ func (client *ClusterClient) SyncApplyOnLeader(command []byte) (interface{}, err
 
 func (client *ClusterClient) listenLeader() {
 	for n := range client.r.LeaderCh() {
-		logger.Debug(n)
+		logger.Debug("ChangeLeaderNotification:", n)
 
 		client.leaderMu.Lock()
 		if client.leaderState.leaderAddr != n.CurrentLeaderAddress {

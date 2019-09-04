@@ -71,8 +71,8 @@ func (s *WebsocketServer) OnError(f func(Conn, error)) *WebsocketServer {
 	return s
 }
 
-func (s *WebsocketServer) Broadcast(except Conn, room string, msg string, v ...interface{}) error {
-	conns := s.roomStore.ToBroadcast(except, room)
+func (s *WebsocketServer) Broadcast(room string, msg string, v ...interface{}) error {
+	conns := s.roomStore.ToBroadcast(room)
 	for _, conn := range conns {
 		_ = conn.Emit(msg, v...)
 	}

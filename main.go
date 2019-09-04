@@ -12,7 +12,7 @@ import (
 	"isp-config-service/helper"
 	"isp-config-service/holder"
 	"isp-config-service/raft"
-	"isp-config-service/state"
+	"isp-config-service/store"
 	"isp-config-service/subs"
 	"isp-config-service/ws"
 	"net/http"
@@ -49,12 +49,12 @@ func main() {
 	<-shutdownChan
 }
 
-func initWebsocket(bindAddress string, clusterClint *cluster.ClusterClient, store *state.Store) {
+func initWebsocket(bindAddress string, clusterClient *cluster.ClusterClient, store *store.Store) {
 	socket, err := ws.NewWebsocketServer()
 	if err != nil {
 		logger.Fatal(err)
 	}
-	subs.NewSocketEventHandler(socket, clusterClint, store).SubscribeAll()
+	subs.NewSocketEventHandler(socket, clusterClient, store).SubscribeAll()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/socket.io/", socket.ServeHttp)
@@ -70,8 +70,8 @@ func initWebsocket(bindAddress string, clusterClint *cluster.ClusterClient, stor
 	logger.Infof("socket.IO server start on %s", bindAddress)
 }
 
-func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration) (*cluster.ClusterClient, *state.Store) {
-	store := state.NewStateStore()
+func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration) (*cluster.ClusterClient, *store.Store) {
+	store := store.NewStateStore()
 	r, err := raft.NewRaft(bindAddress, clusterCfg, store)
 	if err != nil {
 		logger.Fatal(err)
@@ -79,7 +79,10 @@ func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration) (*cluste
 	clusterClient := cluster.NewRaftClusterClient(r)
 	holder.ClusterClient = clusterClient
 
-	_ = r.BootstrapCluster() // err can be ignored
+	err = r.BootstrapCluster() // err can be ignored
+	if err != nil {
+		logger.Error("BootstrapCluster err:", err)
+	}
 
 	logger.Infof("raft server start on %s", bindAddress)
 
@@ -103,13 +106,13 @@ func onShutdown(ctx context.Context, sig os.Signal) {
 	}
 
 	if err := holder.Socket.Close(); err != nil {
-		logger.Info("socket.io shutdown err: %v", err)
+		logger.Warnf("socket.io shutdown err: %v", err)
 	} else {
 		logger.Info("socket.io shutdown success")
 	}
 
 	if err := holder.HttpServer.Shutdown(ctx); err != nil {
-		logger.Info("http server shutdown err: %v", err)
+		logger.Warnf("http server shutdown err: %v", err)
 	} else {
 		logger.Info("http server shutdown success")
 	}

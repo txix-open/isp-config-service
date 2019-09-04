@@ -6,3 +6,8 @@ const (
 	TokenParam   = "token"
 	ClusterParam = "cluster"
 )
+const (
+	_ = iota
+	BackendDeclarationCommand
+	ConfigSchemaCommand
+)

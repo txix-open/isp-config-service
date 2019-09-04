@@ -3,8 +3,11 @@ package cluster
 import (
 	"github.com/cenkalti/backoff"
 	gosocketio "github.com/integration-system/golang-socketio"
+	"github.com/integration-system/isp-lib/config"
 	"github.com/integration-system/isp-lib/logger"
+	"isp-config-service/conf"
 	"net"
+	"strconv"
 	"time"
 )
 
@@ -46,14 +49,13 @@ func getSocketIoUrl(address string) string {
 		panic(err) //must never occured
 	}
 
-	/*cfg := config.Get().(*conf.Configuration)
+	cfg := config.Get().(*conf.Configuration)
 	port, err := strconv.Atoi(cfg.WS.Rest.Port)
 	if err != nil {
 		panic(err)
-	}*/
-
-	return gosocketio.GetUrl(addr.IP.String(), 9001, false, map[string]string{
+	}
+	return gosocketio.GetUrl(addr.IP.String(), port, false, map[string]string{
 		ClusterParam: "true",
-	}) //TODO for test
+	})
 
 }
