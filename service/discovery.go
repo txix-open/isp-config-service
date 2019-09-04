@@ -13,16 +13,20 @@ import (
 	"time"
 )
 
-var DiscoveryService = NewDiscoveryService()
+const (
+	RoutesSubscribersRoom = "__routesSubscribers"
+)
 
-var RoutesSubscribersRoom = "__routesSubscribers"
+var (
+	DiscoveryService = NewDiscoveryService()
+)
 
 type discoveryService struct {
 	subs map[string][]string
 	lock sync.RWMutex
 }
 
-func (ds *discoveryService) HandleDisconnect(connId string) {
+func (ds *discoveryService) HandleDisconnect(connId string) { //TODO где то передается целиком объект ws.Conn, привести к одному виду(думаю ws.Conn)
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 	if events, ok := ds.subs[connId]; ok {
@@ -79,6 +83,7 @@ func (ds *discoveryService) sendAddrList(conn ws.Conn, event string, addressList
 	}
 }
 
+//TODO вынесли логику работы с роутами в отдельный сервис
 func (ds *discoveryService) SubscribeRoutes(conn ws.Conn, state state.State) {
 	holder.Socket.Rooms().Join(conn, RoutesSubscribersRoom)
 	routes := state.GetRoutes()

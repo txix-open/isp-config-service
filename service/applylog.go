@@ -10,11 +10,13 @@ import (
 	"isp-config-service/store/state"
 )
 
-var ApplyLogService applyLogService
+var (
+	ClusterStoreService clusterStoreService
+)
 
-type applyLogService struct{}
+type clusterStoreService struct{}
 
-func (l applyLogService) HandleBackendDeclarationCommand(declaration structure.BackendDeclaration, state state.State) (state.State, error) {
+func (l clusterStoreService) HandleBackendDeclarationCommand(declaration structure.BackendDeclaration, state state.State) (state.State, error) {
 	state.UpsertBackend(declaration)
 	logger.Debug("HandleBackendDeclarationCommand: upserted backend", declaration.ModuleName)
 	DiscoveryService.BroadcastModuleAddresses(declaration.ModuleName, state)
@@ -22,7 +24,8 @@ func (l applyLogService) HandleBackendDeclarationCommand(declaration structure.B
 	return state, nil
 }
 
-func (l applyLogService) PrepareBackendDeclarationCommand(backend structure.BackendDeclaration) []byte {
+//TODO вынести как отдельную функция с парметрами вызова (int command, payload interface{}) ([]byte, error) для возможности переиспользования
+func (l clusterStoreService) PrepareBackendDeclarationCommand(backend structure.BackendDeclaration) []byte {
 	var buf bytes.Buffer
 	buf2 := make([]byte, 8)
 	binary.BigEndian.PutUint64(buf2, cluster.BackendDeclarationCommand)

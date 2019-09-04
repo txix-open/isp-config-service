@@ -28,7 +28,7 @@ func (h *socketEventHandler) SubscribeAll() {
 		OnDisconnect(h.handleDisconnect).
 		OnError(h.handleError).
 		OnWithAck(cluster.ApplyCommandEvent, h.applyCommandOnLeader).
-		On(utils.ModuleReady, h.handleModuleReady).
+		On(utils.ModuleReady, h.handleModuleReady). //TODO сделать функцию с Ack, возвращать текстовку ошибки в случае возниконовения ошибки, константу ok, если все ок
 		On(utils.ModuleSendRequirements, h.handleModuleRequirements)
 }
 
@@ -45,6 +45,7 @@ func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
 		holder.Socket.Rooms().Leave(conn, followersRoom)
 	}
 	service.DiscoveryService.HandleDisconnect(conn.Id())
+	//TODO при отключении топология кластера меняется, соответсвенно нужно обновлять состояние и уведомлять всех об изменении
 }
 
 func (h *socketEventHandler) handleError(conn ws.Conn, err error) {

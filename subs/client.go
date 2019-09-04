@@ -15,7 +15,7 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) {
 	instanceUuid, moduleName, err := conn.Parameters()
 	logger.Debug("instanceUuid:", instanceUuid, "moduleName:", moduleName) // REMOVE
 	if err != nil {
-		_ = conn.Emit(utils.ErrorConnection, map[string]string{"error": err.Error()})
+		_ = conn.Emit(utils.ErrorConnection, map[string]string{"error": err.Error()}) //эти штуки тогда убертся вовсе
 		return
 	}
 
@@ -34,7 +34,7 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) {
 		logger.Warnf("SOCKET ROUTES ERROR, handleModuleDeclaration: %s, error validate routes data: %s", conn.Id(), errors)
 	} else if h.store.GetState().CheckBackendChanged(declaration) {
 		// TODO h.store.GetState() locks
-		i, err := h.cluster.SyncApply(service.ApplyLogService.PrepareBackendDeclarationCommand(declaration))
+		i, err := h.cluster.SyncApply(service.ClusterStoreService.PrepareBackendDeclarationCommand(declaration))
 		logger.Debug("cluster.SyncApply:", i, err)
 	}
 

@@ -13,7 +13,7 @@ func (s *Store) applyBackendDeclarationCommand(data []byte) error {
 		logger.Warnf("Store.applyBackendDeclarationCommand: %s, error parse json data: %s", err.Error())
 		return err
 	}
-	state, err := service.ApplyLogService.HandleBackendDeclarationCommand(declaration, s.state)
+	state, err := service.ClusterStoreService.HandleBackendDeclarationCommand(declaration, s.state)
 	if err != nil {
 		return err
 	}

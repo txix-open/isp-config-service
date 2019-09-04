@@ -19,7 +19,7 @@ var (
 
 type Store struct {
 	state    state.State
-	lock     sync.Mutex
+	lock     sync.Mutex //TODO RWMutex
 	handlers map[uint64]func([]byte) error
 }
 
@@ -60,7 +60,7 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 	return nil
 }
 
-func (s *Store) GetState() *state.State {
+func (s *Store) GetState() *state.State { //TODO почему указатель ? =), добавим функцию VisitState(f(state state)), попробуем с ней
 	return &s.state
 }
 

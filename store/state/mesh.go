@@ -54,7 +54,7 @@ func (m *Mesh) DeleteBackend(backend structure.BackendDeclaration) (changed bool
 	return
 }
 
-func (m *Mesh) BackendExist(backend structure.BackendDeclaration) (exist bool) {
+func (m *Mesh) BackendExist(backend structure.BackendDeclaration) (exist bool) { //TODO используется ?
 	if nodes, ok := m.modulesMap[backend.ModuleName]; ok {
 		exist = true
 		if len(nodes) == 0 {
@@ -65,7 +65,7 @@ func (m *Mesh) BackendExist(backend structure.BackendDeclaration) (exist bool) {
 }
 
 func (m *Mesh) GetModuleAddresses(moduleName string) []structure.AddressConfiguration {
-	addressList := []structure.AddressConfiguration{}
+	addressList := make([]structure.AddressConfiguration, 0)
 	if nodes, ok := m.modulesMap[moduleName]; ok {
 		for _, backend := range nodes {
 			addressList = append(addressList, backend.Address)
