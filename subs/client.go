@@ -31,14 +31,17 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string
 		logger.Warnf("SOCKET ROUTES ERROR, handleModuleDeclaration: %s, error validate routes data: %s", conn.Id(), errors)
 		return err.Error()
 	}
+	var changed bool
 	h.store.VisitReadState(func(state state.ReadState) {
-		if state.CheckBackendChanged(declaration) {
-			conn.SetBackendDeclaration(declaration)
-			command := service.ClusterStateService.PrepareUpdateBackendDeclarationCommand(declaration)
-			i, err := h.cluster.SyncApply(command)
-			logger.Debug("cluster.SyncApply:", i, err)
-		}
+		changed = state.CheckBackendChanged(declaration)
 	})
+	if changed {
+		conn.SetBackendDeclaration(declaration)
+		command := service.ClusterStateService.PrepareUpdateBackendDeclarationCommand(declaration)
+		i, err := h.cluster.SyncApply(command)
+		logger.Debug("cluster.SyncApply:", i, err)
+	}
+
 	return ok
 }
 
