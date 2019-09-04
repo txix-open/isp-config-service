@@ -6,14 +6,29 @@ import (
 	"isp-config-service/service"
 )
 
-func (s *Store) applyBackendDeclarationCommand(data []byte) error {
+func (s *Store) applyUpdateBackendDeclarationCommand(data []byte) error {
 	declaration := structure.BackendDeclaration{}
 	err := json.Unmarshal(data, &declaration)
 	if err != nil {
-		logger.Warnf("Store.applyBackendDeclarationCommand: %s, error parse json data: %s", err.Error())
+		logger.Warnf("Store.applyUpdateBackendDeclarationCommand: %s, error parse json data: %s", err.Error())
 		return err
 	}
-	state, err := service.ClusterStoreService.HandleBackendDeclarationCommand(declaration, s.state)
+	state, err := service.ClusterStateService.HandleUpdateBackendDeclarationCommand(declaration, s.state)
+	if err != nil {
+		return err
+	}
+	s.state = state
+	return nil
+}
+
+func (s *Store) applyDeleteBackendDeclarationCommand(data []byte) error {
+	declaration := structure.BackendDeclaration{}
+	err := json.Unmarshal(data, &declaration)
+	if err != nil {
+		logger.Warnf("Store.applyDeleteBackendDeclarationCommand: %s, error parse json data: %s", err.Error())
+		return err
+	}
+	state, err := service.ClusterStateService.HandleDeleteBackendDeclarationCommand(declaration, s.state)
 	if err != nil {
 		return err
 	}

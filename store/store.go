@@ -19,7 +19,7 @@ var (
 
 type Store struct {
 	state    state.State
-	lock     sync.Mutex //TODO RWMutex
+	lock     sync.RWMutex
 	handlers map[uint64]func([]byte) error
 }
 
@@ -60,8 +60,14 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 	return nil
 }
 
-func (s *Store) GetState() *state.State { //TODO почему указатель ? =), добавим функцию VisitState(f(state state)), попробуем с ней
-	return &s.state
+func (s *Store) GetReadState() state.ReadState {
+	return s.state
+}
+
+func (s *Store) VisitReadState(f func(state.ReadState)) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	f(s.GetReadState())
 }
 
 type fsmSnapshot struct {
@@ -74,18 +80,15 @@ func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
 		if err != nil {
 			return err
 		}
-
 		if _, err := sink.Write(b); err != nil {
 			return err
 		}
-
 		return sink.Close()
 	}()
 
 	if err != nil {
 		_ = sink.Cancel()
 	}
-
 	return err
 }
 
@@ -96,7 +99,8 @@ func NewStateStore() *Store {
 		state: state.NewState(),
 	}
 	store.handlers = map[uint64]func([]byte) error{
-		cluster.BackendDeclarationCommand: store.applyBackendDeclarationCommand,
+		cluster.UpdateBackendDeclarationCommand: store.applyUpdateBackendDeclarationCommand,
+		cluster.DeleteBackendDeclarationCommand: store.applyDeleteBackendDeclarationCommand,
 	}
 	return store
 }

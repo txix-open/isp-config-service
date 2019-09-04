@@ -42,10 +42,9 @@ func (m *Mesh) CheckBackendChanged(backend structure.BackendDeclaration) (change
 	return
 }
 
-func (m *Mesh) DeleteBackend(backend structure.BackendDeclaration) (changed bool) {
+func (m *Mesh) DeleteBackend(backend structure.BackendDeclaration) {
 	address := backend.Address.GetAddress()
 	if nodes, ok := m.modulesMap[backend.ModuleName]; ok {
-		changed = true
 		delete(nodes, address)
 		if len(nodes) == 0 {
 			delete(m.modulesMap, backend.ModuleName)
@@ -54,11 +53,11 @@ func (m *Mesh) DeleteBackend(backend structure.BackendDeclaration) (changed bool
 	return
 }
 
-func (m *Mesh) BackendExist(backend structure.BackendDeclaration) (exist bool) { //TODO используется ?
+func (m *Mesh) BackendExist(backend structure.BackendDeclaration) (exist bool) {
+	address := backend.Address.GetAddress()
 	if nodes, ok := m.modulesMap[backend.ModuleName]; ok {
-		exist = true
-		if len(nodes) == 0 {
-			delete(m.modulesMap, backend.ModuleName)
+		if _, ok := nodes[address]; ok {
+			exist = true
 		}
 	}
 	return

@@ -6,68 +6,67 @@ import (
 	"github.com/integration-system/isp-lib/bootstrap"
 	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/structure"
-	"github.com/integration-system/isp-lib/utils"
 	"isp-config-service/service"
+	"isp-config-service/store/state"
 	"isp-config-service/ws"
 )
 
-func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) {
+func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string {
 	instanceUuid, moduleName, err := conn.Parameters()
 	logger.Debug("instanceUuid:", instanceUuid, "moduleName:", moduleName) // REMOVE
 	if err != nil {
-		_ = conn.Emit(utils.ErrorConnection, map[string]string{"error": err.Error()}) //эти штуки тогда убертся вовсе
-		return
+		return err.Error()
 	}
 
 	declaration := structure.BackendDeclaration{}
 	err = json.Unmarshal(data, &declaration)
 	if err != nil {
-		_ = conn.Emit(utils.ErrorConnection, map[string]string{"error": err.Error()})
 		logger.Warnf("handleModuleDeclaration: %s, error parse json data: %s", conn.Id(), err.Error())
-		return
+		return err.Error()
 	}
 
 	_, err = govalidator.ValidateStruct(declaration)
 	if err != nil {
 		errors := govalidator.ErrorsByField(err)
-		_ = conn.Emit(utils.ErrorConnection, map[string]map[string]string{"error": errors})
 		logger.Warnf("SOCKET ROUTES ERROR, handleModuleDeclaration: %s, error validate routes data: %s", conn.Id(), errors)
-	} else if h.store.GetState().CheckBackendChanged(declaration) {
-		// TODO h.store.GetState() locks
-		i, err := h.cluster.SyncApply(service.ClusterStoreService.PrepareBackendDeclarationCommand(declaration))
-		logger.Debug("cluster.SyncApply:", i, err)
+		return err.Error()
 	}
-
+	h.store.VisitReadState(func(state state.ReadState) {
+		if state.CheckBackendChanged(declaration) {
+			conn.SetBackendDeclaration(declaration)
+			command := service.ClusterStateService.PrepareUpdateBackendDeclarationCommand(declaration)
+			i, err := h.cluster.SyncApply(command)
+			logger.Debug("cluster.SyncApply:", i, err)
+		}
+	})
+	return ok
 }
 
-func (h *socketEventHandler) handleRoutesUpdate(conn ws.Conn, data []byte) {
-
-}
-
-func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte) {
+func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte) string {
 	logger.Debugf("onReceivedModuleRequirements: %s %s", conn.Id(), string(data))
 
 	instanceUuid, moduleName, err := conn.Parameters()
 	logger.Debug("instanceUuid:", instanceUuid, "moduleName:", moduleName) // REMOVE
 	if err != nil {
-		_ = conn.Emit(utils.ErrorConnection, map[string]string{"error": err.Error()})
-		return
+		return err.Error()
 	}
 
 	declaration := bootstrap.ModuleRequirements{}
 	err = json.Unmarshal(data, &declaration)
 	if err != nil {
-		_ = conn.Emit(utils.ErrorConnection, map[string]string{"error": err.Error()})
 		logger.Debugf("onReceivedModuleRequirements: %s, error parse json data: %s", conn.Id(), err.Error())
-		return
+		return err.Error()
 	}
 
 	if declaration.RequireRoutes {
-		// TODO h.store.GetState() locks
-		service.DiscoveryService.SubscribeRoutes(conn, *h.store.GetState())
+		h.store.VisitReadState(func(state state.ReadState) {
+			service.RoutesService.SubscribeRoutes(conn, state)
+		})
 	}
-	// TODO h.store.GetState() locks
-	service.DiscoveryService.Subscribe(conn, declaration.RequiredModules, *h.store.GetState())
+	h.store.VisitReadState(func(state state.ReadState) {
+		service.DiscoveryService.Subscribe(conn, declaration.RequiredModules, state)
+	})
+	return ok
 }
 
 func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) {

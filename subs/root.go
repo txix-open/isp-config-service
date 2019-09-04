@@ -28,8 +28,8 @@ func (h *socketEventHandler) SubscribeAll() {
 		OnDisconnect(h.handleDisconnect).
 		OnError(h.handleError).
 		OnWithAck(cluster.ApplyCommandEvent, h.applyCommandOnLeader).
-		On(utils.ModuleReady, h.handleModuleReady). //TODO сделать функцию с Ack, возвращать текстовку ошибки в случае возниконовения ошибки, константу ok, если все ок
-		On(utils.ModuleSendRequirements, h.handleModuleRequirements)
+		OnWithAck(utils.ModuleReady, h.handleModuleReady).
+		OnWithAck(utils.ModuleSendRequirements, h.handleModuleRequirements)
 }
 
 func (h *socketEventHandler) handleConnect(conn ws.Conn) {
@@ -45,7 +45,13 @@ func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
 		holder.Socket.Rooms().Leave(conn, followersRoom)
 	}
 	service.DiscoveryService.HandleDisconnect(conn.Id())
-	//TODO при отключении топология кластера меняется, соответсвенно нужно обновлять состояние и уведомлять всех об изменении
+	service.RoutesService.HandleDisconnect(conn.Id())
+	backend := conn.GetBackendDeclaration()
+	if backend != nil {
+		command := service.ClusterStateService.PrepareDeleteBackendDeclarationCommand(*backend)
+		i, err := h.cluster.SyncApply(command)
+		logger.Debug("cluster.SyncApply:", i, err)
+	}
 }
 
 func (h *socketEventHandler) handleError(conn ws.Conn, err error) {

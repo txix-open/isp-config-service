@@ -26,7 +26,7 @@ type discoveryService struct {
 	lock sync.RWMutex
 }
 
-func (ds *discoveryService) HandleDisconnect(connId string) { //TODO где то передается целиком объект ws.Conn, привести к одному виду(думаю ws.Conn)
+func (ds *discoveryService) HandleDisconnect(connId string) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 	if events, ok := ds.subs[connId]; ok {
@@ -36,7 +36,7 @@ func (ds *discoveryService) HandleDisconnect(connId string) { //TODO где то
 	holder.Socket.Rooms().LeaveByConnId(connId, RoutesSubscribersRoom)
 }
 
-func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state.State) {
+func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state.ReadState) {
 	if len(events) == 0 {
 		return
 	}
@@ -46,6 +46,7 @@ func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state
 	holder.Socket.Rooms().Join(conn, events...)
 	for _, event := range events {
 		addressList := state.GetModuleAddresses(event)
+		event = utils.ModuleConnected(event)
 		ds.sendAddrList(conn, event, addressList)
 	}
 }
@@ -71,43 +72,6 @@ func (ds *discoveryService) broadcastAddrList(moduleName string, event string, a
 
 func (ds *discoveryService) sendAddrList(conn ws.Conn, event string, addressList []structure.AddressConfiguration) {
 	if bytes, err := json.Marshal(addressList); err != nil {
-		logger.Warn(err)
-	} else {
-		bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 3)
-		err := backoff.Retry(func() error {
-			return conn.Emit(event, string(bytes))
-		}, bf)
-		if err != nil {
-			logger.Error(err)
-		}
-	}
-}
-
-//TODO вынесли логику работы с роутами в отдельный сервис
-func (ds *discoveryService) SubscribeRoutes(conn ws.Conn, state state.State) {
-	holder.Socket.Rooms().Join(conn, RoutesSubscribersRoom)
-	routes := state.GetRoutes()
-	ds.sendRoutes(conn, utils.ConfigSendRoutesWhenConnected, routes)
-}
-
-func (ds *discoveryService) BroadcastRoutes(state state.State) {
-	routes := state.GetRoutes()
-	ds.broadcastRoutes(utils.ConfigSendRoutesChanged, routes)
-}
-
-func (ds *discoveryService) broadcastRoutes(event string, routes structure.RoutingConfig) {
-	if bytes, err := json.Marshal(routes); err != nil {
-		logger.Warn(err)
-	} else {
-		err = holder.Socket.Broadcast(RoutesSubscribersRoom, event, string(bytes))
-		if err != nil {
-			logger.Error(err)
-		}
-	}
-}
-
-func (ds *discoveryService) sendRoutes(conn ws.Conn, event string, routes structure.RoutingConfig) {
-	if bytes, err := json.Marshal(routes); err != nil {
 		logger.Warn(err)
 	} else {
 		bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 3)

@@ -8,6 +8,6 @@ const (
 )
 const (
 	_ = iota
-	BackendDeclarationCommand
-	ConfigSchemaCommand
+	UpdateBackendDeclarationCommand
+	DeleteBackendDeclarationCommand
 )

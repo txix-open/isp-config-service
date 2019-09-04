@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:e92f5581902c345eb4ceffdcd4a854fb8f73cf436d47d837d1ec98ef1fe0a214"
+  name = "github.com/StackExchange/wmi"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5d049714c4a64225c3c79a7cf7d02f7fb5b96338"
+  version = "1.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:7a9140c806333a78122763d08ec6c0d7358c7fff1df8cfbb01881c5dc46e24e5"
   name = "github.com/armon/go-metrics"
@@ -26,6 +34,14 @@
   version = "v1.3.1"
 
 [[projects]]
+  digest = "1:652880afc6b57ce0a67173f552cb35ccda816493a1da6ca20e5074a66bcd083f"
+  name = "github.com/buaazp/fasthttprouter"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ade4e2031af3aed7fffd241084aad80a58faf421"
+  version = "v0.1.1"
+
+[[projects]]
   digest = "1:c1100fc71e23b6a32b2c68a5202a848fd13811d5a10b12edb8019c3667d1cd9a"
   name = "github.com/cenkalti/backoff"
   packages = ["."]
@@ -40,6 +56,17 @@
   pruneopts = "UT"
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
   version = "v1.4.7"
+
+[[projects]]
+  digest = "1:440028f55cb322d8cb5b9d5ebec298a00b7d74690a658fe6b1c0c0b44341bfae"
+  name = "github.com/go-ole/go-ole"
+  packages = [
+    ".",
+    "oleutil",
+  ]
+  pruneopts = "UT"
+  revision = "97b6244175ae18ea6eef668034fd6565847501c9"
+  version = "v1.2.4"
 
 [[projects]]
   digest = "1:07f4fafe81587b642166199f41c3edcca12929fcfcc0261b00be5dea2f968f44"
@@ -186,14 +213,17 @@
   revision = "5959fcea049facd9441fff9de976191accd3cf9f"
 
 [[projects]]
-  digest = "1:fd6ba35c1332fa3ad5be6f4fa1206adba26c184e79f32310a0c50b6811e0e530"
+  digest = "1:86431b6d676940fee5c9fa74cc730041a33454271ca5069caa72049c77445dd0"
   name = "github.com/integration-system/isp-lib"
   packages = [
     "backend",
+    "bootstrap",
     "config",
     "config/schema",
     "logger",
+    "metric",
     "proto/stubs",
+    "socket",
     "streaming",
     "structure",
     "utils",
@@ -220,6 +250,26 @@
   pruneopts = "UT"
   revision = "27518f6661eba504be5a7a9a9f6d9460d892ade3"
   version = "v1.1.7"
+
+[[projects]]
+  digest = "1:caa1da085cc12cd39d3ddb267434902f621050e1b46f7e9477b2b933df680193"
+  name = "github.com/klauspost/compress"
+  packages = [
+    "flate",
+    "gzip",
+    "zlib",
+  ]
+  pruneopts = "UT"
+  revision = "2c38f6d2dc5a6a21b6851f2414f4e10adf8e3eee"
+  version = "v1.8.1"
+
+[[projects]]
+  digest = "1:923c4d7194b42e054b2eb8a6c62824ac55e23ececc1c7e48d4da69c971c55954"
+  name = "github.com/klauspost/cpuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "05a8198c0f5a27739aec358908d7e12c64ce6eb7"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
@@ -310,6 +360,25 @@
   version = "v0.8.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:5bbebe8ac19ecb6c87790a89faa20566e38ed0d6494a1d14c4f5b05d9ce2436c"
+  name = "github.com/rcrowley/go-metrics"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "cac0b30c2563378d434b5af411844adff8e32960"
+
+[[projects]]
+  digest = "1:f5139e9f4441369ffb5d44fa9fae62b921457d4dc09cd873ed0fd44511cc87ee"
+  name = "github.com/shirou/gopsutil"
+  packages = [
+    "cpu",
+    "internal/common",
+  ]
+  pruneopts = "UT"
+  revision = "d80c43f9c984a48783daf22f4bd9278006ae483a"
+  version = "v2.19.7"
+
+[[projects]]
   digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -367,6 +436,26 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "a83968bda2d37294a3541b7d2207fb6f5a3559a3"
+
+[[projects]]
+  digest = "1:c468422f334a6b46a19448ad59aaffdfc0a36b08fdcc1c749a0b29b6453d7e59"
+  name = "github.com/valyala/bytebufferpool"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e746df99fe4a3986f4d4f79e13c1e0117ce9c2f7"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:30fe8021645a9d9966fcede2a59c2e2f498d433687fc5cddd7de85a6a0a44c28"
+  name = "github.com/valyala/fasthttp"
+  packages = [
+    ".",
+    "fasthttputil",
+    "stackless",
+  ]
+  pruneopts = "UT"
+  revision = "8ce231e840720d91e22f855ddba797b3b916fc75"
 
 [[projects]]
   digest = "1:39a425f98fb19427061a693fe6bf0683c9bddec4b25b17067e34fdb465e39cb9"
@@ -501,16 +590,19 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/asaskevich/govalidator",
     "github.com/cenkalti/backoff",
     "github.com/googollee/go-socket.io",
     "github.com/hashicorp/raft",
     "github.com/hashicorp/raft-boltdb",
     "github.com/integration-system/golang-socketio",
     "github.com/integration-system/isp-lib/backend",
+    "github.com/integration-system/isp-lib/bootstrap",
     "github.com/integration-system/isp-lib/config",
     "github.com/integration-system/isp-lib/config/schema",
     "github.com/integration-system/isp-lib/logger",
     "github.com/integration-system/isp-lib/structure",
+    "github.com/integration-system/isp-lib/utils",
     "github.com/json-iterator/go",
     "github.com/mohae/deepcopy",
     "github.com/pkg/errors",
