@@ -1,3 +1,5 @@
+### v1.2.1
+* fix doc generate
 ### v1.2.0
 * add method `GetSchemaByModuleId` 
 ### v1.1.0
