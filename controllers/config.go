@@ -18,7 +18,7 @@ import (
 // @Description Возвращает массив конфиграций по запрошенным идентификаторам (все, если массив пустой)
 // @Accept  json
 // @Produce  json
-// @Param body body []int false "Массив идентификаторов конфигураций"
+// @Param body body []integer false "Массив идентификаторов конфигураций"
 // @Success 200 {array} entity.Config
 // @Failure 500 {object} structure.GrpcError
 // @Router /config/get_configs [POST]

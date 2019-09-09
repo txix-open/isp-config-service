@@ -20,7 +20,7 @@ import (
 // @Description Возвращает массив модулей по запрошенным идентификаторам (все, если массив пустой)
 // @Accept  json
 // @Produce  json
-// @Param body body []int false "массив идентификаторов модулей"
+// @Param body body []integer false "массив идентификаторов модулей"
 // @Success 200 {array} entity.Module
 // @Failure 500 {object} structure.GrpcError
 // @Router /config/get_modules [POST]
