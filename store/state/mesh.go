@@ -42,10 +42,13 @@ func (m *Mesh) CheckBackendChanged(backend structure.BackendDeclaration) (change
 	return
 }
 
-func (m *Mesh) DeleteBackend(backend structure.BackendDeclaration) {
+func (m *Mesh) DeleteBackend(backend structure.BackendDeclaration) (deleted bool) {
 	address := backend.Address.GetAddress()
 	if nodes, ok := m.modulesMap[backend.ModuleName]; ok {
-		delete(nodes, address)
+		if _, ok := nodes[address]; ok {
+			delete(nodes, address)
+			deleted = true
+		}
 		if len(nodes) == 0 {
 			delete(m.modulesMap, backend.ModuleName)
 		}

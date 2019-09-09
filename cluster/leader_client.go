@@ -1,10 +1,14 @@
 package cluster
 
 import (
+	"encoding/json"
+	"errors"
 	"github.com/cenkalti/backoff"
 	gosocketio "github.com/integration-system/golang-socketio"
 	"github.com/integration-system/isp-lib/config"
 	"github.com/integration-system/isp-lib/logger"
+	"github.com/integration-system/isp-lib/structure"
+	"github.com/integration-system/isp-lib/utils"
 	"isp-config-service/conf"
 	"net"
 	"strconv"
@@ -19,6 +23,17 @@ func (c *SocketLeaderClient) Send(data []byte, timeout time.Duration) (string, e
 	return c.c.Ack(ApplyCommandEvent, data, timeout)
 }
 
+func (c *SocketLeaderClient) SendDeclaration(backend structure.BackendDeclaration, timeout time.Duration) (string, error) {
+	data, err := json.Marshal(backend)
+	if err != nil {
+		return "", err
+	}
+	if c.c.IsAlive() {
+		return c.c.Ack(utils.ModuleReady, data, timeout)
+	}
+	return "", errors.New("SendDeclaration connection is not alive")
+}
+
 func (c *SocketLeaderClient) Dial(timeout time.Duration) error {
 	backOff := backoff.NewExponentialBackOff()
 	backOff.MaxElapsedTime = timeout
@@ -29,7 +44,7 @@ func (c *SocketLeaderClient) Close() {
 	c.c.Close()
 }
 
-func NewSocketLeaderClient(address string) *SocketLeaderClient {
+func NewSocketLeaderClient(address string, f func()) *SocketLeaderClient {
 	socketIoAddress := getSocketIoUrl(address)
 	client := gosocketio.NewClientBuilder().
 		EnableReconnection().
@@ -38,6 +53,13 @@ func NewSocketLeaderClient(address string) *SocketLeaderClient {
 			logger.Warnf("socket.io leader(%s) client reconnection err: %v", socketIoAddress, err)
 		}).
 		BuildToConnect(socketIoAddress)
+	err := client.On(gosocketio.OnDisconnection, func(channel *gosocketio.Channel) {
+		logger.Debugf("[%s]:%s", channel.Ip(), "LeaderClient OnDisconnection")
+		f()
+	})
+	if err != nil {
+		logger.Fatal(err)
+	}
 	return &SocketLeaderClient{
 		c: client,
 	}
@@ -54,6 +76,17 @@ func getSocketIoUrl(address string) string {
 	if err != nil {
 		panic(err)
 	}
+	// TODO логика для определения порта пира, т.к всё тестируется на одной машине
+	//peerNumber := addr.Port - 9000
+	//switch peerNumber {
+	//case 2:
+	//	port = 9011
+	//case 3:
+	//	port = 9021
+	//case 4:
+	//	port = 9031
+	//}
+	//
 	return gosocketio.GetUrl(addr.IP.String(), port, false, map[string]string{
 		ClusterParam: "true",
 	})

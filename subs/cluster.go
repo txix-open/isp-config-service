@@ -9,5 +9,5 @@ func (h *socketEventHandler) applyCommandOnLeader(conn ws.Conn, cmd []byte) stri
 	if err != nil {
 		return err.Error()
 	}
-	return ok
+	return Ok
 }

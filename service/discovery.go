@@ -13,10 +13,6 @@ import (
 	"time"
 )
 
-const (
-	RoutesSubscribersRoom = "__routesSubscribers"
-)
-
 var (
 	DiscoveryService = NewDiscoveryService()
 )
@@ -33,7 +29,6 @@ func (ds *discoveryService) HandleDisconnect(connId string) {
 		holder.Socket.Rooms().LeaveByConnId(connId, events...)
 		delete(ds.subs, connId)
 	}
-	holder.Socket.Rooms().LeaveByConnId(connId, RoutesSubscribersRoom)
 }
 
 func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state.ReadState) {
@@ -51,7 +46,7 @@ func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state
 	}
 }
 
-func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, state state.State) {
+func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, state state.ReadState) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 	event := utils.ModuleConnected(moduleName)

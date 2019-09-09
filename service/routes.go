@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+const (
+	RoutesSubscribersRoom = "__routesSubscribers"
+)
+
 var RoutesService routesService
 
 type routesService struct{}

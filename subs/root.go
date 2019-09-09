@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ok = "ok"
+	Ok = "ok"
 
 	followersRoom = "followers"
 )
@@ -48,9 +48,9 @@ func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
 	service.RoutesService.HandleDisconnect(conn.Id())
 	backend := conn.GetBackendDeclaration()
 	if backend != nil {
-		command := service.ClusterStateService.PrepareDeleteBackendDeclarationCommand(*backend)
+		command := cluster.PrepareDeleteBackendDeclarationCommand(*backend)
 		i, err := h.cluster.SyncApply(command)
-		logger.Debug("cluster.SyncApply:", i, err)
+		logger.Debug("cluster.SyncApply DeleteBackendDeclarationCommand:", i, err)
 	}
 }
 

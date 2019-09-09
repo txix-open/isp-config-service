@@ -6,20 +6,15 @@ import (
 	"github.com/integration-system/isp-lib/bootstrap"
 	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/structure"
+	"isp-config-service/cluster"
 	"isp-config-service/service"
 	"isp-config-service/store/state"
 	"isp-config-service/ws"
 )
 
 func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string {
-	instanceUuid, moduleName, err := conn.Parameters()
-	logger.Debug("instanceUuid:", instanceUuid, "moduleName:", moduleName) // REMOVE
-	if err != nil {
-		return err.Error()
-	}
-
 	declaration := structure.BackendDeclaration{}
-	err = json.Unmarshal(data, &declaration)
+	err := json.Unmarshal(data, &declaration)
 	if err != nil {
 		logger.Warnf("handleModuleDeclaration: %s, error parse json data: %s", conn.Id(), err.Error())
 		return err.Error()
@@ -31,18 +26,17 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string
 		logger.Warnf("SOCKET ROUTES ERROR, handleModuleDeclaration: %s, error validate routes data: %s", conn.Id(), errors)
 		return err.Error()
 	}
+	conn.SetBackendDeclaration(declaration)
 	var changed bool
 	h.store.VisitReadState(func(state state.ReadState) {
 		changed = state.CheckBackendChanged(declaration)
 	})
 	if changed {
-		conn.SetBackendDeclaration(declaration)
-		command := service.ClusterStateService.PrepareUpdateBackendDeclarationCommand(declaration)
+		command := cluster.PrepareUpdateBackendDeclarationCommand(declaration)
 		i, err := h.cluster.SyncApply(command)
-		logger.Debug("cluster.SyncApply:", i, err)
+		logger.Debug("cluster.SyncApply UpdateBackendDeclarationCommand:", i, err)
 	}
-
-	return ok
+	return Ok
 }
 
 func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte) string {
@@ -69,7 +63,7 @@ func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte)
 	h.store.VisitReadState(func(state state.ReadState) {
 		service.DiscoveryService.Subscribe(conn, declaration.RequiredModules, state)
 	})
-	return ok
+	return Ok
 }
 
 func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) {

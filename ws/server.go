@@ -26,7 +26,7 @@ func (s *WebsocketServer) Rooms() *RoomStore {
 
 func (s *WebsocketServer) OnWithAck(event string, f func(conn Conn, data []byte) string) *WebsocketServer {
 	must(s.s.On(event, func(conn socketio.Socket, data []byte) string {
-		logger.Debugf("[%s]:$s:%s", conn.Request().RemoteAddr, event, string(data))
+		logger.Debugf("[%s]:%s:%s", conn.Request().RemoteAddr, event, string(data))
 
 		return f(s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn}), data)
 	}))
@@ -35,7 +35,7 @@ func (s *WebsocketServer) OnWithAck(event string, f func(conn Conn, data []byte)
 
 func (s *WebsocketServer) On(event string, f func(conn Conn, data []byte)) *WebsocketServer {
 	must(s.s.On(event, func(conn socketio.Socket, data []byte) {
-		logger.Debugf("[%s]:$s:%s", conn.Request().RemoteAddr, event, string(data))
+		logger.Debugf("[%s]:%s:%s", conn.Request().RemoteAddr, event, string(data))
 
 		f(s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn}), data)
 	}))
@@ -44,7 +44,7 @@ func (s *WebsocketServer) On(event string, f func(conn Conn, data []byte)) *Webs
 
 func (s *WebsocketServer) OnConnect(f func(Conn)) *WebsocketServer {
 	must(s.s.On(gosocketio.OnConnection, func(conn socketio.Socket) {
-		logger.Debugf("[%s]:$s", conn.Request().RemoteAddr, gosocketio.OnConnection)
+		logger.Debugf("[%s]:%s", conn.Request().RemoteAddr, gosocketio.OnConnection)
 
 		f(s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn}))
 	}))
@@ -53,7 +53,7 @@ func (s *WebsocketServer) OnConnect(f func(Conn)) *WebsocketServer {
 
 func (s *WebsocketServer) OnDisconnect(f func(Conn)) *WebsocketServer {
 	must(s.s.On(gosocketio.OnDisconnection, func(conn socketio.Socket) {
-		logger.Debugf("[%s]:$s", conn.Request().RemoteAddr, gosocketio.OnDisconnection)
+		logger.Debugf("[%s]:%s", conn.Request().RemoteAddr, gosocketio.OnDisconnection)
 
 		c := s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn})
 		f(c)
@@ -64,7 +64,7 @@ func (s *WebsocketServer) OnDisconnect(f func(Conn)) *WebsocketServer {
 
 func (s *WebsocketServer) OnError(f func(Conn, error)) *WebsocketServer {
 	must(s.s.On(gosocketio.OnError, func(conn socketio.Socket, err error) {
-		logger.Debugf("[%s]:$s:%v", conn.Request().RemoteAddr, gosocketio.OnError, err)
+		logger.Debugf("[%s]:%s:%v", conn.Request().RemoteAddr, gosocketio.OnError, err)
 
 		f(s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn}), err)
 	}))
@@ -74,7 +74,10 @@ func (s *WebsocketServer) OnError(f func(Conn, error)) *WebsocketServer {
 func (s *WebsocketServer) Broadcast(room string, msg string, v ...interface{}) error {
 	conns := s.roomStore.ToBroadcast(room)
 	for _, conn := range conns {
-		_ = conn.Emit(msg, v...)
+		err := conn.Emit(msg, v...)
+		if err != nil {
+			logger.Warnf("Broadcast to %s, message %s. err: %v", room, msg, err)
+		}
 	}
 	return nil
 }

@@ -24,6 +24,7 @@ type Store struct {
 }
 
 func (s *Store) Apply(l *raft.Log) interface{} {
+	logger.Info("Applying...")
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if len(l.Data) < 8 {
@@ -68,6 +69,12 @@ func (s *Store) VisitReadState(f func(state.ReadState)) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	f(s.GetReadState())
+}
+
+func (s *Store) VisitState(f func(state.State)) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	f(s.state)
 }
 
 type fsmSnapshot struct {

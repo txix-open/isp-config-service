@@ -3,6 +3,7 @@ package cluster
 import (
 	"errors"
 	"github.com/integration-system/isp-lib/logger"
+	"github.com/integration-system/isp-lib/structure"
 	"isp-config-service/raft"
 	"sync"
 	"time"
@@ -22,9 +23,11 @@ const (
 type ClusterClient struct {
 	r *raft.Raft
 
-	leaderMu     sync.RWMutex
-	leaderState  leaderState
-	leaderClient *SocketLeaderClient
+	leaderMu           sync.RWMutex
+	leaderState        leaderState
+	leaderClient       *SocketLeaderClient
+	declaration        structure.BackendDeclaration
+	onClientDisconnect func(string)
 }
 
 func (client *ClusterClient) Shutdown() error {
@@ -71,7 +74,6 @@ func (client *ClusterClient) SyncApplyOnLeader(command []byte) (interface{}, err
 func (client *ClusterClient) listenLeader() {
 	for n := range client.r.LeaderCh() {
 		logger.Debug("ChangeLeaderNotification:", n)
-
 		client.leaderMu.Lock()
 		if client.leaderState.leaderAddr != n.CurrentLeaderAddress {
 			if client.leaderClient != nil {
@@ -80,12 +82,29 @@ func (client *ClusterClient) listenLeader() {
 			}
 		}
 		if n.LeaderElected && !n.IsLeader {
-			leaderClient := NewSocketLeaderClient(n.CurrentLeaderAddress)
+			leaderClient := NewSocketLeaderClient(n.CurrentLeaderAddress, func() {
+				client.onClientDisconnect(client.leaderState.leaderAddr)
+			})
 			if err := leaderClient.Dial(leaderConnectionTimeout); err != nil {
 				logger.Fatalf("could not connect to leader: %v", err)
 				continue
 			}
+			go func(declaration structure.BackendDeclaration) {
+				response, err := leaderClient.SendDeclaration(declaration, defaultApplyTimeout)
+				if err != nil {
+					logger.Warn("leaderClient.SendDeclaration", err)
+				} else if response != `"ok"` {
+					logger.Warn("leaderClient.SendDeclaration response", response)
+				}
+			}(client.declaration)
+
 			client.leaderClient = leaderClient
+		} else if n.LeaderElected && n.IsLeader {
+			go func(declaration structure.BackendDeclaration) {
+				command := PrepareUpdateBackendDeclarationCommand(declaration)
+				i, err := client.SyncApply(command)
+				logger.Debug("cluster.SyncApply announce myself:", i, err)
+			}(client.declaration)
 		}
 		client.leaderState = leaderState{
 			leaderElected: n.LeaderElected,
@@ -103,10 +122,12 @@ type leaderState struct {
 	leaderAddr    string
 }
 
-func NewRaftClusterClient(r *raft.Raft) *ClusterClient {
+func NewRaftClusterClient(r *raft.Raft, declaration structure.BackendDeclaration, onClientDisconnect func(string)) *ClusterClient {
 	client := &ClusterClient{
-		r:           r,
-		leaderState: leaderState{},
+		r:                  r,
+		declaration:        declaration,
+		leaderState:        leaderState{},
+		onClientDisconnect: onClientDisconnect,
 	}
 	go client.listenLeader()
 

@@ -37,8 +37,8 @@ func (s State) GetRoutes() structure.RoutingConfig {
 	return s.mesh.GetRoutes()
 }
 
-func (s *State) DeleteBackend(backend structure.BackendDeclaration) {
-	s.mesh.DeleteBackend(backend)
+func (s *State) DeleteBackend(backend structure.BackendDeclaration) (deleted bool) {
+	return s.mesh.DeleteBackend(backend)
 }
 
 func (s State) BackendExist(backend structure.BackendDeclaration) (exist bool) {
