@@ -122,12 +122,12 @@ type leaderState struct {
 	leaderAddr    string
 }
 
-func NewRaftClusterClient(r *raft.Raft, declaration structure.BackendDeclaration, onClientDisconnect func(string)) *ClusterClient {
+func NewRaftClusterClient(r *raft.Raft, declaration structure.BackendDeclaration, onLeaderDisconnect func(string)) *ClusterClient {
 	client := &ClusterClient{
 		r:                  r,
 		declaration:        declaration,
 		leaderState:        leaderState{},
-		onClientDisconnect: onClientDisconnect,
+		onClientDisconnect: onLeaderDisconnect,
 	}
 	go client.listenLeader()
 

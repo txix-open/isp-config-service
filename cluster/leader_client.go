@@ -44,7 +44,7 @@ func (c *SocketLeaderClient) Close() {
 	c.c.Close()
 }
 
-func NewSocketLeaderClient(address string, f func()) *SocketLeaderClient {
+func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *SocketLeaderClient {
 	socketIoAddress := getSocketIoUrl(address)
 	client := gosocketio.NewClientBuilder().
 		EnableReconnection().
@@ -55,7 +55,7 @@ func NewSocketLeaderClient(address string, f func()) *SocketLeaderClient {
 		BuildToConnect(socketIoAddress)
 	err := client.On(gosocketio.OnDisconnection, func(channel *gosocketio.Channel) {
 		logger.Debugf("[%s]:%s", channel.Ip(), "LeaderClient OnDisconnection")
-		f()
+		leaderDisconnectionCallback()
 	})
 	if err != nil {
 		logger.Fatal(err)
