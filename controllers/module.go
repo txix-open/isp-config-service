@@ -16,6 +16,7 @@ import (
 )
 
 // GetModules godoc
+// @Tags Модули
 // @Summary Метод получени объектов модулей по идентификаторам
 // @Description Возвращает массив модулей по запрошенным идентификаторам (все, если массив пустой)
 // @Accept  json
@@ -34,6 +35,7 @@ func GetModules(identities []int32) ([]st.Module, error) {
 }
 
 // GetModulesAggregatedInfo godoc
+// @Tags Модули
 // @Summary Метод получения полной информации о состоянии модуля
 // @Description Возвращает полное состояние всех модулей в кластере (конфигурация, схема конфигурации, подключенные экземпляры)
 // @Accept  json

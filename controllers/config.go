@@ -14,6 +14,7 @@ import (
 )
 
 // GetConfigs godoc
+// @Tags Конфигурация
 // @Summary Метод получения объектов конфигурации по идентификаторам
 // @Description Возвращает массив конфиграций по запрошенным идентификаторам (все, если массив пустой)
 // @Accept  json
@@ -31,6 +32,7 @@ func GetConfigs(identities []int64) ([]st.Config, error) {
 }
 
 // GetConfigByInstanceUUIDAndModuleName godoc
+// @Tags Конфигурация
 // @Summary Метод получени объекта конфигурации по названию модуля
 // @Description Возвращает конфиграцию по названию модуля и идентификатору инстанса
 // @Accept  json
@@ -53,6 +55,7 @@ func GetConfigByInstanceUUIDAndModuleName(request st.ModuleInstanceIdentity) (*s
 }
 
 // CreateUpdateConfig godoc
+// @Tags Конфигурация
 // @Summary Метод обновления конфигурации
 // @Description Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
 // В случае обновления рассылает все подключенным модулям актуальную конфигурацию
@@ -100,6 +103,7 @@ func CreateUpdateConfig(config st.Config) (*st.Config, error) {
 }
 
 // UpdateActiveConfigByInstanceUUIDAndModuleName godoc
+// @Tags Конфигурация
 // @Summary Метод обновления конфигурации по названию модуля
 // @Description Обновляет объект конфиграции для модуля, рассылает подключенным модулям обновленную конфигурацию
 // @Accept  json

@@ -13,6 +13,7 @@ var Schema = schema{}
 type schema struct{}
 
 // GetModulesAggregatedInfo godoc
+// @Tags Схема
 // @Summary Метод схемы конфигурации модуля
 // @Description Возвращает текущую json схему конфигурации модуля
 // @Accept  json

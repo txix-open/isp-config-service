@@ -55,6 +55,8 @@ func init() {
 // @version 1.2.0
 // @description Сервис управления конфигурацией модулей ISP кластера
 
+// @license.name GNU GPL v3.0
+
 // @host localhost:9003
 // @BasePath /api/config
 func main() {
