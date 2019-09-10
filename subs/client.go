@@ -55,12 +55,10 @@ func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte)
 		return err.Error()
 	}
 
-	if declaration.RequireRoutes {
-		h.store.VisitReadState(func(state state.ReadState) {
-			service.RoutesService.SubscribeRoutes(conn, state)
-		})
-	}
 	h.store.VisitReadState(func(state state.ReadState) {
+		if declaration.RequireRoutes {
+			service.RoutesService.SubscribeRoutes(conn, state)
+		}
 		service.DiscoveryService.Subscribe(conn, declaration.RequiredModules, state)
 	})
 	return Ok

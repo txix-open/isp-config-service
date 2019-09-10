@@ -24,7 +24,7 @@ type Store struct {
 }
 
 func (s *Store) Apply(l *raft.Log) interface{} {
-	logger.Info("Applying...")
+	logger.Debug("Applying...")
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if len(l.Data) < 8 {

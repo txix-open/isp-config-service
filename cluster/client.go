@@ -5,6 +5,7 @@ import (
 	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/structure"
 	"isp-config-service/raft"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -91,9 +92,12 @@ func (client *ClusterClient) listenLeader() {
 			}
 			go func(declaration structure.BackendDeclaration) {
 				response, err := leaderClient.SendDeclaration(declaration, defaultApplyTimeout)
+				if res, err := strconv.Unquote(response); err == nil {
+					response = res
+				}
 				if err != nil {
 					logger.Warn("leaderClient.SendDeclaration", err)
-				} else if response != `"ok"` {
+				} else if response != "ok" {
 					logger.Warn("leaderClient.SendDeclaration response", response)
 				}
 			}(client.declaration)
