@@ -202,7 +202,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5fe2b83ed2a106e83b286114a5607702f8b9267da157e2fdd188183082d6e25f"
+  digest = "1:280d620c33aea271545c0b4456e1a9347a45b03aca09d2bb8923cc524864a325"
   name = "github.com/integration-system/golang-socketio"
   packages = [
     ".",
@@ -210,7 +210,7 @@
     "transport",
   ]
   pruneopts = "UT"
-  revision = "eab7356528fe3ff8d8cd3ba1464e4b7326032315"
+  revision = "24b88aed7c77403c0b9b45de1f42ddc3c4fc0fb2"
 
 [[projects]]
   digest = "1:86431b6d676940fee5c9fa74cc730041a33454271ca5069caa72049c77445dd0"
