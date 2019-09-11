@@ -60,12 +60,16 @@ func (s *RoomStore) Join(conn Conn, rooms ...string) {
 }
 
 func (s *RoomStore) Leave(conn Conn, rooms ...string) {
+	s.LeaveByConnId(conn.Id(), rooms...)
+}
+
+func (s *RoomStore) LeaveByConnId(id string, rooms ...string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for _, room := range rooms {
 		if conns, ok := s.rooms[room]; ok {
-			delete(conns, conn.Id())
+			delete(conns, id)
 			if len(conns) == 0 {
 				delete(s.rooms, room)
 			}
@@ -73,17 +77,15 @@ func (s *RoomStore) Leave(conn Conn, rooms ...string) {
 	}
 }
 
-func (s *RoomStore) ToBroadcast(except Conn, rooms ...string) []Conn {
+func (s *RoomStore) ToBroadcast(rooms ...string) []Conn {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	result := make([]Conn, 0)
 	for _, room := range rooms {
 		if conns, ok := s.rooms[room]; ok {
-			for id, conn := range conns {
-				if id != except.Id() {
-					result = append(result, conn)
-				}
+			for _, conn := range conns {
+				result = append(result, conn)
 			}
 		}
 	}
