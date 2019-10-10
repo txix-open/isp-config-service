@@ -51,7 +51,7 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 		EnableReconnection().
 		ReconnectionTimeout(1 * time.Second).
 		OnReconnectionError(func(err error) {
-			log.Warnf(codes.LeaderClientReconnectionError, "leader client reconnection err: %v", err)
+			log.Warnf(codes.LeaderClientConnectionError, "leader client reconnection err: %v", err)
 		}).
 		BuildToConnect(socketIoAddress)
 	err := client.On(gosocketio.OnDisconnection, func(channel *gosocketio.Channel) {
@@ -61,8 +61,9 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 		leaderDisconnectionCallback()
 	})
 	if err != nil {
-		log.Fatalf(codes.LeaderClientBindError, "leader client unable to bind event. err: %v", err)
+		panic(err) ////must never occurred, and will removed in future
 	}
+
 	return &SocketLeaderClient{
 		c: client,
 	}
@@ -71,7 +72,7 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 func getSocketIoUrl(address string) string {
 	addr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
-		panic(err) //must never occured
+		panic(err) //must never occurred
 	}
 
 	cfg := config.Get().(*conf.Configuration)

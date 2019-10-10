@@ -28,7 +28,7 @@ func (s *Store) Apply(l *raft.Log) interface{} {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if len(l.Data) < 8 {
-		log.Fatalf(codes.InvalidLogDataCommand, "invalid log data command: %s", l.Data)
+		log.Fatalf(codes.ApplyLogCommandError, "invalid log data command: %s", l.Data)
 	}
 	command := binary.BigEndian.Uint64(l.Data[:8])
 	if handler, ok := s.handlers[command]; ok {
@@ -37,7 +37,7 @@ func (s *Store) Apply(l *raft.Log) interface{} {
 			log.Fatalf(codes.ApplyLogCommandError, "apply log command: %v", err)
 		}
 	} else {
-		log.Fatalf(codes.UnknownLogCommand, "unknown log command %s", command)
+		log.Fatalf(codes.ApplyLogCommandError, "unknown log command %s", command)
 	}
 	return nil
 }

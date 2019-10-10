@@ -87,7 +87,7 @@ func (client *ClusterClient) listenLeader() {
 				client.onClientDisconnect(client.leaderState.leaderAddr)
 			})
 			if err := leaderClient.Dial(leaderConnectionTimeout); err != nil {
-				log.Fatalf(codes.ConnectToLeaderError, "could not connect to leader: %v", err)
+				log.Fatalf(codes.LeaderClientConnectionError, "could not connect to leader: %v", err)
 				continue
 			}
 			go func(declaration structure.BackendDeclaration) {

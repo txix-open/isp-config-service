@@ -1,23 +1,11 @@
 package entity
 
 import (
-	"encoding/json"
 	"github.com/integration-system/isp-lib/config/schema"
-	log "github.com/integration-system/isp-log"
-	"isp-config-service/codes"
 	"time"
 )
 
 type ConfigData map[string]interface{}
-
-func (cd ConfigData) ToJSON() string {
-	if bytes, err := json.Marshal(cd); err == nil {
-		return string(bytes)
-	} else {
-		log.Warnf(codes.ConfigDataSerializeError, "could not serialize config data to JSON %v", err)
-		return "{}"
-	}
-}
 
 type Config struct {
 	tableName     string     `sql:"?db_schema.configs" json:"-"`
