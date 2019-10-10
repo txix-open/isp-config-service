@@ -3,9 +3,10 @@ package service
 import (
 	"encoding/json"
 	"github.com/cenkalti/backoff"
-	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/structure"
 	"github.com/integration-system/isp-lib/utils"
+	log "github.com/integration-system/isp-log"
+	"isp-config-service/codes"
 	"isp-config-service/holder"
 	"isp-config-service/store/state"
 	"isp-config-service/ws"
@@ -42,7 +43,10 @@ func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state
 	for _, event := range events {
 		addressList := state.GetModuleAddresses(event)
 		event = utils.ModuleConnected(event)
-		ds.sendAddrList(conn, event, addressList)
+		err := ds.sendAddrList(conn, event, addressList)
+		if err != nil {
+			log.Errorf(codes.DiscoveryServiceError, "send module connected %v", err)
+		}
 	}
 }
 
@@ -51,32 +55,37 @@ func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, state st
 	defer ds.lock.RUnlock()
 	event := utils.ModuleConnected(moduleName)
 	addressList := state.GetModuleAddresses(moduleName)
-	ds.broadcastAddrList(moduleName, event, addressList)
-}
-
-func (ds *discoveryService) broadcastAddrList(moduleName string, event string, addressList []structure.AddressConfiguration) {
-	if bytes, err := json.Marshal(addressList); err != nil {
-		logger.Warn(err)
-	} else {
-		err = holder.Socket.Broadcast(moduleName, event, string(bytes))
-		if err != nil {
-			logger.Error(err)
-		}
+	err := ds.broadcastAddrList(moduleName, event, addressList)
+	if err != nil {
+		log.Errorf(codes.DiscoveryServiceError, "broadcast module connected %v", err)
 	}
 }
 
-func (ds *discoveryService) sendAddrList(conn ws.Conn, event string, addressList []structure.AddressConfiguration) {
+func (ds *discoveryService) broadcastAddrList(moduleName string, event string, addressList []structure.AddressConfiguration) error {
 	if bytes, err := json.Marshal(addressList); err != nil {
-		logger.Warn(err)
+		return err
+	} else {
+		err = holder.Socket.Broadcast(moduleName, event, string(bytes))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ds *discoveryService) sendAddrList(conn ws.Conn, event string, addressList []structure.AddressConfiguration) error {
+	if bytes, err := json.Marshal(addressList); err != nil {
+		return err
 	} else {
 		bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 3)
 		err := backoff.Retry(func() error {
 			return conn.Emit(event, string(bytes))
 		}, bf)
 		if err != nil {
-			logger.Error(err)
+			return err
 		}
 	}
+	return nil
 }
 
 func NewDiscoveryService() *discoveryService {

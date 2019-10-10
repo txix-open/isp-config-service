@@ -3,12 +3,13 @@ package store
 import (
 	"encoding/binary"
 	"github.com/hashicorp/raft"
-	"github.com/integration-system/isp-lib/logger"
+	log "github.com/integration-system/isp-log"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mohae/deepcopy"
 	"github.com/pkg/errors"
 	"io"
 	"isp-config-service/cluster"
+	"isp-config-service/codes"
 	"isp-config-service/store/state"
 	"sync"
 )
@@ -24,40 +25,36 @@ type Store struct {
 }
 
 func (s *Store) Apply(l *raft.Log) interface{} {
-	logger.Debug("Applying...")
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if len(l.Data) < 8 {
-		logger.Fatal("Invalid log data command", l.Data)
+		log.Fatalf(codes.InvalidLogDataCommand, "invalid log data command: %s", l.Data)
 	}
 	command := binary.BigEndian.Uint64(l.Data[:8])
 	if handler, ok := s.handlers[command]; ok {
 		err := handler(l.Data[8:])
 		if err != nil {
-			logger.Fatal("error while applying log command", command, err)
+			log.Fatalf(codes.ApplyLogCommandError, "apply log command: %v", err)
 		}
 	} else {
-		logger.Fatal("Log command not found", command)
+		log.Fatalf(codes.UnknownLogCommand, "unknown log command %s", command)
 	}
 	return nil
 }
 
 func (s *Store) Snapshot() (raft.FSMSnapshot, error) {
 	s.lock.Lock()
-	defer s.lock.Unlock()
-	logger.Debug("Create snapshot")
-
 	copied := deepcopy.Copy(s.state).(state.State)
+	s.lock.Unlock()
 	return &fsmSnapshot{copied}, nil
 }
 
 func (s *Store) Restore(rc io.ReadCloser) error {
-	state := state.State{}
-	logger.Debug("Try to restore snapshot")
-	if err := json.NewDecoder(rc).Decode(&state); err != nil {
+	state2 := state.State{}
+	if err := json.NewDecoder(rc).Decode(&state2); err != nil {
 		return errors.WithMessage(err, "unmarshal store")
 	}
-	s.state = state
+	s.state = state2
 	return nil
 }
 

@@ -3,9 +3,10 @@ package service
 import (
 	"encoding/json"
 	"github.com/cenkalti/backoff"
-	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/structure"
 	"github.com/integration-system/isp-lib/utils"
+	log "github.com/integration-system/isp-log"
+	"isp-config-service/codes"
 	"isp-config-service/holder"
 	"isp-config-service/store/state"
 	"isp-config-service/ws"
@@ -27,35 +28,45 @@ func (rs *routesService) HandleDisconnect(connId string) {
 func (rs *routesService) SubscribeRoutes(conn ws.Conn, state state.ReadState) {
 	holder.Socket.Rooms().Join(conn, RoutesSubscribersRoom)
 	routes := state.GetRoutes()
-	rs.sendRoutes(conn, utils.ConfigSendRoutesWhenConnected, routes)
+	err := rs.sendRoutes(conn, utils.ConfigSendRoutesWhenConnected, routes)
+	if err != nil {
+		log.Errorf(codes.RoutesServiceError, "send routes %v", err)
+	}
+
 }
 
 func (rs *routesService) BroadcastRoutes(state state.ReadState) {
 	routes := state.GetRoutes()
-	rs.broadcastRoutes(utils.ConfigSendRoutesChanged, routes)
+	err := rs.broadcastRoutes(utils.ConfigSendRoutesChanged, routes)
+	if err != nil {
+		log.Errorf(codes.RoutesServiceError, "broadcast routes %v", err)
+	}
+
 }
 
-func (rs *routesService) broadcastRoutes(event string, routes structure.RoutingConfig) {
+func (rs *routesService) broadcastRoutes(event string, routes structure.RoutingConfig) error {
 	if bytes, err := json.Marshal(routes); err != nil {
-		logger.Warn(err)
+		return err
 	} else {
 		err = holder.Socket.Broadcast(RoutesSubscribersRoom, event, string(bytes))
 		if err != nil {
-			logger.Error(err)
+			return err
 		}
 	}
+	return nil
 }
 
-func (rs *routesService) sendRoutes(conn ws.Conn, event string, routes structure.RoutingConfig) {
+func (rs *routesService) sendRoutes(conn ws.Conn, event string, routes structure.RoutingConfig) error {
 	if bytes, err := json.Marshal(routes); err != nil {
-		logger.Warn(err)
+		return err
 	} else {
 		bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 3)
 		err := backoff.Retry(func() error {
 			return conn.Emit(event, string(bytes))
 		}, bf)
 		if err != nil {
-			logger.Error(err)
+			return err
 		}
 	}
+	return nil
 }

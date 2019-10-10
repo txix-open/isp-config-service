@@ -2,10 +2,15 @@ package state
 
 import (
 	"github.com/integration-system/isp-lib/structure"
+	"isp-config-service/entity"
 )
 
 type State struct {
-	mesh *Mesh
+	mesh          *Mesh
+	configs       *ConfigStore
+	schemas       *SchemaStore
+	modules       *ModuleStore
+	commonConfigs *CommonConfigStore
 }
 
 type ReadState interface {
@@ -17,7 +22,21 @@ type ReadState interface {
 
 func NewState() State {
 	return State{
-		mesh: NewMesh(),
+		mesh:          NewMesh(),
+		configs:       NewConfigStore(),
+		schemas:       NewSchemaStore(),
+		modules:       NewModuleStore(),
+		commonConfigs: NewCommonConfigStore(),
+	}
+}
+
+func NewStateFromSnapshot(configs []entity.Config, schemas []entity.ConfigSchema, modules []entity.Module, commConfigs []entity.CommonConfig) State {
+	return State{
+		mesh:          NewMesh(),
+		configs:       &ConfigStore{configs: configs},
+		schemas:       &SchemaStore{schemas: schemas},
+		modules:       &ModuleStore{modules: modules},
+		commonConfigs: &CommonConfigStore{configs: commConfigs},
 	}
 }
 
