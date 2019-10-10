@@ -2,8 +2,9 @@ package cluster
 
 import (
 	"errors"
-	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/structure"
+	log "github.com/integration-system/isp-log"
+	"isp-config-service/codes"
 	"isp-config-service/raft"
 	"strconv"
 	"sync"
@@ -74,7 +75,6 @@ func (client *ClusterClient) SyncApplyOnLeader(command []byte) (interface{}, err
 
 func (client *ClusterClient) listenLeader() {
 	for n := range client.r.LeaderCh() {
-		logger.Debug("ChangeLeaderNotification:", n)
 		client.leaderMu.Lock()
 		if client.leaderState.leaderAddr != n.CurrentLeaderAddress {
 			if client.leaderClient != nil {
@@ -87,7 +87,7 @@ func (client *ClusterClient) listenLeader() {
 				client.onClientDisconnect(client.leaderState.leaderAddr)
 			})
 			if err := leaderClient.Dial(leaderConnectionTimeout); err != nil {
-				logger.Fatalf("could not connect to leader: %v", err)
+				log.Fatalf(codes.LeaderClientConnectionError, "could not connect to leader: %v", err)
 				continue
 			}
 			go func(declaration structure.BackendDeclaration) {
@@ -96,9 +96,9 @@ func (client *ClusterClient) listenLeader() {
 					response = res
 				}
 				if err != nil {
-					logger.Warn("leaderClient.SendDeclaration", err)
+					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader err: %v", err)
 				} else if response != "ok" {
-					logger.Warn("leaderClient.SendDeclaration response", response)
+					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader response: %s", response)
 				}
 			}(client.declaration)
 
@@ -107,7 +107,7 @@ func (client *ClusterClient) listenLeader() {
 			go func(declaration structure.BackendDeclaration) {
 				command := PrepareUpdateBackendDeclarationCommand(declaration)
 				i, err := client.SyncApply(command)
-				logger.Debug("cluster.SyncApply announce myself:", i, err)
+				log.Debugf(0, "cluster.SyncApply announce myself:%v, %v", i, err)
 			}(client.declaration)
 		}
 		client.leaderState = leaderState{

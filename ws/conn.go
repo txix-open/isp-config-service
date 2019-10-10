@@ -9,7 +9,7 @@ import (
 
 type Conn interface {
 	Id() string
-	Parameters() (instanceUUID string, moduleName string, error error)
+	Parameters() (moduleName string, err error)
 	Emit(event string, args ...interface{}) error
 	IsConfigClusterNode() bool
 	SetBackendDeclaration(backend structure.BackendDeclaration)
@@ -21,8 +21,10 @@ type wsConn struct {
 	backend *structure.BackendDeclaration
 }
 
-func (c *wsConn) Parameters() (instanceUUID string, moduleName string, error error) {
-	return utils.ParseParameters(c.conn.Request().URL.RawQuery)
+func (c *wsConn) Parameters() (moduleName string, err error) {
+	// TODO remove instanceUUID from isp-lib
+	_, moduleName, err = utils.ParseParameters(c.conn.Request().URL.RawQuery)
+	return moduleName, err
 }
 
 func (c *wsConn) Id() string {

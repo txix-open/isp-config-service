@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/structure"
+	log "github.com/integration-system/isp-log"
+	"isp-config-service/codes"
 )
 
 const (
@@ -34,7 +35,7 @@ func prepareCommand(command uint64, payload interface{}) []byte {
 	buf := bytes.NewBuffer(cmd)
 	err := json.NewEncoder(buf).Encode(payload)
 	if err != nil {
-		logger.Fatal("prepareCommand json encoding", err)
+		log.Fatalf(codes.PrepareLogCommandError, "prepare log command: %v", err)
 	}
 	return buf.Bytes()
 }

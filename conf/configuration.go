@@ -5,7 +5,7 @@ import (
 )
 
 type Configuration struct {
-	Database         structure.DBConfiguration      `valid:"required~Required"`
+	Database         structure.DBConfiguration      `valid:"required~Required" schema:"База данных,настройка параметров подключения к базе данных"`
 	GrpcOuterAddress structure.AddressConfiguration `valid:"required~Required" json:"grpcOuterAddress"`
 	ModuleName       string                         `valid:"required~Required"`
 	WS               struct {

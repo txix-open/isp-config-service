@@ -99,6 +99,8 @@ func NewRaft(bind string, configuration conf.ClusterConfiguration, state raft.FS
 	}
 
 	cfg := raft.DefaultConfig()
+	cfg.Logger = &LoggerAdapter{name: "RAFT"}
+	cfg.NoSnapshotRestoreOnStart = true
 	cfg.LocalID = raft.ServerID(configuration.OuterAddress)
 	r, err := raft.NewRaft(cfg, state, logStore, store, snapshotStore, trans)
 	if err != nil {

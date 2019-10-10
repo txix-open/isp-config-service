@@ -1,39 +1,42 @@
 package entity
 
 import (
-	"encoding/json"
 	"github.com/integration-system/isp-lib/config/schema"
-	"github.com/integration-system/isp-lib/logger"
 	"time"
 )
 
 type ConfigData map[string]interface{}
 
-func (cd ConfigData) ToJSON() string {
-	if bytes, err := json.Marshal(cd); err == nil {
-		return string(bytes)
-	} else {
-		logger.Warn("Could not serialize config data to JSON", err)
-		return "{}"
-	}
+type Config struct {
+	tableName     string     `sql:"?db_schema.configs" json:"-"`
+	Id            string     `json:"id" valid:"required~Required"`
+	Name          string     `json:"name" valid:"required~Required"`
+	CommonConfigs []string   `json:"commonConfigs" pg:",array"`
+	Description   string     `json:"description"`
+	ModuleId      string     `json:"moduleId" valid:"required~Required"`
+	Version       int32      `json:"version" sql:",null"`
+	Active        bool       `json:"active" sql:",null"`
+	CreatedAt     time.Time  `json:"createdAt" sql:",null"`
+	UpdatedAt     time.Time  `json:"updatedAt" sql:",null"`
+	Data          ConfigData `json:"data" sql:",notnull"`
 }
 
-type Config struct {
-	Id          int64      `json:"id"`
+type CommonConfig struct {
+	tableName   string     `sql:"?db_schema.common_configs" json:"-"`
+	Id          string     `json:"id" valid:"required~Required"`
 	Name        string     `json:"name" valid:"required~Required"`
 	Description string     `json:"description"`
-	ModuleId    int32      `json:"moduleId" valid:"required~Required"`
 	Version     int32      `json:"version" sql:",null"`
-	Active      bool       `json:"active" sql:",null"`
 	CreatedAt   time.Time  `json:"createdAt" sql:",null"`
 	UpdatedAt   time.Time  `json:"updatedAt" sql:",null"`
 	Data        ConfigData `json:"data" sql:",notnull"`
 }
 
 type ConfigSchema struct {
-	Id        int32
+	tableName string `sql:"?db_schema.config_schemas" json:"-"`
+	Id        string `json:"id" valid:"required~Required"`
 	Version   string
-	ModuleId  int32
+	ModuleId  string
 	Schema    schema.Schema
 	CreatedAt time.Time
 	UpdatedAt time.Time

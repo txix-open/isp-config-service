@@ -6,9 +6,10 @@ import (
 	"github.com/cenkalti/backoff"
 	gosocketio "github.com/integration-system/golang-socketio"
 	"github.com/integration-system/isp-lib/config"
-	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/structure"
 	"github.com/integration-system/isp-lib/utils"
+	log "github.com/integration-system/isp-log"
+	"isp-config-service/codes"
 	"isp-config-service/conf"
 	"net"
 	"strconv"
@@ -50,16 +51,19 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 		EnableReconnection().
 		ReconnectionTimeout(1 * time.Second).
 		OnReconnectionError(func(err error) {
-			logger.Warnf("socket.io leader(%s) client reconnection err: %v", socketIoAddress, err)
+			log.Warnf(codes.LeaderClientConnectionError, "leader client reconnection err: %v", err)
 		}).
 		BuildToConnect(socketIoAddress)
 	err := client.On(gosocketio.OnDisconnection, func(channel *gosocketio.Channel) {
-		logger.Debugf("[%s]:%s", channel.Ip(), "LeaderClient OnDisconnection")
+		log.WithMetadata(map[string]interface{}{
+			"leaderIp": channel.Ip(),
+		}).Warn(codes.LeaderClientDisconnected, "leader client disconnected")
 		leaderDisconnectionCallback()
 	})
 	if err != nil {
-		logger.Fatal(err)
+		panic(err) ////must never occurred, and will removed in future
 	}
+
 	return &SocketLeaderClient{
 		c: client,
 	}
@@ -68,7 +72,7 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 func getSocketIoUrl(address string) string {
 	addr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
-		panic(err) //must never occured
+		panic(err) //must never occurred
 	}
 
 	cfg := config.Get().(*conf.Configuration)

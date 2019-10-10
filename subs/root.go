@@ -1,9 +1,10 @@
 package subs
 
 import (
-	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/utils"
+	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
+	"isp-config-service/codes"
 	"isp-config-service/holder"
 	"isp-config-service/service"
 	"isp-config-service/store"
@@ -11,8 +12,7 @@ import (
 )
 
 const (
-	Ok = "ok"
-
+	Ok            = "ok"
 	followersRoom = "followers"
 )
 
@@ -50,12 +50,16 @@ func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
 	if backend != nil {
 		command := cluster.PrepareDeleteBackendDeclarationCommand(*backend)
 		i, err := h.cluster.SyncApply(command)
-		logger.Debug("cluster.SyncApply DeleteBackendDeclarationCommand:", i, err)
+		if err != nil {
+			log.WithMetadata(map[string]interface{}{
+				"answer": i,
+			}).Warnf(codes.SyncApplyError, "apply DeleteBackendDeclarationCommand %v", err)
+		}
 	}
 }
 
 func (h *socketEventHandler) handleError(conn ws.Conn, err error) {
-	logger.Warnf("socket.io: %v", err)
+	log.Warnf(codes.SocketIoError, "socket.io: %v", err)
 }
 
 func NewSocketEventHandler(socket *ws.WebsocketServer, cluster *cluster.ClusterClient, store *store.Store) *socketEventHandler {
