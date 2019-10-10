@@ -57,7 +57,7 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 	err := client.On(gosocketio.OnDisconnection, func(channel *gosocketio.Channel) {
 		log.WithMetadata(map[string]interface{}{
 			"leaderIp": channel.Ip(),
-		}).Warn(codes.LeaderClientDisconnected, "leaderclient disconnected")
+		}).Warn(codes.LeaderClientDisconnected, "leader client disconnected")
 		leaderDisconnectionCallback()
 	})
 	if err != nil {
