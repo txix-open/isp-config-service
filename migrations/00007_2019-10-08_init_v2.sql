@@ -37,7 +37,6 @@ ALTER TABLE config_schemas
 CREATE TABLE common_configs
 (
     id          VARCHAR(255) NOT NULL PRIMARY KEY,
-    uuid        UUID         NOT NULL,
     name        VARCHAR(255) NOT NULL DEFAULT 'unnamed',
     description TEXT,
     version     int4         NOT NULL,
@@ -47,36 +46,8 @@ CREATE TABLE common_configs
     data        jsonb        NOT NULL DEFAULT '{}'
 );
 
-ALTER TABLE common_configs
-    ADD CONSTRAINT "unique_common_configs_uuid" UNIQUE ("uuid");
-
 
 -- +goose Down
-
-ALTER TABLE configs
-    DROP CONSTRAINT "FK_configs_moduleId_modules_id";
-
-ALTER TABLE config_schemas
-    DROP CONSTRAINT "fk_module_id__module_id";
-
-
-ALTER TABLE configs
-    ALTER COLUMN id TYPE integer;
-
-ALTER TABLE config_schemas
-    ALTER COLUMN id TYPE integer;
-
-ALTER TABLE modules
-    ALTER COLUMN id TYPE integer;
-
-ALTER TABLE configs
-    ADD CONSTRAINT "FK_configs_moduleId_modules_id"
-        FOREIGN KEY ("module_id") REFERENCES modules ("id")
-            ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE config_schemas
-    ADD CONSTRAINT FK_module_id__module_id FOREIGN KEY (module_id)
-        REFERENCES modules (id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 DROP TABLE common_configs;
 
