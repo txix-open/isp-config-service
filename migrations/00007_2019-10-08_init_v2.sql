@@ -3,22 +3,40 @@
 DROP TABLE instances CASCADE;
 
 ALTER TABLE configs
-    ADD COLUMN uuid           UUID   NOT NULL DEFAULT uuid_generate_v4(),
-    ADD COLUMN common_configs UUID[] NOT NULL DEFAULT '{}',
-    ADD CONSTRAINT "unique_configs_uuid" UNIQUE ("uuid");
+    DROP CONSTRAINT "FK_configs_moduleId_modules_id";
 
 ALTER TABLE config_schemas
-    ADD COLUMN uuid UUID NOT NULL DEFAULT uuid_generate_v4(),
-    ADD CONSTRAINT "unique_config_schemas_uuid" UNIQUE ("uuid");
+    DROP CONSTRAINT "fk_module_id__module_id";
+
+
+ALTER TABLE configs
+    ALTER COLUMN id TYPE varchar(255),
+    ALTER COLUMN module_id TYPE varchar(255),
+    ADD COLUMN common_configs varchar(255)[] NOT NULL DEFAULT '{}';
+
+ALTER TABLE config_schemas
+    ALTER COLUMN module_id TYPE varchar(255),
+    ALTER COLUMN id TYPE varchar(255);
 
 ALTER TABLE modules
-    ADD COLUMN uuid UUID NOT NULL DEFAULT uuid_generate_v4(),
-    ADD CONSTRAINT "unique_modules_uuid" UNIQUE ("uuid");
+    ALTER COLUMN id TYPE varchar(255);
+
+-- Constraints
+
+ALTER TABLE configs
+    ADD CONSTRAINT "FK_configs_moduleId_modules_id"
+        FOREIGN KEY ("module_id") REFERENCES modules ("id")
+            ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE config_schemas
+    ADD CONSTRAINT FK_module_id__module_id FOREIGN KEY (module_id)
+        REFERENCES modules (id) ON UPDATE CASCADE ON DELETE CASCADE;
+
 
 
 CREATE TABLE common_configs
 (
-    id          serial4      NOT NULL PRIMARY KEY,
+    id          VARCHAR(255) NOT NULL PRIMARY KEY,
     uuid        UUID         NOT NULL,
     name        VARCHAR(255) NOT NULL DEFAULT 'unnamed',
     description TEXT,
@@ -36,13 +54,29 @@ ALTER TABLE common_configs
 -- +goose Down
 
 ALTER TABLE configs
-    DROP COLUMN uuid;
+    DROP CONSTRAINT "FK_configs_moduleId_modules_id";
 
 ALTER TABLE config_schemas
-    DROP COLUMN uuid;
+    DROP CONSTRAINT "fk_module_id__module_id";
+
+
+ALTER TABLE configs
+    ALTER COLUMN id TYPE integer;
+
+ALTER TABLE config_schemas
+    ALTER COLUMN id TYPE integer;
 
 ALTER TABLE modules
-    DROP COLUMN uuid;
+    ALTER COLUMN id TYPE integer;
+
+ALTER TABLE configs
+    ADD CONSTRAINT "FK_configs_moduleId_modules_id"
+        FOREIGN KEY ("module_id") REFERENCES modules ("id")
+            ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE config_schemas
+    ADD CONSTRAINT FK_module_id__module_id FOREIGN KEY (module_id)
+        REFERENCES modules (id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 DROP TABLE common_configs;
 

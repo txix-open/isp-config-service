@@ -28,8 +28,8 @@ const (
 	LeaderClientDisconnected     = 0
 
 	// Services
-	DiscoveryServiceError = 0
-	RoutesServiceError    = 0
+	DiscoveryServiceSendModulesError = 0
+	RoutesServiceSendRoutesError     = 0
 
 	DeleteBackendDeclarationError = 0
 )

@@ -45,7 +45,7 @@ func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state
 		event = utils.ModuleConnected(event)
 		err := ds.sendAddrList(conn, event, addressList)
 		if err != nil {
-			log.Errorf(codes.DiscoveryServiceError, "send module connected %v", err)
+			log.Errorf(codes.DiscoveryServiceSendModulesError, "send module connected %v", err)
 		}
 	}
 }
@@ -57,7 +57,7 @@ func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, state st
 	addressList := state.GetModuleAddresses(moduleName)
 	err := ds.broadcastAddrList(moduleName, event, addressList)
 	if err != nil {
-		log.Errorf(codes.DiscoveryServiceError, "broadcast module connected %v", err)
+		log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected %v", err)
 	}
 }
 

@@ -30,7 +30,7 @@ func (rs *routesService) SubscribeRoutes(conn ws.Conn, state state.ReadState) {
 	routes := state.GetRoutes()
 	err := rs.sendRoutes(conn, utils.ConfigSendRoutesWhenConnected, routes)
 	if err != nil {
-		log.Errorf(codes.RoutesServiceError, "send routes %v", err)
+		log.Errorf(codes.RoutesServiceSendRoutesError, "send routes %v", err)
 	}
 
 }
@@ -39,7 +39,7 @@ func (rs *routesService) BroadcastRoutes(state state.ReadState) {
 	routes := state.GetRoutes()
 	err := rs.broadcastRoutes(utils.ConfigSendRoutesChanged, routes)
 	if err != nil {
-		log.Errorf(codes.RoutesServiceError, "broadcast routes %v", err)
+		log.Errorf(codes.RoutesServiceSendRoutesError, "broadcast routes %v", err)
 	}
 
 }

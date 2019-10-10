@@ -87,7 +87,8 @@ func initWebsocket(bindAddress string, clusterClient *cluster.ClusterClient, raf
 }
 
 func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration, declaration structure.BackendDeclaration) (*cluster.ClusterClient, *store.Store) {
-	raftStore := store.NewStateStoreFromRepository()
+	raftState := store.NewStateFromRepository()
+	raftStore := store.NewStateStore(raftState)
 	r, err := raft.NewRaft(bindAddress, clusterCfg, raftStore)
 	if err != nil {
 		log.Fatalf(codes.InitRaftError, "unable to create raft server. %v", err)

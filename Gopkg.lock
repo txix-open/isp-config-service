@@ -233,14 +233,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:21b7454a3f43dc141a1b48ef954bd98a506aa9aab599d9ec214a324b9864b49b"
+  digest = "1:1789fb6e57949a6e4cacb74023cd30efb04b09dc6111d6ef3718241ebb23ebe9"
   name = "github.com/integration-system/isp-log"
   packages = [
     ".",
     "stdcodes",
   ]
   pruneopts = "UT"
-  revision = "d1d067bfc8eaa1de1d70da37578322ec72e0af04"
+  revision = "a22bf2e0b56a9ef47db4a98756e39f700a99b688"
 
 [[projects]]
   branch = "master"

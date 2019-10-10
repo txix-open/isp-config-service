@@ -98,9 +98,9 @@ func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
 
 func (f *fsmSnapshot) Release() {}
 
-func NewStateStore() *Store {
+func NewStateStore(st state.State) *Store {
 	store := &Store{
-		state: state.NewState(),
+		state: st,
 	}
 	store.handlers = map[uint64]func([]byte) error{
 		cluster.UpdateBackendDeclarationCommand: store.applyUpdateBackendDeclarationCommand,
