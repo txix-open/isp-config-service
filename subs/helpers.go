@@ -9,7 +9,9 @@ import (
 func EmitConn(conn ws.Conn, event string, args ...interface{}) {
 	err := conn.Emit(event, args...)
 	if err != nil {
-		log.Warnf(codes.SocketIoEmitError, "emit err %v", err)
+		log.WithMetadata(map[string]interface{}{
+			"event": event,
+		}).Warnf(codes.SocketIoEmitError, "emit err %v", err)
 	}
 }
 
