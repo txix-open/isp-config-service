@@ -30,8 +30,8 @@ func (clusterStateService) HandleDeleteBackendDeclarationCommand(declaration str
 	if deleted {
 		DiscoveryService.BroadcastModuleAddresses(declaration.ModuleName, state)
 		RoutesService.BroadcastRoutes(state)
+		module := state.UpdateModuleLastDisconnected(declaration.ModuleName)
 		if holder.ClusterClient.IsLeader() {
-			module := state.UpdateModuleLastDisconnected(declaration.ModuleName)
 			_, err := model.ModuleRep.Upsert(module)
 			if err != nil {
 				log.Errorf(codes.DatabaseOperationError, "upsert module: %v", err)

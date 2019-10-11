@@ -1,10 +1,10 @@
 package cluster
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
+	jsoniter "github.com/json-iterator/go"
 	"isp-config-service/codes"
 	"isp-config-service/raft"
 	"strconv"
@@ -16,6 +16,7 @@ var (
 	ErrNoLeader                   = errors.New("no leader in cluster")
 	ErrLeaderClientNotInitialized = errors.New("leader client not initialized")
 	ErrNotLeader                  = errors.New("node is not a leader")
+	json                          = jsoniter.ConfigFastest
 )
 
 const (
@@ -46,6 +47,9 @@ func (client *ClusterClient) Shutdown() error {
 }
 
 func (client *ClusterClient) IsLeader() bool {
+	client.leaderMu.RLock()
+	defer client.leaderMu.RUnlock()
+
 	return client.leaderState.isLeader
 }
 

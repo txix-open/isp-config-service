@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/cenkalti/backoff"
 	gosocketio "github.com/integration-system/golang-socketio"

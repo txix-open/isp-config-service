@@ -44,55 +44,26 @@ func (h *socketEventHandler) handleConnect(conn ws.Conn) {
 	}
 	moduleName, err := conn.Parameters()
 	if err != nil {
-		err := conn.Emit(utils.ErrorConnection, err.Error())
-		if err != nil {
-			log.Warnf(codes.SocketIoEmitError, "emit err %v", err)
-		}
+		EmitConn(conn, utils.ErrorConnection, err.Error())
 		return
 	}
 	command := cluster.PrepareModuleConnectedCommand(moduleName)
-
-	applyLogResponse, err := h.cluster.SyncApply(command)
-	if err != nil {
-		log.Warnf(codes.SyncApplyError, "apply ModuleConnectedCommand: %v", err)
-	}
-	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
-		log.WithMetadata(map[string]interface{}{
-			"comment":    applyLogResponse.Comment,
-			"applyError": applyLogResponse.ApplyError,
-		}).Warn(codes.SyncApplyError, "apply ModuleConnectedCommand")
-	}
+	h.SyncApplyCommand(command, "ModuleConnectedCommand")
 
 	var config map[string]interface{}
 	h.store.VisitReadState(func(state state.ReadState) {
 		config, err = state.GetCompiledConfig(moduleName)
 	})
 	if err != nil {
-		err := conn.Emit(utils.ConfigError, err.Error())
-		if err != nil {
-			log.WithMetadata(map[string]interface{}{
-				"module": moduleName,
-			}).Warnf(codes.SocketIoEmitError, "emit err %v", err)
-		}
+		EmitConn(conn, utils.ConfigError, err.Error())
 		return
 	}
 	data, err := json.Marshal(config)
 	if err != nil {
-		err := conn.Emit(utils.ConfigError, err.Error())
-		if err != nil {
-			log.WithMetadata(map[string]interface{}{
-				"module": moduleName,
-			}).Warnf(codes.SocketIoEmitError, "emit err %v", err)
-		}
+		EmitConn(conn, utils.ConfigError, err.Error())
 		return
 	}
-	err = conn.Emit(utils.ConfigSendConfigWhenConnected, string(data))
-	if err != nil {
-		log.WithMetadata(map[string]interface{}{
-			"module": moduleName,
-		}).Warnf(codes.SocketIoEmitError, "emit config err %v", err)
-	}
-
+	EmitConn(conn, utils.ConfigSendConfigWhenConnected, string(data))
 }
 
 func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
@@ -104,17 +75,7 @@ func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
 	backend := conn.GetBackendDeclaration()
 	if backend != nil {
 		command := cluster.PrepareDeleteBackendDeclarationCommand(*backend)
-
-		applyLogResponse, err := h.cluster.SyncApply(command)
-		if err != nil {
-			log.Warnf(codes.SyncApplyError, "apply ModuleConnectedCommand: %v", err)
-		}
-		if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
-			log.WithMetadata(map[string]interface{}{
-				"comment":    applyLogResponse.Comment,
-				"applyError": applyLogResponse.ApplyError,
-			}).Warn(codes.SyncApplyError, "apply DeleteBackendDeclarationCommand")
-		}
+		h.SyncApplyCommand(command, "ModuleConnectedCommand")
 	}
 }
 

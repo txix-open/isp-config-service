@@ -3,7 +3,6 @@ package cluster
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
