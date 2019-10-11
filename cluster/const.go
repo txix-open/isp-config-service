@@ -14,11 +14,13 @@ const (
 
 	TokenParam   = "token"
 	ClusterParam = "cluster"
+	Ok           = "ok"
 )
 const (
 	_ = iota
 	UpdateBackendDeclarationCommand
 	DeleteBackendDeclarationCommand
+	ModuleConnectedCommand
 )
 
 func PrepareUpdateBackendDeclarationCommand(backend structure.BackendDeclaration) []byte {
@@ -27,6 +29,10 @@ func PrepareUpdateBackendDeclarationCommand(backend structure.BackendDeclaration
 
 func PrepareDeleteBackendDeclarationCommand(backend structure.BackendDeclaration) []byte {
 	return prepareCommand(DeleteBackendDeclarationCommand, backend)
+}
+
+func PrepareModuleConnectedCommand(moduleName string) []byte {
+	return prepareCommand(ModuleConnectedCommand, ModuleConnected{ModuleName: moduleName})
 }
 
 func prepareCommand(command uint64, payload interface{}) []byte {

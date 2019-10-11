@@ -1,7 +1,6 @@
 package subs
 
 import (
-	"encoding/json"
 	"github.com/asaskevich/govalidator"
 	"github.com/integration-system/isp-lib/bootstrap"
 	"github.com/integration-system/isp-lib/structure"
@@ -31,18 +30,22 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string
 	})
 	if changed {
 		command := cluster.PrepareUpdateBackendDeclarationCommand(declaration)
-		i, err := h.cluster.SyncApply(command)
+		applyLogResponse, err := h.cluster.SyncApply(command)
 		if err != nil {
+			return err.Error()
+		}
+		if applyLogResponse.ApplyError != "" {
 			log.WithMetadata(map[string]interface{}{
-				"answer": i,
-			}).Warnf(codes.SyncApplyError, "apply UpdateBackendDeclarationCommand %v", err)
+				"comment":    applyLogResponse.Comment,
+				"applyError": applyLogResponse.ApplyError,
+			}).Warn(codes.SyncApplyError, "apply UpdateBackendDeclarationCommand")
+			return applyLogResponse.ApplyError
 		}
 	}
 	return Ok
 }
 
 func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte) string {
-
 	moduleName, err := conn.Parameters()
 	log.Debugf(0, "handleModuleRequirements moduleName: %s", moduleName) // REMOVE
 	if err != nil {

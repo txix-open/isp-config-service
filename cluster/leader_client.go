@@ -92,7 +92,10 @@ func getSocketIoUrl(address string) string {
 	//}
 	//
 	return gosocketio.GetUrl(addr.IP.String(), port, false, map[string]string{
-		ClusterParam: "true",
+		ClusterParam:  "true",
+		"module_name": cfg.ModuleName,
+		// TODO вынести ключи в константы в isp-lib и выпилить instance_uuid
+		"instance_uuid": "9d89354b-c728-4b48-b002-a7d3b229f151",
 	})
 
 }
