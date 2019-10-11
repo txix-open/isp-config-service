@@ -14,8 +14,8 @@ type clusterStateService struct{}
 func (l clusterStateService) HandleUpdateBackendDeclarationCommand(declaration structure.BackendDeclaration, state state.State) (state.State, error) {
 	changed := state.UpsertBackend(declaration)
 	if changed {
-		DiscoveryService.BroadcastModuleAddresses(declaration.ModuleName, &state)
-		RoutesService.BroadcastRoutes(&state)
+		DiscoveryService.BroadcastModuleAddresses(declaration.ModuleName, state)
+		RoutesService.BroadcastRoutes(state)
 	}
 	return state, nil
 }
@@ -23,8 +23,8 @@ func (l clusterStateService) HandleUpdateBackendDeclarationCommand(declaration s
 func (l clusterStateService) HandleDeleteBackendDeclarationCommand(declaration structure.BackendDeclaration, state state.State) (state.State, error) {
 	deleted := state.DeleteBackend(declaration)
 	if deleted {
-		DiscoveryService.BroadcastModuleAddresses(declaration.ModuleName, &state)
-		RoutesService.BroadcastRoutes(&state)
+		DiscoveryService.BroadcastModuleAddresses(declaration.ModuleName, state)
+		RoutesService.BroadcastRoutes(state)
 	}
 	return state, nil
 }

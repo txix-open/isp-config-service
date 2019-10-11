@@ -65,7 +65,7 @@ func (s State) BackendExist(backend structure.BackendDeclaration) (exist bool) {
 	return s.mesh.BackendExist(backend)
 }
 
-func (s *State) GetModuleByName(moduleName string) (entity.Module, bool) {
+func (s State) GetModuleByName(moduleName string) (entity.Module, bool) {
 	return s.modules.GetByName(moduleName)
 }
 
