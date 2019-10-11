@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/pkg/errors"
 	"isp-config-service/entity"
+	"isp-config-service/holder"
 	"isp-config-service/model"
 	"isp-config-service/store/state"
 )
@@ -17,11 +18,12 @@ func (schemaService) HandleUpdateConfigSchema(schema entity.ConfigSchema, state 
 		return state, errors.Errorf("module with id %s not found", schema.ModuleId)
 	}
 
-	//todo add check is leader?
-	schema = state.UpdateSchema(schema)
-	_, err := model.SchemaRep.Upsert(schema)
-	if err != nil {
-		return state, err
+	if holder.ClusterClient.IsLeader() {
+		schema = state.UpdateSchema(schema)
+		_, err := model.SchemaRep.Upsert(schema)
+		if err != nil {
+			return state, err
+		}
 	}
 	return state, nil
 }

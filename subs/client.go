@@ -84,14 +84,11 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 	if err := jsoniter.Unmarshal(data, &configSchema); err != nil {
 		return err.Error()
 	}
-	var (
-		module entity.Module
-		ok     bool
-	)
+	module := new(entity.Module)
 	h.store.VisitReadState(func(readState state.ReadState) {
-		module, ok = readState.GetModuleByName(moduleName)
+		module = readState.GetModuleByName(moduleName)
 	})
-	if !ok {
+	if module == nil {
 		return fmt.Sprintf("module with name %s not found", moduleName)
 	}
 
