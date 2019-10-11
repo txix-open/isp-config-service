@@ -12,8 +12,8 @@ var SchemaService schemaService
 type schemaService struct{}
 
 func (schemaService) HandleUpdateConfigSchema(schema entity.ConfigSchema, state state.State) (state.State, error) {
-	_, ok := state.GetModuleById(schema.ModuleId)
-	if !ok {
+	module := state.GetModuleById(schema.ModuleId)
+	if module == nil {
 		return state, errors.Errorf("module with id %s not found", schema.ModuleId)
 	}
 

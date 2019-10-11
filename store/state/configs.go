@@ -1,7 +1,6 @@
 package state
 
 import (
-	"fmt"
 	"isp-config-service/entity"
 )
 
@@ -21,13 +20,13 @@ func (cs *ConfigStore) Activate(config entity.Config) {
 	// TODO
 }
 
-func (cs *ConfigStore) GetActiveByModuleId(moduleId string) (*entity.Config, error) {
+func (cs *ConfigStore) GetActiveByModuleId(moduleId string) *entity.Config {
 	for _, conf := range cs.configs {
 		if conf.ModuleId == moduleId && conf.Active {
-			return &conf, nil
+			return &conf
 		}
 	}
-	return nil, fmt.Errorf("no active configs for moduleId %s", moduleId)
+	return nil
 }
 
 func (cs *ConfigStore) GetById(id int64) (*entity.Config, error) {

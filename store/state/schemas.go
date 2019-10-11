@@ -1,7 +1,6 @@
 package state
 
 import (
-	"github.com/satori/go.uuid"
 	"isp-config-service/entity"
 )
 
@@ -17,7 +16,7 @@ func (ss *SchemaStore) Upsert(schema entity.ConfigSchema) entity.ConfigSchema {
 			return schema
 		}
 	}
-	schema.Id = uuid.NewV1().String()
+	schema.Id = GenerateId()
 	ss.schemas = append(ss.schemas, schema)
 	return schema
 }

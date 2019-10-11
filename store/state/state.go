@@ -2,6 +2,7 @@ package state
 
 import (
 	"github.com/integration-system/isp-lib/structure"
+	"github.com/pkg/errors"
 	"isp-config-service/entity"
 	"time"
 )
@@ -20,7 +21,7 @@ type ReadState interface {
 	GetRoutes() structure.RoutingConfig
 	BackendExist(backend structure.BackendDeclaration) (exist bool)
 	GetCompiledConfig(moduleName string) (map[string]interface{}, error)
-	GetModuleByName(string) (entity.Module, bool)
+	GetModuleByName(string) *entity.Module
 }
 
 func NewState() State {
@@ -68,13 +69,13 @@ func (s State) BackendExist(backend structure.BackendDeclaration) (exist bool) {
 }
 
 func (s State) GetCompiledConfig(moduleName string) (map[string]interface{}, error) {
-	module, err := s.modules.GetByName(moduleName)
-	if err != nil {
-		return nil, err
+	module := s.modules.GetByName(moduleName)
+	if module == nil {
+		return nil, errors.Errorf("module with name %s not found", moduleName)
 	}
-	config, err := s.configs.GetActiveByModuleId(module.Id)
-	if err != nil {
-		return nil, err
+	config := s.configs.GetActiveByModuleId(module.Id)
+	if config == nil {
+		return nil, errors.Errorf("no active configs for moduleId %s", module.Id)
 	}
 	commonConfigs := s.commonConfigs.GetByIds(config.CommonConfigs)
 	configsToMerge := make([]map[string]interface{}, 0, len(commonConfigs))
@@ -87,9 +88,9 @@ func (s State) GetCompiledConfig(moduleName string) (map[string]interface{}, err
 	return resultData, nil
 }
 
-func (s State) UpdateModuleLastConnected(moduleName string) entity.Module {
-	existedModule, err := s.modules.GetByName(moduleName)
-	if err != nil {
+func (s *State) UpdateModuleLastConnected(moduleName string) entity.Module {
+	existedModule := s.modules.GetByName(moduleName)
+	if existedModule == nil {
 		module := s.modules.Create(moduleName)
 		return module
 	}
@@ -98,9 +99,9 @@ func (s State) UpdateModuleLastConnected(moduleName string) entity.Module {
 	return *existedModule
 }
 
-func (s State) UpdateModuleLastDisconnected(moduleName string) entity.Module {
-	existedModule, err := s.modules.GetByName(moduleName)
-	if err != nil {
+func (s *State) UpdateModuleLastDisconnected(moduleName string) entity.Module {
+	existedModule := s.modules.GetByName(moduleName)
+	if existedModule == nil {
 		module := s.modules.Create(moduleName)
 		return module
 	}
@@ -109,11 +110,11 @@ func (s State) UpdateModuleLastDisconnected(moduleName string) entity.Module {
 	return *existedModule
 }
 
-func (s State) GetModuleByName(moduleName string) (entity.Module, bool) {
+func (s State) GetModuleByName(moduleName string) *entity.Module {
 	return s.modules.GetByName(moduleName)
 }
 
-func (s *State) GetModuleById(moduleId string) (entity.Module, bool) {
+func (s State) GetModuleById(moduleId string) *entity.Module {
 	return s.modules.GetById(moduleId)
 }
 

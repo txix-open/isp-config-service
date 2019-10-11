@@ -1,7 +1,6 @@
 package state
 
 import (
-	"fmt"
 	"isp-config-service/entity"
 	"time"
 )
@@ -18,22 +17,22 @@ func (ms *ModuleStore) Update(module entity.Module) {
 	}
 }
 
-func (ms *ModuleStore) GetByName(name string) (entity.Module, bool) {
+func (ms *ModuleStore) GetByName(name string) *entity.Module {
 	for _, module := range ms.modules {
 		if module.Name == name {
-			return module, true
+			return &module
 		}
 	}
-	return entity.Module{}, false
+	return nil
 }
 
-func (ms *ModuleStore) GetById(id string) (entity.Module, bool) {
+func (ms *ModuleStore) GetById(id string) *entity.Module {
 	for _, module := range ms.modules {
 		if module.Id == id {
-			return module, true
+			return &module
 		}
 	}
-	return entity.Module{}, false
+	return nil
 }
 
 func (ms *ModuleStore) Create(name string) entity.Module {

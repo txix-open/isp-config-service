@@ -1,11 +1,10 @@
 package store
 
 import (
-	"fmt"
 	"github.com/integration-system/isp-lib/structure"
-	jsoniter "github.com/json-iterator/go"
-	"isp-config-service/entity"
+	"github.com/pkg/errors"
 	"isp-config-service/cluster"
+	"isp-config-service/entity"
 	"isp-config-service/service"
 )
 
@@ -13,11 +12,11 @@ func (s *Store) applyUpdateBackendDeclarationCommand(data []byte) error {
 	declaration := structure.BackendDeclaration{}
 	err := json.Unmarshal(data, &declaration)
 	if err != nil {
-		return fmt.Errorf("UpdateBackendDeclarationCommand: %w", err)
+		return errors.Errorf("UpdateBackendDeclarationCommand: %w", err)
 	}
 	state, err := service.ClusterStateService.HandleUpdateBackendDeclarationCommand(declaration, s.state)
 	if err != nil {
-		return fmt.Errorf("UpdateBackendDeclarationCommand: %w", err)
+		return errors.Errorf("UpdateBackendDeclarationCommand: %w", err)
 	}
 	s.state = state
 	return nil
@@ -27,7 +26,7 @@ func (s *Store) applyDeleteBackendDeclarationCommand(data []byte) error {
 	declaration := structure.BackendDeclaration{}
 	err := json.Unmarshal(data, &declaration)
 	if err != nil {
-		return fmt.Errorf("DeleteBackendDeclarationCommand: %w", err)
+		return errors.Errorf("DeleteBackendDeclarationCommand: %w", err)
 	}
 	state, err := service.ClusterStateService.HandleDeleteBackendDeclarationCommand(declaration, s.state)
 	if err != nil {
@@ -39,9 +38,9 @@ func (s *Store) applyDeleteBackendDeclarationCommand(data []byte) error {
 
 func (s *Store) applyUpdateConfigSchema(data []byte) error {
 	schema := entity.ConfigSchema{}
-	err := jsoniter.Unmarshal(data, &schema)
+	err := json.Unmarshal(data, &schema)
 	if err != nil {
-		return fmt.Errorf("UpdateConfigSchemaCommand: %w", err)
+		return errors.Errorf("UpdateConfigSchemaCommand: %w", err)
 	}
 	state, err := service.SchemaService.HandleUpdateConfigSchema(schema, s.state)
 	if err != nil {
@@ -55,7 +54,7 @@ func (s *Store) applyModuleConnectedCommand(data []byte) error {
 	moduleConnected := cluster.ModuleConnected{}
 	err := json.Unmarshal(data, &moduleConnected)
 	if err != nil {
-		return fmt.Errorf("ModuleConnectedCommand: %w", err)
+		return errors.Errorf("ModuleConnectedCommand: %w", err)
 	}
 	state, err := service.ClusterStateService.HandleModuleConnectedCommand(moduleConnected, s.state)
 	if err != nil {
