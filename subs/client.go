@@ -36,9 +36,10 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string
 		}
 		if applyLogResponse.ApplyError != "" {
 			log.WithMetadata(map[string]interface{}{
-				"comment":    applyLogResponse.Comment,
-				"applyError": applyLogResponse.ApplyError,
-			}).Warn(codes.SyncApplyError, "apply UpdateBackendDeclarationCommand")
+				"comment":     applyLogResponse.Comment,
+				"applyError":  applyLogResponse.ApplyError,
+				"commandName": "UpdateBackendDeclarationCommand",
+			}).Warn(codes.SyncApplyError, "apply command")
 			return applyLogResponse.ApplyError
 		}
 	}

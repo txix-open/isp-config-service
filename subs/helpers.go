@@ -20,8 +20,9 @@ func (h *socketEventHandler) SyncApplyCommand(command []byte, commandName string
 	}
 	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
 		log.WithMetadata(map[string]interface{}{
-			"comment":    applyLogResponse.Comment,
-			"applyError": applyLogResponse.ApplyError,
-		}).Warnf(codes.SyncApplyError, "apply %s", commandName)
+			"comment":     applyLogResponse.Comment,
+			"applyError":  applyLogResponse.ApplyError,
+			"commandName": commandName,
+		}).Warnf(codes.SyncApplyError, "apply command")
 	}
 }
