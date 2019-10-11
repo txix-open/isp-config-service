@@ -14,9 +14,18 @@ func (cs *CommonConfigStore) Delete(config entity.CommonConfig) {
 	// TODO
 }
 
-func (cs *CommonConfigStore) GetById(id int64) (*entity.CommonConfig, error) {
-	// TODO
-	return nil, nil
+func (cs *CommonConfigStore) GetByIds(ids []string) []entity.CommonConfig {
+	if len(ids) == 0 {
+		return nil
+	}
+	idsMap := StringsToMap(ids)
+	configs := make([]entity.CommonConfig, 0, len(ids))
+	for _, config := range cs.configs {
+		if _, found := idsMap[config.Id]; found {
+			configs = append(configs, config)
+		}
+	}
+	return configs
 }
 
 func NewCommonConfigStore() *CommonConfigStore {

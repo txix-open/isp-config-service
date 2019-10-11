@@ -25,6 +25,7 @@ type Store struct {
 }
 
 func (s *Store) Apply(l *raft.Log) interface{} {
+	var returnError error
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if len(l.Data) < 8 {
@@ -34,12 +35,17 @@ func (s *Store) Apply(l *raft.Log) interface{} {
 	if handler, ok := s.handlers[command]; ok {
 		err := handler(l.Data[8:])
 		if err != nil {
-			log.Fatalf(codes.ApplyLogCommandError, "apply log command: %v", err)
+			returnError = err
 		}
 	} else {
 		log.Fatalf(codes.ApplyLogCommandError, "unknown log command %s", command)
 	}
-	return nil
+
+	var logResponse cluster.ApplyLogResponse
+	if returnError != nil {
+		logResponse.ApplyError = returnError.Error()
+	}
+	return logResponse
 }
 
 func (s *Store) Snapshot() (raft.FSMSnapshot, error) {
@@ -59,7 +65,7 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 }
 
 func (s *Store) GetReadState() state.ReadState {
-	return &s.state
+	return s.state
 }
 
 func (s *Store) VisitReadState(f func(state.ReadState)) {
@@ -105,6 +111,7 @@ func NewStateStore(st state.State) *Store {
 	store.handlers = map[uint64]func([]byte) error{
 		cluster.UpdateBackendDeclarationCommand: store.applyUpdateBackendDeclarationCommand,
 		cluster.DeleteBackendDeclarationCommand: store.applyDeleteBackendDeclarationCommand,
+		cluster.ModuleConnectedCommand:          store.applyModuleConnectedCommand,
 		cluster.UpdateConfigSchemaCommand:       store.applyUpdateConfigSchema,
 	}
 	return store

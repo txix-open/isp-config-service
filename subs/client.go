@@ -35,18 +35,23 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string
 	})
 	if changed {
 		command := cluster.PrepareUpdateBackendDeclarationCommand(declaration)
-		i, err := h.cluster.SyncApply(command)
+		applyLogResponse, err := h.cluster.SyncApply(command)
 		if err != nil {
+			return err.Error()
+		}
+		if applyLogResponse.ApplyError != "" {
 			log.WithMetadata(map[string]interface{}{
-				"answer": i,
-			}).Warnf(codes.SyncApplyError, "apply UpdateBackendDeclarationCommand %v", err)
+				"comment":     applyLogResponse.Comment,
+				"applyError":  applyLogResponse.ApplyError,
+				"commandName": "UpdateBackendDeclarationCommand",
+			}).Warn(codes.SyncApplyError, "apply command")
+			return applyLogResponse.ApplyError
 		}
 	}
 	return Ok
 }
 
 func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte) string {
-
 	moduleName, err := conn.Parameters()
 	log.Debugf(0, "handleModuleRequirements moduleName: %s", moduleName) // REMOVE
 	if err != nil {

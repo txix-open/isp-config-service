@@ -3,6 +3,7 @@ package state
 import (
 	"github.com/integration-system/isp-lib/structure"
 	"isp-config-service/entity"
+	"time"
 )
 
 type State struct {
@@ -18,6 +19,7 @@ type ReadState interface {
 	GetModuleAddresses(moduleName string) []structure.AddressConfiguration
 	GetRoutes() structure.RoutingConfig
 	BackendExist(backend structure.BackendDeclaration) (exist bool)
+	GetCompiledConfig(moduleName string) (map[string]interface{}, error)
 	GetModuleByName(string) (entity.Module, bool)
 }
 
@@ -63,6 +65,48 @@ func (s *State) DeleteBackend(backend structure.BackendDeclaration) (deleted boo
 
 func (s State) BackendExist(backend structure.BackendDeclaration) (exist bool) {
 	return s.mesh.BackendExist(backend)
+}
+
+func (s State) GetCompiledConfig(moduleName string) (map[string]interface{}, error) {
+	module, err := s.modules.GetByName(moduleName)
+	if err != nil {
+		return nil, err
+	}
+	config, err := s.configs.GetActiveByModuleId(module.Id)
+	if err != nil {
+		return nil, err
+	}
+	commonConfigs := s.commonConfigs.GetByIds(config.CommonConfigs)
+	configsToMerge := make([]map[string]interface{}, 0, len(commonConfigs))
+	for _, common := range commonConfigs {
+		configsToMerge = append(configsToMerge, common.Data)
+	}
+	configsToMerge = append(configsToMerge, config.Data)
+
+	resultData := MergeNestedMaps(configsToMerge...)
+	return resultData, nil
+}
+
+func (s State) UpdateModuleLastConnected(moduleName string) entity.Module {
+	existedModule, err := s.modules.GetByName(moduleName)
+	if err != nil {
+		module := s.modules.Create(moduleName)
+		return module
+	}
+	existedModule.LastConnectedAt = time.Now()
+	s.modules.Update(*existedModule)
+	return *existedModule
+}
+
+func (s State) UpdateModuleLastDisconnected(moduleName string) entity.Module {
+	existedModule, err := s.modules.GetByName(moduleName)
+	if err != nil {
+		module := s.modules.Create(moduleName)
+		return module
+	}
+	existedModule.LastDisconnectedAt = time.Now()
+	s.modules.Update(*existedModule)
+	return *existedModule
 }
 
 func (s State) GetModuleByName(moduleName string) (entity.Module, bool) {

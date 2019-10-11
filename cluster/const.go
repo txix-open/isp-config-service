@@ -3,7 +3,6 @@ package cluster
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
@@ -15,12 +14,14 @@ const (
 
 	TokenParam   = "token"
 	ClusterParam = "cluster"
+	Ok           = "ok"
 )
 const (
 	_ = iota
 	UpdateBackendDeclarationCommand
 	DeleteBackendDeclarationCommand
 	UpdateConfigSchemaCommand
+	ModuleConnectedCommand
 )
 
 func PrepareUpdateBackendDeclarationCommand(backend structure.BackendDeclaration) []byte {
@@ -29,6 +30,10 @@ func PrepareUpdateBackendDeclarationCommand(backend structure.BackendDeclaration
 
 func PrepareDeleteBackendDeclarationCommand(backend structure.BackendDeclaration) []byte {
 	return prepareCommand(DeleteBackendDeclarationCommand, backend)
+}
+
+func PrepareModuleConnectedCommand(moduleName string) []byte {
+	return prepareCommand(ModuleConnectedCommand, ModuleConnected{ModuleName: moduleName})
 }
 
 func PrepareUpdateConfigSchemaCommand(schema entity.ConfigSchema) []byte {

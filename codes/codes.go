@@ -7,7 +7,10 @@ const (
 	ShutdownHttpServerError = 0
 	ShutdownHttpServerInfo  = 0
 
-	SocketIoError = 0
+	SocketIoError     = 0
+	SocketIoEmitError = 0
+
+	DatabaseOperationError = 0
 
 	// Raft
 	InitRaftError              = 0

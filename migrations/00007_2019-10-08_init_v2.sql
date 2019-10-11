@@ -19,7 +19,9 @@ ALTER TABLE config_schemas
     ALTER COLUMN id TYPE varchar(255);
 
 ALTER TABLE modules
-    ALTER COLUMN id TYPE varchar(255);
+    ALTER COLUMN id TYPE varchar(255),
+    DROP COLUMN active,
+    DROP COLUMN instance_id;
 
 -- Constraints
 
@@ -40,7 +42,6 @@ CREATE TABLE common_configs
     name        VARCHAR(255) NOT NULL DEFAULT 'unnamed',
     description TEXT,
     version     int4         NOT NULL,
-    active      bool         NOT NULL DEFAULT false,
     created_at  timestamp    NOT NULL DEFAULT (now() at time zone 'utc'),
     updated_at  timestamp    NOT NULL DEFAULT (now() at time zone 'utc'),
     data        jsonb        NOT NULL DEFAULT '{}'

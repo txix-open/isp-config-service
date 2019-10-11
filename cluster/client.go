@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
+	jsoniter "github.com/json-iterator/go"
 	"isp-config-service/codes"
 	"isp-config-service/raft"
 	"strconv"
@@ -15,6 +16,7 @@ var (
 	ErrNoLeader                   = errors.New("no leader in cluster")
 	ErrLeaderClientNotInitialized = errors.New("leader client not initialized")
 	ErrNotLeader                  = errors.New("node is not a leader")
+	json                          = jsoniter.ConfigFastest
 )
 
 const (
@@ -44,7 +46,14 @@ func (client *ClusterClient) Shutdown() error {
 	return client.r.GracefulShutdown()
 }
 
-func (client *ClusterClient) SyncApply(command []byte) (interface{}, error) {
+func (client *ClusterClient) IsLeader() bool {
+	client.leaderMu.RLock()
+	defer client.leaderMu.RUnlock()
+
+	return client.leaderState.isLeader
+}
+
+func (client *ClusterClient) SyncApply(command []byte) (*ApplyLogResponse, error) {
 	client.leaderMu.RLock()
 	defer client.leaderMu.RUnlock()
 
@@ -53,24 +62,42 @@ func (client *ClusterClient) SyncApply(command []byte) (interface{}, error) {
 	}
 
 	if client.leaderState.isLeader {
-		return client.r.SyncApply(command)
+		apply, err := client.r.SyncApply(command)
+		if err != nil {
+			return nil, err
+		}
+		logResponse := apply.(ApplyLogResponse)
+		return &logResponse, err
 	} else {
 		if client.leaderClient == nil {
 			return nil, ErrLeaderClientNotInitialized
 		}
-		return client.leaderClient.Send(command, defaultApplyTimeout)
+		response, err := client.leaderClient.Send(command, defaultApplyTimeout)
+		if err != nil {
+			return nil, err
+		}
+		var logResponse ApplyLogResponse
+		err = json.Unmarshal([]byte(response), &logResponse)
+		if err != nil {
+			return nil, err
+		}
+		return &logResponse, nil
 	}
 }
 
-func (client *ClusterClient) SyncApplyOnLeader(command []byte) (interface{}, error) {
+func (client *ClusterClient) SyncApplyOnLeader(command []byte) (*ApplyLogResponse, error) {
 	client.leaderMu.RLock()
 	defer client.leaderMu.RUnlock()
 
 	if !client.leaderState.isLeader {
 		return nil, ErrNotLeader
 	}
-
-	return client.r.SyncApply(command)
+	apply, err := client.r.SyncApply(command)
+	if err != nil {
+		return nil, err
+	}
+	logResponse := apply.(ApplyLogResponse)
+	return &logResponse, err
 }
 
 func (client *ClusterClient) listenLeader() {
@@ -97,7 +124,7 @@ func (client *ClusterClient) listenLeader() {
 				}
 				if err != nil {
 					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader err: %v", err)
-				} else if response != "ok" {
+				} else if response != Ok {
 					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader response: %s", response)
 				}
 			}(client.declaration)
@@ -106,8 +133,17 @@ func (client *ClusterClient) listenLeader() {
 		} else if n.LeaderElected && n.IsLeader {
 			go func(declaration structure.BackendDeclaration) {
 				command := PrepareUpdateBackendDeclarationCommand(declaration)
-				i, err := client.SyncApply(command)
-				log.Debugf(0, "cluster.SyncApply announce myself:%v, %v", i, err)
+
+				applyLogResponse, err := client.SyncApply(command)
+				if err != nil {
+					log.Warnf(codes.SyncApplyError, "cluster.SyncApply announce myself: %v", err)
+				}
+				if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
+					log.WithMetadata(map[string]interface{}{
+						"comment":    applyLogResponse.Comment,
+						"applyError": applyLogResponse.ApplyError,
+					}).Warn(codes.SyncApplyError, "cluster.SyncApply announce myself")
+				}
 			}(client.declaration)
 		}
 		client.leaderState = leaderState{
