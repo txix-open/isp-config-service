@@ -1,14 +1,12 @@
 package subs
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/asaskevich/govalidator"
 	"github.com/integration-system/isp-lib/bootstrap"
 	schema2 "github.com/integration-system/isp-lib/config/schema"
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
-	jsoniter "github.com/json-iterator/go"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
 	"isp-config-service/entity"
@@ -81,7 +79,7 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 	}
 
 	configSchema := schema2.ConfigSchema{}
-	if err := jsoniter.Unmarshal(data, &configSchema); err != nil {
+	if err := json.Unmarshal(data, &configSchema); err != nil {
 		return err.Error()
 	}
 	module := new(entity.Module)
