@@ -59,7 +59,7 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 }
 
 func (s *Store) GetReadState() state.ReadState {
-	return s.state
+	return &s.state
 }
 
 func (s *Store) VisitReadState(f func(state.ReadState)) {
@@ -105,6 +105,7 @@ func NewStateStore(st state.State) *Store {
 	store.handlers = map[uint64]func([]byte) error{
 		cluster.UpdateBackendDeclarationCommand: store.applyUpdateBackendDeclarationCommand,
 		cluster.DeleteBackendDeclarationCommand: store.applyDeleteBackendDeclarationCommand,
+		cluster.UpdateConfigSchemaCommand:       store.applyUpdateConfigSchema,
 	}
 	return store
 }

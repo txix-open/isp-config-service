@@ -27,6 +27,7 @@ func (h *socketEventHandler) SubscribeAll() {
 		OnConnect(h.handleConnect).
 		OnDisconnect(h.handleDisconnect).
 		OnError(h.handleError).
+		OnWithAck(utils.ModuleSendConfigSchema, h.handleConfigSchema).
 		OnWithAck(cluster.ApplyCommandEvent, h.applyCommandOnLeader).
 		OnWithAck(utils.ModuleReady, h.handleModuleReady).
 		OnWithAck(utils.ModuleSendRequirements, h.handleModuleRequirements)

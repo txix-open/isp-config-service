@@ -1,6 +1,8 @@
 package state
 
-import "github.com/integration-system/isp-lib/structure"
+import (
+	"github.com/integration-system/isp-lib/structure"
+)
 
 type Mesh struct {
 	// { "ModuleName": { "address": BackendDeclaration, ...}, ... }
