@@ -1,10 +1,10 @@
 database:
-  address: "10.250.9.10"
-  schema: "config_test_service"
-  database: "dev"
+  address: "127.0.0.1"
+  schema: "config_service"
+  database: "test"
   port: "5432"
-  username: "dev"
-  password: "5FvDf67Lv275sqhKsAKfHitR"
+  username: "test"
+  password: "password"
   createSchema: true
 
 moduleName: "config"
@@ -14,13 +14,13 @@ grpcOuterAddress:
 
 ws:
   rest:
-    port: "9011"
+    port: "9001"
     ip: "127.0.0.1"
   grpc:
-    port: "9022"
+    port: "9092"
     ip: "127.0.0.1"
   raft:
-    port: "9002"
+    port: "9003"
     ip: "0.0.0.0"
 
 metrics:
@@ -35,10 +35,6 @@ metrics:
 cluster:
   dataDir: ./data
   inMemory: true
-  outerAddress: 127.0.0.1:9002
+  outerAddress: 127.0.0.1:9003
   peers:
-    - 127.0.0.1:9002
     - 127.0.0.1:9003
-    - 127.0.0.1:9004
-#    - 127.0.0.1:9006
-#    - 127.0.0.1:9001
