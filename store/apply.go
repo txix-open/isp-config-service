@@ -8,58 +8,54 @@ import (
 	"isp-config-service/service"
 )
 
-func (s *Store) applyUpdateBackendDeclarationCommand(data []byte) error {
+func (s *Store) applyUpdateBackendDeclarationCommand(data []byte) (interface{}, error) {
 	declaration := structure.BackendDeclaration{}
 	err := json.Unmarshal(data, &declaration)
 	if err != nil {
-		return errors.Errorf("UpdateBackendDeclarationCommand: %w", err)
+		return nil, errors.WithMessage(err, "unmarshal structure.BackendDeclaration")
 	}
-	state, err := service.ClusterStateService.HandleUpdateBackendDeclarationCommand(declaration, s.state)
+	err = service.ClusterMeshService.HandleUpdateBackendDeclarationCommand(declaration, s.state)
 	if err != nil {
-		return errors.Errorf("UpdateBackendDeclarationCommand: %w", err)
+		return nil, errors.WithMessage(err, "update backend declaration")
 	}
-	s.state = state
-	return nil
+	return nil, nil
 }
 
-func (s *Store) applyDeleteBackendDeclarationCommand(data []byte) error {
+func (s *Store) applyDeleteBackendDeclarationCommand(data []byte) (interface{}, error) {
 	declaration := structure.BackendDeclaration{}
 	err := json.Unmarshal(data, &declaration)
 	if err != nil {
-		return errors.Errorf("DeleteBackendDeclarationCommand: %w", err)
+		return nil, errors.WithMessage(err, "unmarshal structure.BackendDeclaration")
 	}
-	state, err := service.ClusterStateService.HandleDeleteBackendDeclarationCommand(declaration, s.state)
+	err = service.ClusterMeshService.HandleDeleteBackendDeclarationCommand(declaration, s.state)
 	if err != nil {
-		return err
+		return nil, errors.WithMessage(err, "delete backend declaration")
 	}
-	s.state = state
-	return nil
+	return nil, nil
 }
 
-func (s *Store) applyUpdateConfigSchema(data []byte) error {
+func (s *Store) applyUpdateConfigSchema(data []byte) (interface{}, error) {
 	schema := entity.ConfigSchema{}
 	err := json.Unmarshal(data, &schema)
 	if err != nil {
-		return errors.Errorf("UpdateConfigSchemaCommand: %w", err)
+		return nil, errors.WithMessage(err, "unmarshal entity.ConfigSchema")
 	}
-	state, err := service.SchemaService.HandleUpdateConfigSchema(schema, s.state)
+	err = service.SchemaService.HandleUpdateConfigSchema(schema, s.state)
 	if err != nil {
-		return err
+		return nil, errors.WithMessage(err, "update config schema")
 	}
-	s.state = state
-	return nil
+	return nil, nil
 }
 
-func (s *Store) applyModuleConnectedCommand(data []byte) error {
+func (s *Store) applyModuleConnectedCommand(data []byte) (interface{}, error) {
 	moduleConnected := cluster.ModuleConnected{}
 	err := json.Unmarshal(data, &moduleConnected)
 	if err != nil {
-		return errors.Errorf("ModuleConnectedCommand: %w", err)
+		return nil, errors.WithMessage(err, "unmarshal cluster.ModuleConnected")
 	}
-	state, err := service.ClusterStateService.HandleModuleConnectedCommand(moduleConnected, s.state)
+	err = service.ModuleRegistryService.HandleModuleConnectedCommand(moduleConnected, s.state)
 	if err != nil {
-		return err
+		return nil, errors.WithMessage(err, "register module")
 	}
-	s.state = state
-	return nil
+	return nil, nil
 }

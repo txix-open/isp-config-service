@@ -25,9 +25,9 @@ func (rs *routesService) HandleDisconnect(connId string) {
 	holder.Socket.Rooms().LeaveByConnId(connId, RoutesSubscribersRoom)
 }
 
-func (rs *routesService) SubscribeRoutes(conn ws.Conn, state state.ReadState) {
+func (rs *routesService) SubscribeRoutes(conn ws.Conn, state state.ReadonlyState) {
 	holder.Socket.Rooms().Join(conn, RoutesSubscribersRoom)
-	routes := state.GetRoutes()
+	routes := state.Mesh().GetRoutes()
 	err := rs.sendRoutes(conn, utils.ConfigSendRoutesWhenConnected, routes)
 	if err != nil {
 		log.Errorf(codes.RoutesServiceSendRoutesError, "send routes %v", err)
@@ -35,8 +35,8 @@ func (rs *routesService) SubscribeRoutes(conn ws.Conn, state state.ReadState) {
 
 }
 
-func (rs *routesService) BroadcastRoutes(state state.ReadState) {
-	routes := state.GetRoutes()
+func (rs *routesService) BroadcastRoutes(state state.ReadonlyState) {
+	routes := state.Mesh().GetRoutes()
 	err := rs.broadcastRoutes(utils.ConfigSendRoutesChanged, routes)
 	if err != nil {
 		log.Errorf(codes.RoutesServiceSendRoutesError, "broadcast routes %v", err)

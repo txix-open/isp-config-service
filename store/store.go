@@ -19,31 +19,38 @@ var (
 )
 
 type Store struct {
-	state    state.State
+	state    *state.State
 	lock     sync.RWMutex
-	handlers map[uint64]func([]byte) error
+	handlers map[uint64]func([]byte) (interface{}, error)
 }
 
 func (s *Store) Apply(l *raft.Log) interface{} {
-	var returnError error
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
 	if len(l.Data) < 8 {
-		log.Fatalf(codes.ApplyLogCommandError, "invalid log data command: %s", l.Data)
+		log.Errorf(codes.ApplyLogCommandError, "invalid log data command: %s", l.Data)
 	}
 	command := binary.BigEndian.Uint64(l.Data[:8])
+
+	var (
+		result interface{}
+		err    error
+	)
 	if handler, ok := s.handlers[command]; ok {
-		err := handler(l.Data[8:])
-		if err != nil {
-			returnError = err
-		}
+		result, err = handler(l.Data[8:])
 	} else {
-		log.Fatalf(codes.ApplyLogCommandError, "unknown log command %s", command)
+		log.Errorf(codes.ApplyLogCommandError, "unknown log command %s", command)
 	}
 
-	var logResponse cluster.ApplyLogResponse
-	if returnError != nil {
-		logResponse.ApplyError = returnError.Error()
+	bytes, e := json.Marshal(result)
+	if e != nil {
+		panic(e) // must never occurred
+	}
+
+	logResponse := cluster.ApplyLogResponse{Result: bytes}
+	if err != nil {
+		logResponse.ApplyError = err.Error()
 	}
 	return logResponse
 }
@@ -60,21 +67,18 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 	if err := json.NewDecoder(rc).Decode(&state2); err != nil {
 		return errors.WithMessage(err, "unmarshal store")
 	}
-	s.state = state2
+	s.state = &state2
 	return nil
 }
 
-func (s *Store) GetReadState() state.ReadState {
-	return s.state
-}
-
-func (s *Store) VisitReadState(f func(state.ReadState)) {
+func (s *Store) VisitReadonlyState(f func(state.ReadonlyState)) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	f(s.GetReadState())
+
+	f(*s.state)
 }
 
-func (s *Store) VisitState(f func(state.State)) {
+func (s *Store) VisitState(f func(writableState state.WritableState)) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	f(s.state)
@@ -106,9 +110,9 @@ func (f *fsmSnapshot) Release() {}
 
 func NewStateStore(st state.State) *Store {
 	store := &Store{
-		state: st,
+		state: &st,
 	}
-	store.handlers = map[uint64]func([]byte) error{
+	store.handlers = map[uint64]func([]byte) (interface{}, error){
 		cluster.UpdateBackendDeclarationCommand: store.applyUpdateBackendDeclarationCommand,
 		cluster.DeleteBackendDeclarationCommand: store.applyDeleteBackendDeclarationCommand,
 		cluster.ModuleConnectedCommand:          store.applyModuleConnectedCommand,

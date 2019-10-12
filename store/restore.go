@@ -1,30 +1,29 @@
 package store
 
 import (
-	log "github.com/integration-system/isp-log"
-	"isp-config-service/codes"
+	"github.com/pkg/errors"
 	"isp-config-service/model"
 	"isp-config-service/store/state"
 )
 
-func NewStateFromRepository() state.State {
+func NewStateFromRepository() (state.State, error) {
 	configs, err := model.ConfigRep.Snapshot()
 	if err != nil {
-		log.Fatalf(codes.RestoreFromRepositoryError, "config repository: %s", err)
+		return state.State{}, errors.WithMessage(err, "restore configs")
 	}
 	schemas, err := model.SchemaRep.Snapshot()
 	if err != nil {
-		log.Fatalf(codes.RestoreFromRepositoryError, "schema repository: %s", err)
+		return state.State{}, errors.WithMessage(err, "load config schemas")
 	}
 	modules, err := model.ModuleRep.Snapshot()
 	if err != nil {
-		log.Fatalf(codes.RestoreFromRepositoryError, "module repository: %s", err)
+		return state.State{}, errors.WithMessage(err, "load modules registry")
 	}
 	commonConfigs, err := model.CommonConfigRep.Snapshot()
 	if err != nil {
-		log.Fatalf(codes.RestoreFromRepositoryError, "module repository: %s", err)
+		return state.State{}, errors.WithMessage(err, "load common configs")
 	}
 
 	st := state.NewStateFromSnapshot(configs, schemas, modules, commonConfigs)
-	return st
+	return st, nil
 }

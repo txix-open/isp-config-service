@@ -8,22 +8,24 @@ import (
 	"isp-config-service/store/state"
 )
 
-var SchemaService schemaService
+var (
+	SchemaService schemaService
+)
 
 type schemaService struct{}
 
-func (schemaService) HandleUpdateConfigSchema(schema entity.ConfigSchema, state state.State) (state.State, error) {
-	module := state.GetModuleById(schema.ModuleId)
+func (schemaService) HandleUpdateConfigSchema(schema entity.ConfigSchema, state state.WritableState) error {
+	module := state.Modules().GetById(schema.ModuleId)
 	if module == nil {
-		return state, errors.Errorf("module with id %s not found", schema.ModuleId)
+		return errors.Errorf("module with id %s not found", schema.ModuleId)
 	}
 
 	if holder.ClusterClient.IsLeader() {
-		schema = state.UpdateSchema(schema)
+		schema = state.WritableSchemas().Upsert(schema)
 		_, err := model.SchemaRep.Upsert(schema)
 		if err != nil {
-			return state, err
+			return err
 		}
 	}
-	return state, nil
+	return nil
 }

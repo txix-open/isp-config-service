@@ -4,8 +4,28 @@ import (
 	"isp-config-service/entity"
 )
 
+type WriteableSchemaStore interface {
+	ReadonlySchemaStore
+	Upsert(schema entity.ConfigSchema) entity.ConfigSchema
+}
+
+type ReadonlySchemaStore interface {
+	GetByModuleId(moduleId int32) *entity.ConfigSchema
+	GetById(id int64) *entity.ConfigSchema
+}
+
 type SchemaStore struct {
 	schemas []entity.ConfigSchema
+}
+
+func (ss SchemaStore) GetByModuleId(moduleId int32) *entity.ConfigSchema {
+	// TODO
+	return nil
+}
+
+func (ss SchemaStore) GetById(id int64) *entity.ConfigSchema {
+	// TODO
+	return nil
 }
 
 func (ss *SchemaStore) Upsert(schema entity.ConfigSchema) entity.ConfigSchema {
@@ -19,16 +39,6 @@ func (ss *SchemaStore) Upsert(schema entity.ConfigSchema) entity.ConfigSchema {
 	schema.Id = GenerateId()
 	ss.schemas = append(ss.schemas, schema)
 	return schema
-}
-
-func (ss *SchemaStore) GetByModuleId(moduleId int32) (*entity.ConfigSchema, error) {
-	// TODO
-	return nil, nil
-}
-
-func (ss *SchemaStore) GetById(id int64) (*entity.ConfigSchema, error) {
-	// TODO
-	return nil, nil
 }
 
 func NewSchemaStore() *SchemaStore {

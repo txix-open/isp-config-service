@@ -5,19 +5,22 @@ import (
 	"time"
 )
 
+type WriteableModuleStore interface {
+	ReadonlyModuleStore
+	Update(module entity.Module)
+	Create(name string) entity.Module
+}
+
+type ReadonlyModuleStore interface {
+	GetByName(name string) *entity.Module
+	GetById(id string) *entity.Module
+}
+
 type ModuleStore struct {
 	modules []entity.Module
 }
 
-func (ms *ModuleStore) Update(module entity.Module) {
-	for i := range ms.modules {
-		if ms.modules[i].Id == module.Id {
-			ms.modules[i] = module
-		}
-	}
-}
-
-func (ms *ModuleStore) GetByName(name string) *entity.Module {
+func (ms ModuleStore) GetByName(name string) *entity.Module {
 	for _, module := range ms.modules {
 		if module.Name == name {
 			return &module
@@ -26,13 +29,21 @@ func (ms *ModuleStore) GetByName(name string) *entity.Module {
 	return nil
 }
 
-func (ms *ModuleStore) GetById(id string) *entity.Module {
+func (ms ModuleStore) GetById(id string) *entity.Module {
 	for _, module := range ms.modules {
 		if module.Id == id {
 			return &module
 		}
 	}
 	return nil
+}
+
+func (ms *ModuleStore) Update(module entity.Module) {
+	for i := range ms.modules {
+		if ms.modules[i].Id == module.Id {
+			ms.modules[i] = module
+		}
+	}
 }
 
 func (ms *ModuleStore) Create(name string) entity.Module {

@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ClusterClient *cluster.ClusterClient
+	ClusterClient *cluster.Client
 	Socket        *ws.WebsocketServer
 	HttpServer    *http.Server
 )

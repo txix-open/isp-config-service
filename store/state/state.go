@@ -1,10 +1,7 @@
 package state
 
 import (
-	"github.com/integration-system/isp-lib/structure"
-	"github.com/pkg/errors"
 	"isp-config-service/entity"
-	"time"
 )
 
 type State struct {
@@ -15,13 +12,61 @@ type State struct {
 	commonConfigs *CommonConfigStore
 }
 
-type ReadState interface {
-	CheckBackendChanged(backend structure.BackendDeclaration) (changed bool)
-	GetModuleAddresses(moduleName string) []structure.AddressConfiguration
-	GetRoutes() structure.RoutingConfig
-	BackendExist(backend structure.BackendDeclaration) (exist bool)
-	GetCompiledConfig(moduleName string) (map[string]interface{}, error)
-	GetModuleByName(string) *entity.Module
+func (s State) Mesh() ReadonlyMesh {
+	return s.mesh
+}
+
+func (s State) Configs() ReadonlyConfigStore {
+	return s.configs
+}
+
+func (s State) Schemas() ReadonlySchemaStore {
+	return s.schemas
+}
+
+func (s State) Modules() ReadonlyModuleStore {
+	return s.modules
+}
+
+func (s State) CommonConfigs() ReadonlyCommonConfigStore {
+	return s.commonConfigs
+}
+
+func (s *State) WritableMesh() WriteableMesh {
+	return s.mesh
+}
+
+func (s *State) WritableConfigs() WriteableConfigStore {
+	return s.configs
+}
+
+func (s *State) WritableSchemas() WriteableSchemaStore {
+	return s.schemas
+}
+
+func (s *State) WritableModules() WriteableModuleStore {
+	return s.modules
+}
+
+func (s *State) WritableCommonConfigs() WriteableCommonConfigStore {
+	return s.commonConfigs
+}
+
+type WritableState interface {
+	ReadonlyState
+	WritableMesh() WriteableMesh
+	WritableConfigs() WriteableConfigStore
+	WritableSchemas() WriteableSchemaStore
+	WritableModules() WriteableModuleStore
+	WritableCommonConfigs() WriteableCommonConfigStore
+}
+
+type ReadonlyState interface {
+	Mesh() ReadonlyMesh
+	Configs() ReadonlyConfigStore
+	Schemas() ReadonlySchemaStore
+	Modules() ReadonlyModuleStore
+	CommonConfigs() ReadonlyCommonConfigStore
 }
 
 func NewState() State {
@@ -42,82 +87,4 @@ func NewStateFromSnapshot(configs []entity.Config, schemas []entity.ConfigSchema
 		modules:       &ModuleStore{modules: modules},
 		commonConfigs: &CommonConfigStore{configs: commConfigs},
 	}
-}
-
-func (s State) CheckBackendChanged(backend structure.BackendDeclaration) (changed bool) {
-	return s.mesh.CheckBackendChanged(backend)
-}
-
-func (s *State) UpsertBackend(backend structure.BackendDeclaration) (changed bool) {
-	return s.mesh.UpsertBackend(backend)
-}
-
-func (s State) GetModuleAddresses(moduleName string) []structure.AddressConfiguration {
-	return s.mesh.GetModuleAddresses(moduleName)
-}
-
-func (s State) GetRoutes() structure.RoutingConfig {
-	return s.mesh.GetRoutes()
-}
-
-func (s *State) DeleteBackend(backend structure.BackendDeclaration) (deleted bool) {
-	return s.mesh.DeleteBackend(backend)
-}
-
-func (s State) BackendExist(backend structure.BackendDeclaration) (exist bool) {
-	return s.mesh.BackendExist(backend)
-}
-
-func (s State) GetCompiledConfig(moduleName string) (map[string]interface{}, error) {
-	module := s.modules.GetByName(moduleName)
-	if module == nil {
-		return nil, errors.Errorf("module with name %s not found", moduleName)
-	}
-	config := s.configs.GetActiveByModuleId(module.Id)
-	if config == nil {
-		return nil, errors.Errorf("no active configs for moduleId %s", module.Id)
-	}
-	commonConfigs := s.commonConfigs.GetByIds(config.CommonConfigs)
-	configsToMerge := make([]map[string]interface{}, 0, len(commonConfigs))
-	for _, common := range commonConfigs {
-		configsToMerge = append(configsToMerge, common.Data)
-	}
-	configsToMerge = append(configsToMerge, config.Data)
-
-	resultData := MergeNestedMaps(configsToMerge...)
-	return resultData, nil
-}
-
-func (s *State) UpdateModuleLastConnected(moduleName string) entity.Module {
-	existedModule := s.modules.GetByName(moduleName)
-	if existedModule == nil {
-		module := s.modules.Create(moduleName)
-		return module
-	}
-	existedModule.LastConnectedAt = time.Now()
-	s.modules.Update(*existedModule)
-	return *existedModule
-}
-
-func (s *State) UpdateModuleLastDisconnected(moduleName string) entity.Module {
-	existedModule := s.modules.GetByName(moduleName)
-	if existedModule == nil {
-		module := s.modules.Create(moduleName)
-		return module
-	}
-	existedModule.LastDisconnectedAt = time.Now()
-	s.modules.Update(*existedModule)
-	return *existedModule
-}
-
-func (s State) GetModuleByName(moduleName string) *entity.Module {
-	return s.modules.GetByName(moduleName)
-}
-
-func (s State) GetModuleById(moduleId string) *entity.Module {
-	return s.modules.GetById(moduleId)
-}
-
-func (s *State) UpdateSchema(schema entity.ConfigSchema) entity.ConfigSchema {
-	return s.schemas.Upsert(schema)
 }

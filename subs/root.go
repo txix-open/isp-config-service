@@ -24,7 +24,7 @@ var (
 
 type socketEventHandler struct {
 	socket  *ws.WebsocketServer
-	cluster *cluster.ClusterClient
+	cluster *cluster.Client
 	store   *store.Store
 }
 
@@ -52,8 +52,8 @@ func (h *socketEventHandler) handleConnect(conn ws.Conn) {
 	h.SyncApplyCommand(command, "ModuleConnectedCommand")
 
 	var config map[string]interface{}
-	h.store.VisitReadState(func(state state.ReadState) {
-		config, err = state.GetCompiledConfig(moduleName)
+	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
+		config, err = service.ConfigService.GetCompiledConfig(moduleName, state)
 	})
 	if err != nil {
 		EmitConn(conn, utils.ConfigError, err.Error())
@@ -84,7 +84,7 @@ func (h *socketEventHandler) handleError(conn ws.Conn, err error) {
 	log.Warnf(codes.SocketIoError, "socket.io: %v", err)
 }
 
-func NewSocketEventHandler(socket *ws.WebsocketServer, cluster *cluster.ClusterClient, store *store.Store) *socketEventHandler {
+func NewSocketEventHandler(socket *ws.WebsocketServer, cluster *cluster.Client, store *store.Store) *socketEventHandler {
 	return &socketEventHandler{
 		socket:  socket,
 		cluster: cluster,

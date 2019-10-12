@@ -66,7 +66,7 @@ func main() {
 	<-shutdownChan
 }
 
-func initWebsocket(bindAddress string, clusterClient *cluster.ClusterClient, raftStore *store.Store) {
+func initWebsocket(bindAddress string, clusterClient *cluster.Client, raftStore *store.Store) {
 	socket, err := ws.NewWebsocketServer()
 	if err != nil {
 		// TODO уйдет при миграции
@@ -86,15 +86,20 @@ func initWebsocket(bindAddress string, clusterClient *cluster.ClusterClient, raf
 	holder.HttpServer = httpServer
 }
 
-func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration, declaration structure.BackendDeclaration) (*cluster.ClusterClient, *store.Store) {
-	raftState := store.NewStateFromRepository()
+func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration, declaration structure.BackendDeclaration) (*cluster.Client, *store.Store) {
+	raftState, err := store.NewStateFromRepository()
+	if err != nil {
+		log.Fatal(codes.RestoreFromRepositoryError, err)
+		return nil, nil
+	}
 	raftStore := store.NewStateStore(raftState)
 	r, err := raft.NewRaft(bindAddress, clusterCfg, raftStore)
 	if err != nil {
 		log.Fatalf(codes.InitRaftError, "unable to create raft server. %v", err)
+		return nil, nil
 	}
 	clusterClient := cluster.NewRaftClusterClient(r, declaration, func(address string) {
-		raftStore.VisitState(func(s state.State) {
+		raftStore.VisitState(func(s state.WritableState) {
 			cfg := config.Get().(*conf.Configuration)
 			addr, err := net.ResolveTCPAddr("tcp", address)
 			if err != nil {
@@ -114,7 +119,7 @@ func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration, declarat
 			//
 			addressConfiguration := structure.AddressConfiguration{Port: strconv.Itoa(port), IP: addr.IP.String()}
 			back := structure.BackendDeclaration{ModuleName: cfg.ModuleName, Address: addressConfiguration}
-			_, err = service.ClusterStateService.HandleDeleteBackendDeclarationCommand(back, s)
+			err = service.ClusterMeshService.HandleDeleteBackendDeclarationCommand(back, s)
 			if err != nil {
 				log.Warnf(codes.DeleteBackendDeclarationError, "onClientDisconnect delete backend declaration. %v", err)
 			}

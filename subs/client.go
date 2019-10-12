@@ -28,8 +28,8 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string
 	}
 	conn.SetBackendDeclaration(declaration)
 	var changed bool
-	h.store.VisitReadState(func(state state.ReadState) {
-		changed = state.CheckBackendChanged(declaration)
+	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
+		changed = state.Mesh().CheckBackendChanged(declaration)
 	})
 	if changed {
 		command := cluster.PrepareUpdateBackendDeclarationCommand(declaration)
@@ -39,7 +39,7 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string
 		}
 		if applyLogResponse.ApplyError != "" {
 			log.WithMetadata(map[string]interface{}{
-				"comment":     applyLogResponse.Comment,
+				"comment":     applyLogResponse.Result,
 				"applyError":  applyLogResponse.ApplyError,
 				"commandName": "UpdateBackendDeclarationCommand",
 			}).Warn(codes.SyncApplyError, "apply command")
@@ -62,7 +62,7 @@ func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte)
 		return err.Error()
 	}
 
-	h.store.VisitReadState(func(state state.ReadState) {
+	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
 		if declaration.RequireRoutes {
 			service.RoutesService.SubscribeRoutes(conn, state)
 		}
@@ -83,8 +83,8 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 		return err.Error()
 	}
 	module := new(entity.Module)
-	h.store.VisitReadState(func(readState state.ReadState) {
-		module = readState.GetModuleByName(moduleName)
+	h.store.VisitReadonlyState(func(readState state.ReadonlyState) {
+		module = readState.Modules().GetByName(moduleName)
 	})
 	if module == nil {
 		return fmt.Sprintf("module with name %s not found", moduleName)

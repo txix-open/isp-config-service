@@ -17,10 +17,9 @@ type commonConfigRepPg struct {
 }
 
 func (r *commonConfigRepPg) Snapshot() ([]entity.CommonConfig, error) {
-	var configs []entity.CommonConfig
+	configs := make([]entity.CommonConfig, 0)
 	err := r.rxClient.Visit(func(db *pg.DB) error {
-		return db.Model(&configs).
-			Select()
+		return db.Model(&configs).Select()
 	})
 	return configs, err
 }

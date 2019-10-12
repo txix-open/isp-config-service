@@ -32,7 +32,7 @@ func (ds *discoveryService) HandleDisconnect(connId string) {
 	}
 }
 
-func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state.ReadState) {
+func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state.ReadonlyState) {
 	if len(events) == 0 {
 		return
 	}
@@ -41,7 +41,7 @@ func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state
 	ds.subs[conn.Id()] = events
 	holder.Socket.Rooms().Join(conn, events...)
 	for _, event := range events {
-		addressList := state.GetModuleAddresses(event)
+		addressList := state.Mesh().GetModuleAddresses(event)
 		event = utils.ModuleConnected(event)
 		err := ds.sendAddrList(conn, event, addressList)
 		if err != nil {
@@ -50,11 +50,11 @@ func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state
 	}
 }
 
-func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, state state.ReadState) {
+func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, state state.ReadonlyState) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 	event := utils.ModuleConnected(moduleName)
-	addressList := state.GetModuleAddresses(moduleName)
+	addressList := state.Mesh().GetModuleAddresses(moduleName)
 	err := ds.broadcastAddrList(moduleName, event, addressList)
 	if err != nil {
 		log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected %v", err)

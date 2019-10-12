@@ -24,7 +24,7 @@ const (
 	defaultApplyTimeout     = 3 * time.Second
 )
 
-type ClusterClient struct {
+type Client struct {
 	r *raft.Raft
 
 	leaderMu           sync.RWMutex
@@ -34,7 +34,7 @@ type ClusterClient struct {
 	onClientDisconnect func(string)
 }
 
-func (client *ClusterClient) Shutdown() error {
+func (client *Client) Shutdown() error {
 	client.leaderMu.Lock()
 	defer client.leaderMu.Unlock()
 
@@ -46,14 +46,14 @@ func (client *ClusterClient) Shutdown() error {
 	return client.r.GracefulShutdown()
 }
 
-func (client *ClusterClient) IsLeader() bool {
+func (client *Client) IsLeader() bool {
 	client.leaderMu.RLock()
 	defer client.leaderMu.RUnlock()
 
 	return client.leaderState.isLeader
 }
 
-func (client *ClusterClient) SyncApply(command []byte) (*ApplyLogResponse, error) {
+func (client *Client) SyncApply(command []byte) (*ApplyLogResponse, error) {
 	client.leaderMu.RLock()
 	defer client.leaderMu.RUnlock()
 
@@ -85,7 +85,7 @@ func (client *ClusterClient) SyncApply(command []byte) (*ApplyLogResponse, error
 	}
 }
 
-func (client *ClusterClient) SyncApplyOnLeader(command []byte) (*ApplyLogResponse, error) {
+func (client *Client) SyncApplyOnLeader(command []byte) (*ApplyLogResponse, error) {
 	client.leaderMu.RLock()
 	defer client.leaderMu.RUnlock()
 
@@ -100,7 +100,7 @@ func (client *ClusterClient) SyncApplyOnLeader(command []byte) (*ApplyLogRespons
 	return &logResponse, err
 }
 
-func (client *ClusterClient) listenLeader() {
+func (client *Client) listenLeader() {
 	for n := range client.r.LeaderCh() {
 		client.leaderMu.Lock()
 		if client.leaderState.leaderAddr != n.CurrentLeaderAddress {
@@ -140,7 +140,7 @@ func (client *ClusterClient) listenLeader() {
 				}
 				if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
 					log.WithMetadata(map[string]interface{}{
-						"comment":    applyLogResponse.Comment,
+						"comment":    applyLogResponse.Result,
 						"applyError": applyLogResponse.ApplyError,
 					}).Warn(codes.SyncApplyError, "cluster.SyncApply announce myself")
 				}
@@ -162,8 +162,8 @@ type leaderState struct {
 	leaderAddr    string
 }
 
-func NewRaftClusterClient(r *raft.Raft, declaration structure.BackendDeclaration, onLeaderDisconnect func(string)) *ClusterClient {
-	client := &ClusterClient{
+func NewRaftClusterClient(r *raft.Raft, declaration structure.BackendDeclaration, onLeaderDisconnect func(string)) *Client {
+	client := &Client{
 		r:                  r,
 		declaration:        declaration,
 		leaderState:        leaderState{},

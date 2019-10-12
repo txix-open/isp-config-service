@@ -17,10 +17,9 @@ type configRepPg struct {
 }
 
 func (r *configRepPg) Snapshot() ([]entity.Config, error) {
-	var configs []entity.Config
+	configs := make([]entity.Config, 0)
 	err := r.rxClient.Visit(func(db *pg.DB) error {
-		return db.Model(&configs).
-			Select()
+		return db.Model(&configs).Select()
 	})
 	return configs, err
 }

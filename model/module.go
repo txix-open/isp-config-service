@@ -17,10 +17,9 @@ type modulesRepPg struct {
 }
 
 func (r *modulesRepPg) Snapshot() ([]entity.Module, error) {
-	var modules []entity.Module
+	modules := make([]entity.Module, 0)
 	err := r.rxClient.Visit(func(db *pg.DB) error {
-		return db.Model(&modules).
-			Select()
+		return db.Model(&modules).Select()
 	})
 	return modules, err
 }

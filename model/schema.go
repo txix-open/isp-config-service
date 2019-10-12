@@ -16,10 +16,9 @@ type schemaRepPg struct {
 }
 
 func (r *schemaRepPg) Snapshot() ([]entity.ConfigSchema, error) {
-	var schemas []entity.ConfigSchema
+	schemas := make([]entity.ConfigSchema, 0)
 	err := r.rxClient.Visit(func(db *pg.DB) error {
-		return db.Model(&schemas).
-			Select()
+		return db.Model(&schemas).Select()
 	})
 	return schemas, err
 }
