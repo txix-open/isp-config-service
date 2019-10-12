@@ -112,6 +112,7 @@ func NewStateStore(st state.State) *Store {
 		cluster.UpdateBackendDeclarationCommand: store.applyUpdateBackendDeclarationCommand,
 		cluster.DeleteBackendDeclarationCommand: store.applyDeleteBackendDeclarationCommand,
 		cluster.ModuleConnectedCommand:          store.applyModuleConnectedCommand,
+		cluster.UpdateConfigSchemaCommand:       store.applyUpdateConfigSchema,
 	}
 	return store
 }

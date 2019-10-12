@@ -1,13 +1,24 @@
 package state
 
-import "isp-config-service/entity"
+import (
+	"isp-config-service/entity"
+)
 
 type SchemaStore struct {
 	schemas []entity.ConfigSchema
 }
 
-func (ss *SchemaStore) Upsert(schema entity.ConfigSchema) {
-	// TODO
+func (ss *SchemaStore) Upsert(schema entity.ConfigSchema) entity.ConfigSchema {
+	for key, value := range ss.schemas {
+		if value.ModuleId == schema.ModuleId {
+			schema.Id = value.Id
+			ss.schemas[key] = schema
+			return schema
+		}
+	}
+	schema.Id = GenerateId()
+	ss.schemas = append(ss.schemas, schema)
+	return schema
 }
 
 func (ss *SchemaStore) GetByModuleId(moduleId int32) (*entity.ConfigSchema, error) {

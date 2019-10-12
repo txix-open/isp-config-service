@@ -1,12 +1,15 @@
 package subs
 
 import (
+	"fmt"
 	"github.com/asaskevich/govalidator"
 	"github.com/integration-system/isp-lib/bootstrap"
+	schema2 "github.com/integration-system/isp-lib/config/schema"
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
+	"isp-config-service/entity"
 	"isp-config-service/service"
 	"isp-config-service/store/state"
 	"isp-config-service/ws"
@@ -68,8 +71,38 @@ func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte)
 	return Ok
 }
 
-func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) {
+func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) string {
+	moduleName, err := conn.Parameters()
+	log.Debugf(0, "handleModuleRequirements moduleName: %s", moduleName) // REMOVE
+	if err != nil {
+		return err.Error()
+	}
 
+	configSchema := schema2.ConfigSchema{}
+	if err := json.Unmarshal(data, &configSchema); err != nil {
+		return err.Error()
+	}
+	module := new(entity.Module)
+	h.store.VisitReadState(func(readState state.ReadState) {
+		module = readState.GetModuleByName(moduleName)
+	})
+	if module == nil {
+		return fmt.Sprintf("module with name %s not found", moduleName)
+	}
+
+	schema := entity.ConfigSchema{
+		ModuleId: module.Id,
+		Version:  configSchema.Version,
+		Schema:   configSchema.Schema,
+	}
+	command := cluster.PrepareUpdateConfigSchemaCommand(schema)
+	i, err := h.cluster.SyncApply(command)
+	if err != nil {
+		log.WithMetadata(map[string]interface{}{
+			"answer": i,
+		}).Warnf(codes.SyncApplyError, "apply ModuleSendConfigSchemaCommand %v", err)
+	}
+	return Ok
 }
 
 func (h *socketEventHandler) handleRequestConfig(conn ws.Conn, data []byte) {

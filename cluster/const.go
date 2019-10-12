@@ -6,6 +6,7 @@ import (
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
+	"isp-config-service/entity"
 )
 
 const (
@@ -19,6 +20,7 @@ const (
 	_ = iota
 	UpdateBackendDeclarationCommand
 	DeleteBackendDeclarationCommand
+	UpdateConfigSchemaCommand
 	ModuleConnectedCommand
 )
 
@@ -32,6 +34,10 @@ func PrepareDeleteBackendDeclarationCommand(backend structure.BackendDeclaration
 
 func PrepareModuleConnectedCommand(moduleName string) []byte {
 	return prepareCommand(ModuleConnectedCommand, ModuleConnected{ModuleName: moduleName})
+}
+
+func PrepareUpdateConfigSchemaCommand(schema entity.ConfigSchema) []byte {
+	return prepareCommand(UpdateConfigSchemaCommand, schema)
 }
 
 func prepareCommand(command uint64, payload interface{}) []byte {
