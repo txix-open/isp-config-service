@@ -25,23 +25,25 @@ func (rs *routesService) HandleDisconnect(connId string) {
 	holder.Socket.Rooms().LeaveByConnId(connId, RoutesSubscribersRoom)
 }
 
-func (rs *routesService) SubscribeRoutes(conn ws.Conn, state state.ReadonlyState) {
+func (rs *routesService) SubscribeRoutes(conn ws.Conn, mesh state.ReadonlyMesh) {
 	holder.Socket.Rooms().Join(conn, RoutesSubscribersRoom)
-	routes := state.Mesh().GetRoutes()
-	err := rs.sendRoutes(conn, utils.ConfigSendRoutesWhenConnected, routes)
-	if err != nil {
-		log.Errorf(codes.RoutesServiceSendRoutesError, "send routes %v", err)
-	}
-
+	routes := mesh.GetRoutes()
+	go func(conn ws.Conn, routes structure.RoutingConfig) {
+		err := rs.sendRoutes(conn, utils.ConfigSendRoutesWhenConnected, routes)
+		if err != nil {
+			log.Errorf(codes.RoutesServiceSendRoutesError, "send routes %v", err)
+		}
+	}(conn, routes)
 }
 
-func (rs *routesService) BroadcastRoutes(state state.ReadonlyState) {
-	routes := state.Mesh().GetRoutes()
-	err := rs.broadcastRoutes(utils.ConfigSendRoutesChanged, routes)
-	if err != nil {
-		log.Errorf(codes.RoutesServiceSendRoutesError, "broadcast routes %v", err)
-	}
-
+func (rs *routesService) BroadcastRoutes(mesh state.ReadonlyMesh) {
+	routes := mesh.GetRoutes()
+	go func(routes structure.RoutingConfig) {
+		err := rs.broadcastRoutes(utils.ConfigSendRoutesChanged, routes)
+		if err != nil {
+			log.Errorf(codes.RoutesServiceSendRoutesError, "broadcast routes %v", err)
+		}
+	}(routes)
 }
 
 func (rs *routesService) broadcastRoutes(event string, routes structure.RoutingConfig) error {

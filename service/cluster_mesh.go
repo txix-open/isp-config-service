@@ -14,19 +14,15 @@ type clusterMeshService struct{}
 func (clusterMeshService) HandleUpdateBackendDeclarationCommand(declaration structure.BackendDeclaration, state state.WritableState) {
 	changed := state.WritableMesh().UpsertBackend(declaration)
 	if changed {
-		go func() {
-			DiscoveryService.BroadcastModuleAddresses(declaration.ModuleName, state)
-			RoutesService.BroadcastRoutes(state)
-		}()
+		DiscoveryService.BroadcastModuleAddresses(declaration.ModuleName, state.Mesh())
+		RoutesService.BroadcastRoutes(state.Mesh())
 	}
 }
 
 func (clusterMeshService) HandleDeleteBackendDeclarationCommand(declaration structure.BackendDeclaration, state state.WritableState) {
 	deleted := state.WritableMesh().DeleteBackend(declaration)
 	if deleted {
-		go func() {
-			DiscoveryService.BroadcastModuleAddresses(declaration.ModuleName, state)
-			RoutesService.BroadcastRoutes(state)
-		}()
+		DiscoveryService.BroadcastModuleAddresses(declaration.ModuleName, state.Mesh())
+		RoutesService.BroadcastRoutes(state.Mesh())
 	}
 }

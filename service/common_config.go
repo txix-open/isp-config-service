@@ -27,7 +27,7 @@ func (commonConfigService) HandleDeleteConfigsCommand(deleteConfigs cluster.Dele
 	deleted := state.WritableCommonConfigs().DeleteByIds(ids)
 	if holder.ClusterClient.IsLeader() {
 		// TODO handle db errors
-		_, err := model.ConfigRep.Delete(ids)
+		_, err := model.CommonConfigRep.Delete(ids)
 		if err != nil {
 			log.WithMetadata(map[string]interface{}{
 				"configIds": ids,
