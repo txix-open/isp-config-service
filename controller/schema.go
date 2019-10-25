@@ -32,7 +32,7 @@ func (c *schema) GetByModuleId(request domain.GetByModuleIdRequest) (*entity.Con
 		result = state.Schemas().GetByModuleIds([]string{request.ModuleId})
 	})
 	if len(result) == 0 {
-		return nil, status.Errorf(codes.NotFound, "schema with moduleId %d not found", request.ModuleId)
+		return nil, status.Errorf(codes.NotFound, "schema with moduleId %s not found", request.ModuleId)
 	}
 	return &result[0], nil
 }
