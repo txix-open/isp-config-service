@@ -7,7 +7,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"isp-config-service/codes"
 	"isp-config-service/raft"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -119,9 +118,6 @@ func (client *Client) listenLeader() {
 			}
 			go func(declaration structure.BackendDeclaration) {
 				response, err := leaderClient.SendDeclaration(declaration, defaultApplyTimeout)
-				if res, err := strconv.Unquote(response); err == nil {
-					response = res
-				}
 				if err != nil {
 					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader err: %v", err)
 				} else if response != Ok {

@@ -25,10 +25,10 @@ func (s *WebsocketServer) Rooms() *RoomStore {
 }
 
 func (s *WebsocketServer) OnWithAck(event string, f func(conn Conn, data []byte) string) *WebsocketServer {
-	must(s.s.On(event, func(conn socketio.Socket, data []byte) string {
-		logger.Debugf("[%s]:%s:%s", conn.Request().RemoteAddr, event, string(data))
+	must(s.s.On(event, func(conn socketio.Socket, data string) string {
+		logger.Debugf("[%s]:%s:%s", conn.Request().RemoteAddr, event, data)
 
-		return f(s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn}), data)
+		return f(s.roomStore.GetOrJoinById(conn.Id(), &wsConn{conn: conn}), []byte(data))
 	}))
 	return s
 }

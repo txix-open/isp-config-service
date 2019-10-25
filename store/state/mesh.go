@@ -14,8 +14,11 @@ type ReadonlyMesh interface {
 	CheckBackendChanged(backend structure.BackendDeclaration) (changed bool)
 	BackendExist(backend structure.BackendDeclaration) (exist bool)
 	GetModuleAddresses(moduleName string) []structure.AddressConfiguration
+	GetBackends(module string) []structure.BackendDeclaration
 	GetRoutes() structure.RoutingConfig
 }
+
+type NodesMap map[string]structure.BackendDeclaration
 
 type Mesh struct {
 	// { "ModuleName": { "address": BackendDeclaration, ...}, ... }
@@ -30,6 +33,16 @@ func (m Mesh) BackendExist(backend structure.BackendDeclaration) (exist bool) {
 		}
 	}
 	return
+}
+
+func (m Mesh) GetBackends(module string) []structure.BackendDeclaration {
+	declarations := make([]structure.BackendDeclaration, 0)
+	if nodes, ok := m.modulesMap[module]; ok {
+		for _, backend := range nodes {
+			declarations = append(declarations, backend)
+		}
+	}
+	return declarations
 }
 
 func (m Mesh) GetModuleAddresses(moduleName string) []structure.AddressConfiguration {
@@ -100,8 +113,6 @@ func (m *Mesh) DeleteBackend(backend structure.BackendDeclaration) (deleted bool
 	}
 	return
 }
-
-type NodesMap map[string]structure.BackendDeclaration
 
 func NewMesh() *Mesh {
 	return &Mesh{modulesMap: make(map[string]NodesMap)}

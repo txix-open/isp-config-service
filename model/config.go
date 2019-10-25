@@ -8,8 +8,8 @@ import (
 
 type ConfigRepository interface {
 	Snapshot() ([]entity.Config, error)
-	Upsert(config *entity.Config) (*entity.Config, error)
-	Delete(identities []int64) (int, error)
+	Upsert(config entity.Config) (*entity.Config, error)
+	Delete(identities []string) (int, error)
 }
 
 type configRepPg struct {
@@ -24,18 +24,18 @@ func (r *configRepPg) Snapshot() ([]entity.Config, error) {
 	return configs, err
 }
 
-func (r *configRepPg) Upsert(config *entity.Config) (*entity.Config, error) {
+func (r *configRepPg) Upsert(config entity.Config) (*entity.Config, error) {
 	err := r.rxClient.Visit(func(db *pg.DB) error {
-		_, err := db.Model(config).
+		_, err := db.Model(&config).
 			OnConflict("(id) DO UPDATE").
 			Returning("*").
 			Insert()
 		return err
 	})
-	return config, err
+	return &config, err
 }
 
-func (r *configRepPg) Delete(identities []int64) (int, error) {
+func (r *configRepPg) Delete(identities []string) (int, error) {
 	var err error
 	var res pg.Result
 	err = r.rxClient.Visit(func(db *pg.DB) error {

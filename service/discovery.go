@@ -10,8 +10,13 @@ import (
 	"isp-config-service/holder"
 	"isp-config-service/store/state"
 	"isp-config-service/ws"
+	"strings"
 	"sync"
 	"time"
+)
+
+const (
+	ModuleConnectionEventSuffix = "_" + utils.ModuleConnectionSuffix
 )
 
 var (
@@ -41,8 +46,8 @@ func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state
 	ds.subs[conn.Id()] = events
 	holder.Socket.Rooms().Join(conn, events...)
 	for _, event := range events {
-		addressList := state.Mesh().GetModuleAddresses(event)
-		event = utils.ModuleConnected(event)
+		eventName := strings.TrimSuffix(event, ModuleConnectionEventSuffix)
+		addressList := state.Mesh().GetModuleAddresses(eventName)
 		err := ds.sendAddrList(conn, event, addressList)
 		if err != nil {
 			log.Errorf(codes.DiscoveryServiceSendModulesError, "send module connected %v", err)

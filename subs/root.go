@@ -6,6 +6,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
+	"isp-config-service/entity"
 	"isp-config-service/holder"
 	"isp-config-service/service"
 	"isp-config-service/store"
@@ -23,9 +24,8 @@ var (
 )
 
 type socketEventHandler struct {
-	socket  *ws.WebsocketServer
-	cluster *cluster.Client
-	store   *store.Store
+	socket *ws.WebsocketServer
+	store  *store.Store
 }
 
 func (h *socketEventHandler) SubscribeAll() {
@@ -44,12 +44,21 @@ func (h *socketEventHandler) handleConnect(conn ws.Conn) {
 		holder.Socket.Rooms().Join(conn, followersRoom)
 	}
 	moduleName, err := conn.Parameters()
+	log.Debugf(0, "handleConnect: %s", moduleName) // REMOVE
 	if err != nil {
 		EmitConn(conn, utils.ErrorConnection, err.Error())
 		return
 	}
-	command := cluster.PrepareModuleConnectedCommand(moduleName)
-	h.SyncApplyCommand(command, "ModuleConnectedCommand")
+	holder.Socket.Rooms().Join(conn, moduleName+service.ConfigWatchersRoomSuffix)
+	now := state.GenerateDate()
+	module := entity.Module{
+		Id:              state.GenerateId(),
+		Name:            moduleName,
+		CreatedAt:       now,
+		LastConnectedAt: now,
+	}
+	command := cluster.PrepareModuleConnectedCommand(module)
+	SyncApplyCommand(command, "ModuleConnectedCommand")
 
 	var config map[string]interface{}
 	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
@@ -71,12 +80,28 @@ func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
 	if conn.IsConfigClusterNode() {
 		holder.Socket.Rooms().Leave(conn, followersRoom)
 	}
+	moduleName, _ := conn.Parameters()
+	log.Debugf(0, "handleDisconnect: %s", moduleName) // REMOVE
+	if moduleName != "" {
+		holder.Socket.Rooms().Leave(conn, moduleName+service.ConfigWatchersRoomSuffix)
+		now := state.GenerateDate()
+		module := entity.Module{
+			Id:                 state.GenerateId(),
+			Name:               moduleName,
+			CreatedAt:          now,
+			LastConnectedAt:    now,
+			LastDisconnectedAt: now,
+		}
+		command := cluster.PrepareModuleDisconnectedCommand(module)
+		SyncApplyCommand(command, "ModuleDisconnectedCommand")
+
+	}
 	service.DiscoveryService.HandleDisconnect(conn.Id())
 	service.RoutesService.HandleDisconnect(conn.Id())
 	backend := conn.GetBackendDeclaration()
 	if backend != nil {
 		command := cluster.PrepareDeleteBackendDeclarationCommand(*backend)
-		h.SyncApplyCommand(command, "ModuleConnectedCommand")
+		SyncApplyCommand(command, "DeleteBackendDeclarationCommand")
 	}
 }
 
@@ -84,10 +109,9 @@ func (h *socketEventHandler) handleError(conn ws.Conn, err error) {
 	log.Warnf(codes.SocketIoError, "socket.io: %v", err)
 }
 
-func NewSocketEventHandler(socket *ws.WebsocketServer, cluster *cluster.Client, store *store.Store) *socketEventHandler {
+func NewSocketEventHandler(socket *ws.WebsocketServer, store *store.Store) *socketEventHandler {
 	return &socketEventHandler{
-		socket:  socket,
-		cluster: cluster,
-		store:   store,
+		socket: socket,
+		store:  store,
 	}
 }

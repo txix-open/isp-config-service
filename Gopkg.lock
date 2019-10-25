@@ -164,11 +164,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:793af7eb674c40d9bb472c26e2c1a2eb20407f189dd995f72f58c23bfaea18bc"
+  digest = "1:284a10479bed36f43fbf5809858f2e969811997eab7368e5b5fdca4a4a30fb32"
   name = "github.com/hashicorp/raft"
   packages = ["."]
   pruneopts = "UT"
-  revision = "7d1d8f1e35633442c29f894aba099ac90cd04f2b"
+  revision = "06fcbeea879f4476af60425fc330169bcde4c85e"
 
 [[projects]]
   branch = "master"
@@ -200,8 +200,7 @@
   revision = "ac5582987a2f25e8743e0ebb7259312adda05c23"
 
 [[projects]]
-  branch = "master"
-  digest = "1:280d620c33aea271545c0b4456e1a9347a45b03aca09d2bb8923cc524864a325"
+  digest = "1:12bcebed6dfc45cedc650f6dce60fe6ce6d27de88d9bfa8893a5b144c010d317"
   name = "github.com/integration-system/golang-socketio"
   packages = [
     ".",
@@ -209,11 +208,12 @@
     "transport",
   ]
   pruneopts = "UT"
-  revision = "24b88aed7c77403c0b9b45de1f42ddc3c4fc0fb2"
+  revision = "7513a9b590e428674e3c22ea82f46b28890cc17a"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:50757af2a33b01c2ad349659740367c41739eb03e8c4010e566e0b5bd2031720"
+  digest = "1:70304818e3d84deb317b59a0d02fc95c4f4264b8721efa816e97f749d8cf90a1"
   name = "github.com/integration-system/isp-lib"
   packages = [
     "backend",
@@ -229,7 +229,7 @@
     "utils",
   ]
   pruneopts = "UT"
-  revision = "ef90e94729c8d6fbb34b3ebf033b8d6ffecadb37"
+  revision = "5060d1348219abd8fad3628668b229779a5314c7"
 
 [[projects]]
   branch = "master"
@@ -241,14 +241,6 @@
   ]
   pruneopts = "UT"
   revision = "a22bf2e0b56a9ef47db4a98756e39f700a99b688"
-
-[[projects]]
-  branch = "master"
-  digest = "1:9eb3b0c24935048c4097eedb3344f2f209e35bd12fa3884e54b83a1a55c22224"
-  name = "github.com/integration-system/jsonschema"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "26ce276eb6ea02881e72f7756f48796bc1f9552b"
 
 [[projects]]
   digest = "1:01ed62f8f4f574d8aff1d88caee113700a2b44c42351943fa73cc1808f736a50"
@@ -663,6 +655,8 @@
     "github.com/sirupsen/logrus",
     "github.com/spf13/cast",
     "github.com/thecodeteam/goodbye",
+    "google.golang.org/grpc/codes",
+    "google.golang.org/grpc/status",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
