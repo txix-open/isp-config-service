@@ -11,6 +11,7 @@ import (
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
 	"isp-config-service/conf"
+	"isp-config-service/controller"
 	"isp-config-service/helper"
 	"isp-config-service/holder"
 	"isp-config-service/model"
@@ -41,10 +42,18 @@ func init() {
 	config.InitConfig(&conf.Configuration{})
 }
 
+// @title ISP configuration service
+// @version 2.0.0
+// @description Сервис управления конфигурацией модулей ISP кластера
+
+// @license.name GNU GPL v3.0
+
+// @host localhost:9003
+// @BasePath /api/config
 func main() {
 	cfg := config.Get().(*conf.Configuration)
-	handlers := helper.GetAllHandlers()
-	endpoints := backend.GetEndpoints(cfg.ModuleName, handlers...)
+	handlers := helper.GetHandlers()
+	endpoints := backend.GetEndpoints(cfg.ModuleName, handlers)
 	declaration := structure.BackendDeclaration{
 		ModuleName: cfg.ModuleName,
 		Version:    version,
@@ -54,9 +63,9 @@ func main() {
 	}
 
 	model.DbClient.ReceiveConfiguration(cfg.Database)
-	client, raftStore := initRaft(cfg.WS.Raft.GetAddress(), cfg.Cluster, declaration)
-	initWebsocket(cfg.WS.Rest.GetAddress(), client, raftStore)
-	initGrpc(cfg.WS.Grpc)
+	_, raftStore := initRaft(cfg.WS.Raft.GetAddress(), cfg.Cluster, declaration)
+	initWebsocket(cfg.WS.Rest.GetAddress(), raftStore)
+	initGrpc(cfg.WS.Grpc, raftStore)
 
 	ctx := context.Background()
 	defer goodbye.Exit(ctx, -1)
@@ -66,13 +75,13 @@ func main() {
 	<-shutdownChan
 }
 
-func initWebsocket(bindAddress string, clusterClient *cluster.Client, raftStore *store.Store) {
+func initWebsocket(bindAddress string, raftStore *store.Store) {
 	socket, err := ws.NewWebsocketServer()
 	if err != nil {
 		// TODO уйдет при миграции
 		log.Fatalf(0, "init socket.io %s", err.Error())
 	}
-	subs.NewSocketEventHandler(socket, clusterClient, raftStore).SubscribeAll()
+	subs.NewSocketEventHandler(socket, raftStore).SubscribeAll()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/socket.io/", socket.ServeHttp)
@@ -103,7 +112,7 @@ func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration, declarat
 			cfg := config.Get().(*conf.Configuration)
 			addr, err := net.ResolveTCPAddr("tcp", address)
 			if err != nil {
-				panic(err) //must never occured
+				panic(err) // must never occured
 			}
 			port := addr.Port
 			// TODO логика для определения порта пира, т.к всё тестируется на одной машине
@@ -119,10 +128,7 @@ func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration, declarat
 			//
 			addressConfiguration := structure.AddressConfiguration{Port: strconv.Itoa(port), IP: addr.IP.String()}
 			back := structure.BackendDeclaration{ModuleName: cfg.ModuleName, Address: addressConfiguration}
-			err = service.ClusterMeshService.HandleDeleteBackendDeclarationCommand(back, s)
-			if err != nil {
-				log.Warnf(codes.DeleteBackendDeclarationError, "onClientDisconnect delete backend declaration. %v", err)
-			}
+			service.ClusterMeshService.HandleDeleteBackendDeclarationCommand(back, s)
 		})
 	})
 	holder.ClusterClient = clusterClient
@@ -134,8 +140,13 @@ func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration, declarat
 	return clusterClient, raftStore
 }
 
-func initGrpc(bindAddress structure.AddressConfiguration) {
-	defaultService := backend.GetDefaultService(moduleName, helper.GetAllHandlers()...)
+func initGrpc(bindAddress structure.AddressConfiguration, raftStore *store.Store) {
+	controller.Routes = controller.NewRoutes(raftStore)
+	controller.Schema = controller.NewSchema(raftStore)
+	controller.Module = controller.NewModule(raftStore)
+	controller.Config = controller.NewConfig(raftStore)
+	controller.CommonConfig = controller.NewCommonConfig(raftStore)
+	defaultService := backend.GetDefaultService(moduleName, helper.GetHandlers())
 	backend.StartBackendGrpcServer(bindAddress, defaultService)
 }
 

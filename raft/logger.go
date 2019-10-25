@@ -26,7 +26,6 @@ func (l *LoggerAdapter) Log(level logrus.Level, msg string, args ...interface{})
 			metadata[k] = args[i+1]
 		}
 		isplog.WithMetadata(metadata).Log(level, codes.RaftLoggerCode, msg)
-
 	} else {
 		isplog.Log(level, codes.RaftLoggerCode, msg)
 	}

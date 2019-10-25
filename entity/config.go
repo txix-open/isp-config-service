@@ -26,7 +26,6 @@ type CommonConfig struct {
 	Id          string     `json:"id" valid:"required~Required"`
 	Name        string     `json:"name" valid:"required~Required"`
 	Description string     `json:"description"`
-	Version     int32      `json:"version" sql:",null"`
 	CreatedAt   time.Time  `json:"createdAt" sql:",null"`
 	UpdatedAt   time.Time  `json:"updatedAt" sql:",null"`
 	Data        ConfigData `json:"data" sql:",notnull"`

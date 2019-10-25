@@ -8,8 +8,8 @@ import (
 
 type CommonConfigRepository interface {
 	Snapshot() ([]entity.CommonConfig, error)
-	Upsert(config *entity.CommonConfig) (*entity.CommonConfig, error)
-	Delete(identities []int64) (int, error)
+	Upsert(config entity.CommonConfig) (*entity.CommonConfig, error)
+	Delete(identities []string) (int, error)
 }
 
 type commonConfigRepPg struct {
@@ -24,18 +24,18 @@ func (r *commonConfigRepPg) Snapshot() ([]entity.CommonConfig, error) {
 	return configs, err
 }
 
-func (r *commonConfigRepPg) Upsert(config *entity.CommonConfig) (*entity.CommonConfig, error) {
+func (r *commonConfigRepPg) Upsert(config entity.CommonConfig) (*entity.CommonConfig, error) {
 	err := r.rxClient.Visit(func(db *pg.DB) error {
-		_, err := db.Model(config).
+		_, err := db.Model(&config).
 			OnConflict("(id) DO UPDATE").
 			Returning("*").
 			Insert()
 		return err
 	})
-	return config, err
+	return &config, err
 }
 
-func (r *commonConfigRepPg) Delete(identities []int64) (int, error) {
+func (r *commonConfigRepPg) Delete(identities []string) (int, error) {
 	var err error
 	var res pg.Result
 	err = r.rxClient.Visit(func(db *pg.DB) error {

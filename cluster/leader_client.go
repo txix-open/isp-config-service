@@ -20,7 +20,12 @@ type SocketLeaderClient struct {
 }
 
 func (c *SocketLeaderClient) Send(data []byte, timeout time.Duration) (string, error) {
-	return c.c.Ack(ApplyCommandEvent, data, timeout)
+	response, err := c.c.Ack(ApplyCommandEvent, string(data), timeout)
+	// REMOVE after replacing socket.io
+	if res, err := strconv.Unquote(response); err == nil {
+		response = res
+	}
+	return response, err
 }
 
 func (c *SocketLeaderClient) SendDeclaration(backend structure.BackendDeclaration, timeout time.Duration) (string, error) {
@@ -29,7 +34,12 @@ func (c *SocketLeaderClient) SendDeclaration(backend structure.BackendDeclaratio
 		return "", err
 	}
 	if c.c.IsAlive() {
-		return c.c.Ack(utils.ModuleReady, data, timeout)
+		response, err := c.c.Ack(utils.ModuleReady, string(data), timeout)
+		// REMOVE after replacing socket.io
+		if res, err := strconv.Unquote(response); err == nil {
+			response = res
+		}
+		return response, err
 	}
 	return "", errors.New("SendDeclaration connection is not alive")
 }
@@ -60,7 +70,7 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 		leaderDisconnectionCallback()
 	})
 	if err != nil {
-		panic(err) ////must never occurred, and will removed in future
+		panic(err) // must never occurred, and will removed in future
 	}
 
 	return &SocketLeaderClient{
@@ -71,7 +81,7 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 func getSocketIoUrl(address string) string {
 	addr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
-		panic(err) //must never occurred
+		panic(err) // must never occurred
 	}
 
 	cfg := config.Get().(*conf.Configuration)
@@ -96,5 +106,4 @@ func getSocketIoUrl(address string) string {
 		// TODO вынести ключи в константы в isp-lib и выпилить instance_uuid
 		"instance_uuid": "9d89354b-c728-4b48-b002-a7d3b229f151",
 	})
-
 }

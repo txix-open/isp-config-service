@@ -1,38 +1,36 @@
 package codes
 
-// TODO numbers
 const (
 	// Common
-	StartHttpServerError    = 0
-	ShutdownHttpServerError = 0
-	ShutdownHttpServerInfo  = 0
+	StartHttpServerError    = 1001
+	ShutdownHttpServerError = 1002
+	ShutdownHttpServerInfo  = 1003
 
-	SocketIoError     = 0
-	SocketIoEmitError = 0
+	SocketIoError     = 1004
+	SocketIoEmitError = 1005
 
-	DatabaseOperationError = 0
+	DatabaseOperationError = 1006
 
 	// Raft
-	InitRaftError              = 0
-	RestoreFromRepositoryError = 0
-	RaftLoggerCode             = 0
-	BootstrapClusterError      = 0
-	RaftShutdownError          = 0
-	RaftShutdownInfo           = 0
+	InitRaftError              = 1007
+	RestoreFromRepositoryError = 1008
+	RaftLoggerCode             = 1009
+	BootstrapClusterError      = 1010
+	RaftShutdownError          = 1011
+	RaftShutdownInfo           = 1012
 
 	// Raft Log
-	ApplyLogCommandError   = 0
-	PrepareLogCommandError = 0
-	SyncApplyError         = 0
+	ApplyLogCommandError   = 1013
+	PrepareLogCommandError = 1014
+	SyncApplyError         = 1015
 
 	// Raft Cluster
-	SendDeclarationToLeaderError = 0
-	LeaderClientConnectionError  = 0
-	LeaderClientDisconnected     = 0
+	SendDeclarationToLeaderError = 1016
+	LeaderClientConnectionError  = 1017
+	LeaderClientDisconnected     = 1018
 
 	// Services
-	DiscoveryServiceSendModulesError = 0
-	RoutesServiceSendRoutesError     = 0
-
-	DeleteBackendDeclarationError = 0
+	DiscoveryServiceSendModulesError  = 1019
+	RoutesServiceSendRoutesError      = 1020
+	ConfigServiceBroadcastConfigError = 1021
 )

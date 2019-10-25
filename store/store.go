@@ -32,6 +32,7 @@ func (s *Store) Apply(l *raft.Log) interface{} {
 		log.Errorf(codes.ApplyLogCommandError, "invalid log data command: %s", l.Data)
 	}
 	command := binary.BigEndian.Uint64(l.Data[:8])
+	log.Debugf(0, "Apply %d command. Data: %s", command, l.Data)
 
 	var (
 		result interface{}
@@ -40,7 +41,7 @@ func (s *Store) Apply(l *raft.Log) interface{} {
 	if handler, ok := s.handlers[command]; ok {
 		result, err = handler(l.Data[8:])
 	} else {
-		log.Errorf(codes.ApplyLogCommandError, "unknown log command %s", command)
+		log.Errorf(codes.ApplyLogCommandError, "unknown log command %d", command)
 	}
 
 	bytes, e := json.Marshal(result)
@@ -116,7 +117,14 @@ func NewStateStore(st state.State) *Store {
 		cluster.UpdateBackendDeclarationCommand: store.applyUpdateBackendDeclarationCommand,
 		cluster.DeleteBackendDeclarationCommand: store.applyDeleteBackendDeclarationCommand,
 		cluster.ModuleConnectedCommand:          store.applyModuleConnectedCommand,
-		cluster.UpdateConfigSchemaCommand:       store.applyUpdateConfigSchema,
+		cluster.ModuleDisconnectedCommand:       store.applyModuleDisconnectedCommand,
+		cluster.DeleteModulesCommand:            store.applyDeleteModulesCommand,
+		cluster.UpdateConfigSchemaCommand:       store.applyUpdateConfigSchemaCommand,
+		cluster.ActivateConfigCommand:           store.applyActivateConfigCommand,
+		cluster.DeleteConfigsCommand:            store.applyDeleteConfigsCommand,
+		cluster.UpsertConfigCommand:             store.applyUpsertConfigCommand,
+		cluster.DeleteCommonConfigsCommand:      store.applyDeleteCommonConfigsCommand,
+		cluster.UpsertCommonConfigCommand:       store.applyUpsertCommonConfigCommand,
 	}
 	return store
 }

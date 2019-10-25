@@ -10,8 +10,13 @@ import (
 	"isp-config-service/holder"
 	"isp-config-service/store/state"
 	"isp-config-service/ws"
+	"strings"
 	"sync"
 	"time"
+)
+
+const (
+	ModuleConnectionEventSuffix = "_" + utils.ModuleConnectionSuffix
 )
 
 var (
@@ -32,7 +37,7 @@ func (ds *discoveryService) HandleDisconnect(connId string) {
 	}
 }
 
-func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state.ReadonlyState) {
+func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, mesh state.ReadonlyMesh) {
 	if len(events) == 0 {
 		return
 	}
@@ -40,25 +45,36 @@ func (ds *discoveryService) Subscribe(conn ws.Conn, events []string, state state
 	defer ds.lock.Unlock()
 	ds.subs[conn.Id()] = events
 	holder.Socket.Rooms().Join(conn, events...)
+	eventsAddresses := make([][]structure.AddressConfiguration, 0, len(events))
 	for _, event := range events {
-		addressList := state.Mesh().GetModuleAddresses(event)
-		event = utils.ModuleConnected(event)
-		err := ds.sendAddrList(conn, event, addressList)
-		if err != nil {
-			log.Errorf(codes.DiscoveryServiceSendModulesError, "send module connected %v", err)
-		}
+		eventName := strings.TrimSuffix(event, ModuleConnectionEventSuffix)
+		addressList := mesh.GetModuleAddresses(eventName)
+		eventsAddresses = append(eventsAddresses, addressList)
 	}
+	go func(events []string, eventsAddresses [][]structure.AddressConfiguration, conn ws.Conn) {
+		for i := range events {
+			event := events[i]
+			addressList := eventsAddresses[i]
+			err := ds.sendAddrList(conn, event, addressList)
+			if err != nil {
+				log.Errorf(codes.DiscoveryServiceSendModulesError, "send module connected %v", err)
+			}
+		}
+	}(events, eventsAddresses, conn)
 }
 
-func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, state state.ReadonlyState) {
+func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, mesh state.ReadonlyMesh) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 	event := utils.ModuleConnected(moduleName)
-	addressList := state.Mesh().GetModuleAddresses(moduleName)
-	err := ds.broadcastAddrList(moduleName, event, addressList)
-	if err != nil {
-		log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected %v", err)
-	}
+	addressList := mesh.GetModuleAddresses(moduleName)
+	go func(moduleName, event string, addressList []structure.AddressConfiguration) {
+		err := ds.broadcastAddrList(moduleName, event, addressList)
+		if err != nil {
+			log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected %v", err)
+		}
+		ds.lock.RUnlock()
+	}(moduleName, event, addressList)
 }
 
 func (ds *discoveryService) broadcastAddrList(moduleName string, event string, addressList []structure.AddressConfiguration) error {

@@ -2,18 +2,19 @@ package state
 
 import (
 	"isp-config-service/entity"
-	"time"
 )
 
 type WriteableModuleStore interface {
 	ReadonlyModuleStore
-	Update(module entity.Module)
-	Create(name string) entity.Module
+	UpdateByName(module entity.Module)
+	Create(entity.Module)
+	DeleteByIds(ids []string) (deleted []entity.Module)
 }
 
 type ReadonlyModuleStore interface {
 	GetByName(name string) *entity.Module
 	GetById(id string) *entity.Module
+	GetAll() []entity.Module
 }
 
 type ModuleStore struct {
@@ -38,24 +39,38 @@ func (ms ModuleStore) GetById(id string) *entity.Module {
 	return nil
 }
 
-func (ms *ModuleStore) Update(module entity.Module) {
+func (ms *ModuleStore) UpdateByName(module entity.Module) {
 	for i := range ms.modules {
-		if ms.modules[i].Id == module.Id {
+		if ms.modules[i].Name == module.Name {
 			ms.modules[i] = module
+			return
 		}
 	}
 }
 
-func (ms *ModuleStore) Create(name string) entity.Module {
-	module := entity.Module{
-		Id:                 GenerateId(),
-		Name:               name,
-		CreatedAt:          time.Now(),
-		LastConnectedAt:    time.Now(),
-		LastDisconnectedAt: time.Time{},
-	}
+func (ms *ModuleStore) Create(module entity.Module) {
 	ms.modules = append(ms.modules, module)
-	return module
+}
+
+func (ms *ModuleStore) DeleteByIds(ids []string) []entity.Module {
+	idsMap := StringsToMap(ids)
+	var deleted []entity.Module
+	for i := 0; i < len(ms.modules); i++ {
+		id := ms.modules[i].Id
+		if _, ok := idsMap[id]; ok {
+			// change modules ordering
+			deleted = append(deleted, ms.modules[i])
+			ms.modules[i] = ms.modules[len(ms.modules)-1]
+			ms.modules = ms.modules[:len(ms.modules)-1]
+		}
+	}
+	return deleted
+}
+
+func (ms *ModuleStore) GetAll() []entity.Module {
+	response := make([]entity.Module, len(ms.modules))
+	copy(response, ms.modules)
+	return response
 }
 
 func NewModuleStore() *ModuleStore {

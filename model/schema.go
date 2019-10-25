@@ -9,6 +9,7 @@ import (
 type SchemaRepository interface {
 	Snapshot() ([]entity.ConfigSchema, error)
 	Upsert(s entity.ConfigSchema) (*entity.ConfigSchema, error)
+	Delete(identities []string) (int, error)
 }
 
 type schemaRepPg struct {
@@ -32,4 +33,15 @@ func (r *schemaRepPg) Upsert(s entity.ConfigSchema) (*entity.ConfigSchema, error
 		return err
 	})
 	return &s, err
+}
+
+func (r *schemaRepPg) Delete(identities []string) (int, error) {
+	var err error
+	var res pg.Result
+	err = r.rxClient.Visit(func(db *pg.DB) error {
+		res, err = db.Model(&entity.ConfigSchema{}).
+			Where("id IN (?)", pg.In(identities)).Delete()
+		return err
+	})
+	return res.RowsAffected(), err
 }

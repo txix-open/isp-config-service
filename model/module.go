@@ -9,7 +9,7 @@ import (
 type ModulesRepository interface {
 	Snapshot() ([]entity.Module, error)
 	Upsert(module entity.Module) (entity.Module, error)
-	Delete(identities []int32) (int, error)
+	Delete(identities []string) (int, error)
 }
 
 type modulesRepPg struct {
@@ -35,7 +35,7 @@ func (r *modulesRepPg) Upsert(module entity.Module) (entity.Module, error) {
 	return module, err
 }
 
-func (r *modulesRepPg) Delete(identities []int32) (int, error) {
+func (r *modulesRepPg) Delete(identities []string) (int, error) {
 	var err error
 	var res pg.Result
 	err = r.rxClient.Visit(func(db *pg.DB) error {

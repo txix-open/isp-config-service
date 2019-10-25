@@ -4,11 +4,12 @@ import (
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
+	"isp-config-service/holder"
 	"isp-config-service/ws"
 )
 
 func (h *socketEventHandler) applyCommandOnLeader(conn ws.Conn, cmd []byte) string {
-	obj, err := h.cluster.SyncApplyOnLeader(cmd)
+	obj, err := holder.ClusterClient.SyncApplyOnLeader(cmd)
 	if err != nil {
 		var logResponse cluster.ApplyLogResponse
 		logResponse.ApplyError = err.Error()

@@ -10,12 +10,15 @@ import (
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
 	"isp-config-service/entity"
+	"isp-config-service/holder"
 	"isp-config-service/service"
 	"isp-config-service/store/state"
 	"isp-config-service/ws"
 )
 
 func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string {
+	moduleName, _ := conn.Parameters()                            // REMOVE
+	log.Debugf(0, "handleModuleReady moduleName: %s", moduleName) // REMOVE
 	declaration := structure.BackendDeclaration{}
 	err := json.Unmarshal(data, &declaration)
 	if err != nil {
@@ -33,7 +36,7 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string
 	})
 	if changed {
 		command := cluster.PrepareUpdateBackendDeclarationCommand(declaration)
-		applyLogResponse, err := h.cluster.SyncApply(command)
+		applyLogResponse, err := holder.ClusterClient.SyncApply(command)
 		if err != nil {
 			return err.Error()
 		}
@@ -63,17 +66,17 @@ func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte)
 	}
 
 	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
+		service.DiscoveryService.Subscribe(conn, declaration.RequiredModules, state.Mesh())
 		if declaration.RequireRoutes {
-			service.RoutesService.SubscribeRoutes(conn, state)
+			service.RoutesService.SubscribeRoutes(conn, state.Mesh())
 		}
-		service.DiscoveryService.Subscribe(conn, declaration.RequiredModules, state)
 	})
 	return Ok
 }
 
 func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) string {
 	moduleName, err := conn.Parameters()
-	log.Debugf(0, "handleModuleRequirements moduleName: %s", moduleName) // REMOVE
+	log.Debugf(0, "handleConfigSchema moduleName: %s", moduleName) // REMOVE
 	if err != nil {
 		return err.Error()
 	}
@@ -82,6 +85,19 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 	if err := json.Unmarshal(data, &configSchema); err != nil {
 		return err.Error()
 	}
+	// TODO Костыль. Дважды посылаем ModuleConnected, т.к с момента первой отправки в handleConnect,
+	//  состояние к конкретной ноде кластера может не успеть примениться
+	now := state.GenerateDate()
+	newModule := entity.Module{
+		Id:              state.GenerateId(),
+		Name:            moduleName,
+		CreatedAt:       now,
+		LastConnectedAt: now,
+	}
+	command := cluster.PrepareModuleConnectedCommand(newModule)
+	SyncApplyCommand(command, "ModuleConnectedCommand")
+	// />
+
 	module := new(entity.Module)
 	h.store.VisitReadonlyState(func(readState state.ReadonlyState) {
 		module = readState.Modules().GetByName(moduleName)
@@ -91,16 +107,41 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 	}
 
 	schema := entity.ConfigSchema{
-		ModuleId: module.Id,
-		Version:  configSchema.Version,
-		Schema:   configSchema.Schema,
+		Id:        state.GenerateId(),
+		Version:   configSchema.Version,
+		ModuleId:  module.Id,
+		Schema:    configSchema.Schema,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
-	command := cluster.PrepareUpdateConfigSchemaCommand(schema)
-	i, err := h.cluster.SyncApply(command)
+	command = cluster.PrepareUpdateConfigSchemaCommand(schema)
+	i, err := holder.ClusterClient.SyncApply(command)
 	if err != nil {
 		log.WithMetadata(map[string]interface{}{
 			"answer": i,
 		}).Warnf(codes.SyncApplyError, "apply ModuleSendConfigSchemaCommand %v", err)
+	}
+
+	var configs []entity.Config
+	h.store.VisitReadonlyState(func(readState state.ReadonlyState) {
+		configs = readState.Configs().GetByModuleIds([]string{module.Id})
+	})
+	if len(configs) == 0 {
+		config := entity.Config{
+			Id:        state.GenerateId(),
+			Name:      module.Name,
+			ModuleId:  module.Id,
+			Data:      configSchema.DefaultConfig,
+			CreatedAt: now,
+			UpdatedAt: now,
+		}
+		upsertConfig := cluster.UpsertConfig{
+			Config: config,
+			Create: true,
+		}
+
+		command := cluster.PrepareUpsertConfigCommand(upsertConfig)
+		SyncApplyCommand(command, "UpsertConfigCommand")
 	}
 	return Ok
 }
