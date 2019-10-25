@@ -73,7 +73,6 @@ func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, mesh sta
 		if err != nil {
 			log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected %v", err)
 		}
-		ds.lock.RUnlock()
 	}(moduleName, event, addressList)
 }
 
