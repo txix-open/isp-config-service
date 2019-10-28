@@ -43,8 +43,8 @@ func (c *commonConfig) GetConfigs(identities []string) []entity.CommonConfig {
 // @Tags Общие конфигурации
 // @Accept  json
 // @Produce  json
-// @Param body body entity.Config true "объект для сохранения"
-// @Success 200 {object} entity.Config
+// @Param body body entity.CommonConfig true "объект для сохранения"
+// @Success 200 {object} entity.CommonConfig
 // @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
 // @Failure 500 {object} structure.GrpcError
 // @Router /common_config/create_update_config [POST]
