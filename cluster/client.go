@@ -102,11 +102,9 @@ func (client *Client) SyncApplyOnLeader(command []byte) (*ApplyLogResponse, erro
 func (client *Client) listenLeader() {
 	for n := range client.r.LeaderCh() {
 		client.leaderMu.Lock()
-		if client.leaderState.leaderAddr != n.CurrentLeaderAddress {
-			if client.leaderClient != nil {
-				client.leaderClient.Close()
-				client.leaderClient = nil
-			}
+		if client.leaderClient != nil {
+			client.leaderClient.Close()
+			client.leaderClient = nil
 		}
 		if n.LeaderElected && !n.IsLeader {
 			leaderClient := NewSocketLeaderClient(n.CurrentLeaderAddress, func() {

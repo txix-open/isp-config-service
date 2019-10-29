@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/cenkalti/backoff"
 	etp "github.com/integration-system/isp-etp-go/client"
@@ -17,10 +16,6 @@ import (
 	"net/url"
 	"strconv"
 	"time"
-)
-
-const (
-	LeaderClientReconnectionTimeout = 500 * time.Millisecond
 )
 
 type SocketLeaderClient struct {
@@ -82,28 +77,13 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 			"leaderAddr": address,
 		}).Warn(codes.LeaderClientDisconnected, "leader client disconnected")
 		leaderDisconnectionCallback()
-		go func() {
-			for {
-				err := leaderClient.client.Dial(leaderClient.globalCtx, leaderClient.url)
-				if err == nil {
-					log.Warnf(codes.LeaderClientConnectionError, "leader client reconnected")
-					return
-				} else if errors.Is(err, context.Canceled) {
-					log.Warnf(codes.LeaderClientConnectionError, "leader client reconnection canceled")
-					return
-				} else {
-					log.Warnf(codes.LeaderClientConnectionError, "leader client reconnection err: %v", err)
-				}
-				time.Sleep(LeaderClientReconnectionTimeout)
-			}
-		}()
 	})
 
 	leaderClient.client.OnError(func(err error) {
 		log.Warnf(codes.LeaderClientConnectionError, "leader client on error: %v", err)
 	})
 	leaderClient.client.OnConnect(func() {
-		log.Warnf(codes.LeaderClientConnectionError, "leader client connected")
+		log.Debug(0, "leader client connected")
 	})
 	return leaderClient
 }

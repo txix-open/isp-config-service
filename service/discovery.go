@@ -11,13 +11,8 @@ import (
 	"isp-config-service/codes"
 	"isp-config-service/holder"
 	"isp-config-service/store/state"
-	"strings"
 	"sync"
 	"time"
-)
-
-const (
-	ModuleConnectionEventSuffix = "_" + utils.ModuleConnectionSuffix
 )
 
 var (
@@ -38,20 +33,23 @@ func (ds *discoveryService) HandleDisconnect(connId string) {
 	}
 }
 
-func (ds *discoveryService) Subscribe(conn etp.Conn, events []string, mesh state.ReadonlyMesh) {
-	if len(events) == 0 {
+func (ds *discoveryService) Subscribe(conn etp.Conn, modules []string, mesh state.ReadonlyMesh) {
+	if len(modules) == 0 {
 		return
 	}
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
+	eventsAddresses := make([][]structure.AddressConfiguration, 0, len(modules))
+	events := make([]string, 0, len(modules))
+	for _, module := range modules {
+		event := utils.ModuleConnected(module)
+		addressList := mesh.GetModuleAddresses(module)
+		eventsAddresses = append(eventsAddresses, addressList)
+		events = append(events, event)
+	}
 	ds.subs[conn.ID()] = events
 	holder.EtpServer.Rooms().Join(conn, events...)
-	eventsAddresses := make([][]structure.AddressConfiguration, 0, len(events))
-	for _, event := range events {
-		eventName := strings.TrimSuffix(event, ModuleConnectionEventSuffix)
-		addressList := mesh.GetModuleAddresses(eventName)
-		eventsAddresses = append(eventsAddresses, addressList)
-	}
+
 	go func(events []string, eventsAddresses [][]structure.AddressConfiguration, conn etp.Conn) {
 		for i := range events {
 			event := events[i]

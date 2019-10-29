@@ -28,16 +28,10 @@ func (h *socketEventHandler) handleModuleReady(conn etp.Conn, data []byte) []byt
 		return []byte(err.Error())
 	}
 	SetBackendDeclaration(conn, declaration)
-	var changed bool
-	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
-		changed = state.Mesh().CheckBackendChanged(declaration)
-	})
-	if changed {
-		command := cluster.PrepareUpdateBackendDeclarationCommand(declaration)
-		_, err = SyncApplyCommand(command, "UpdateBackendDeclarationCommand")
-		if err != nil {
-			return []byte(err.Error())
-		}
+	command := cluster.PrepareUpdateBackendDeclarationCommand(declaration)
+	_, err = SyncApplyCommand(command, "UpdateBackendDeclarationCommand")
+	if err != nil {
+		return []byte(err.Error())
 	}
 	return []byte(Ok)
 }
