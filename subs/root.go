@@ -1,6 +1,7 @@
 package subs
 
 import (
+	etp "github.com/integration-system/isp-etp-go"
 	"github.com/integration-system/isp-lib/utils"
 	log "github.com/integration-system/isp-log"
 	jsoniter "github.com/json-iterator/go"
@@ -11,12 +12,11 @@ import (
 	"isp-config-service/service"
 	"isp-config-service/store"
 	"isp-config-service/store/state"
-	"isp-config-service/ws"
 )
 
 const (
 	Ok            = "ok"
-	followersRoom = "followers"
+	followersRoom = "cluster_followers"
 )
 
 var (
@@ -24,12 +24,12 @@ var (
 )
 
 type socketEventHandler struct {
-	socket *ws.WebsocketServer
+	server etp.Server
 	store  *store.Store
 }
 
 func (h *socketEventHandler) SubscribeAll() {
-	h.socket.
+	h.server.
 		OnConnect(h.handleConnect).
 		OnDisconnect(h.handleDisconnect).
 		OnError(h.handleError).
@@ -39,18 +39,19 @@ func (h *socketEventHandler) SubscribeAll() {
 		OnWithAck(utils.ModuleSendConfigSchema, h.handleConfigSchema)
 }
 
-func (h *socketEventHandler) handleConnect(conn ws.Conn) {
-	if conn.IsConfigClusterNode() {
-		holder.Socket.Rooms().Join(conn, followersRoom)
+func (h *socketEventHandler) handleConnect(conn etp.Conn) {
+	isClusterNode := IsConfigClusterNode(conn)
+	if isClusterNode {
+		holder.EtpServer.Rooms().Join(conn, followersRoom)
 	}
-	moduleName, err := conn.Parameters()
+	moduleName, err := Parameters(conn)
 	log.Debugf(0, "handleConnect: %s", moduleName) // REMOVE
 	if err != nil {
-		EmitConn(conn, utils.ErrorConnection, err.Error())
-		conn.Disconnect()
+		EmitConn(conn, utils.ErrorConnection, []byte(err.Error()))
+		_ = conn.Close()
 		return
 	}
-	holder.Socket.Rooms().Join(conn, moduleName+service.ConfigWatchersRoomSuffix)
+	holder.EtpServer.Rooms().Join(conn, moduleName+service.ConfigWatchersRoomSuffix)
 	now := state.GenerateDate()
 	module := entity.Module{
 		Id:              state.GenerateId(),
@@ -60,9 +61,9 @@ func (h *socketEventHandler) handleConnect(conn ws.Conn) {
 	}
 	command := cluster.PrepareModuleConnectedCommand(module)
 	_, err = SyncApplyCommand(command, "ModuleConnectedCommand")
-	if err != nil {
-		EmitConn(conn, utils.ErrorConnection, err.Error())
-		conn.Disconnect()
+	if err != nil && !isClusterNode {
+		EmitConn(conn, utils.ErrorConnection, []byte(err.Error()))
+		_ = conn.Close()
 		return
 	}
 
@@ -71,25 +72,25 @@ func (h *socketEventHandler) handleConnect(conn ws.Conn) {
 		config, err = service.ConfigService.GetCompiledConfig(moduleName, state)
 	})
 	if err != nil {
-		EmitConn(conn, utils.ConfigError, err.Error())
+		EmitConn(conn, utils.ConfigError, []byte(err.Error()))
 		return
 	}
 	data, err := json.Marshal(config)
 	if err != nil {
-		EmitConn(conn, utils.ConfigError, err.Error())
+		EmitConn(conn, utils.ConfigError, []byte(err.Error()))
 		return
 	}
-	EmitConn(conn, utils.ConfigSendConfigWhenConnected, string(data))
+	EmitConn(conn, utils.ConfigSendConfigWhenConnected, data)
 }
 
-func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
-	if conn.IsConfigClusterNode() {
-		holder.Socket.Rooms().Leave(conn, followersRoom)
+func (h *socketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error) {
+	if IsConfigClusterNode(conn) {
+		holder.EtpServer.Rooms().Leave(conn, followersRoom)
 	}
-	moduleName, _ := conn.Parameters()
+	moduleName, _ := Parameters(conn)
 	log.Debugf(0, "handleDisconnect: %s", moduleName) // REMOVE
 	if moduleName != "" {
-		holder.Socket.Rooms().Leave(conn, moduleName+service.ConfigWatchersRoomSuffix)
+		holder.EtpServer.Rooms().Leave(conn, moduleName+service.ConfigWatchersRoomSuffix)
 		now := state.GenerateDate()
 		module := entity.Module{
 			Id:                 state.GenerateId(),
@@ -102,22 +103,22 @@ func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
 		_, _ = SyncApplyCommand(command, "ModuleDisconnectedCommand")
 
 	}
-	service.DiscoveryService.HandleDisconnect(conn.Id())
-	service.RoutesService.HandleDisconnect(conn.Id())
-	backend := conn.GetBackendDeclaration()
-	if backend != nil {
-		command := cluster.PrepareDeleteBackendDeclarationCommand(*backend)
+	service.DiscoveryService.HandleDisconnect(conn.ID())
+	service.RoutesService.HandleDisconnect(conn.ID())
+	backend, ok := ExtractBackendDeclaration(conn)
+	if ok {
+		command := cluster.PrepareDeleteBackendDeclarationCommand(backend)
 		_, _ = SyncApplyCommand(command, "DeleteBackendDeclarationCommand")
 	}
 }
 
-func (h *socketEventHandler) handleError(conn ws.Conn, err error) {
-	log.Warnf(codes.SocketIoError, "socket.io: %v", err)
+func (h *socketEventHandler) handleError(conn etp.Conn, err error) {
+	log.Warnf(codes.WebsocketError, "isp-etp: %v", err)
 }
 
-func NewSocketEventHandler(socket *ws.WebsocketServer, store *store.Store) *socketEventHandler {
+func NewSocketEventHandler(server etp.Server, store *store.Store) *socketEventHandler {
 	return &socketEventHandler{
-		socket: socket,
+		server: server,
 		store:  store,
 	}
 }

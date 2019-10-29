@@ -51,5 +51,3 @@
 [[override]]
   name = "github.com/hashicorp/raft"
   branch = "master"
-
-

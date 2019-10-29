@@ -1,19 +1,20 @@
 package subs
 
 import (
+	"context"
 	"errors"
+	etp "github.com/integration-system/isp-etp-go"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
 	"isp-config-service/holder"
-	"isp-config-service/ws"
 )
 
-func EmitConn(conn ws.Conn, event string, args ...interface{}) {
-	err := conn.Emit(event, args...)
+func EmitConn(conn etp.Conn, event string, body []byte) {
+	err := conn.Emit(context.Background(), event, body)
 	if err != nil {
 		log.WithMetadata(map[string]interface{}{
 			"event": event,
-		}).Warnf(codes.SocketIoEmitError, "emit err %v", err)
+		}).Warnf(codes.WebsocketEmitError, "emit err %v", err)
 	}
 }
 

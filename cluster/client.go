@@ -71,12 +71,12 @@ func (client *Client) SyncApply(command []byte) (*ApplyLogResponse, error) {
 		if client.leaderClient == nil {
 			return nil, ErrLeaderClientNotInitialized
 		}
-		response, err := client.leaderClient.Send(command, defaultApplyTimeout)
+		response, err := client.leaderClient.Ack(command, defaultApplyTimeout)
 		if err != nil {
 			return nil, err
 		}
 		var logResponse ApplyLogResponse
-		err = json.Unmarshal([]byte(response), &logResponse)
+		err = json.Unmarshal(response, &logResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -119,9 +119,9 @@ func (client *Client) listenLeader() {
 			go func(declaration structure.BackendDeclaration) {
 				response, err := leaderClient.SendDeclaration(declaration, defaultApplyTimeout)
 				if err != nil {
-					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader err: %v", err)
+					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader. err: %v", err)
 				} else if response != Ok {
-					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader response: %s", response)
+					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader. response: %s", response)
 				}
 			}(client.declaration)
 

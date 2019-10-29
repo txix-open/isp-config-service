@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/integration-system/isp-etp-go"
 	"github.com/integration-system/isp-lib/backend"
 	"github.com/integration-system/isp-lib/bootstrap"
 	"github.com/integration-system/isp-lib/config"
@@ -20,7 +21,6 @@ import (
 	"isp-config-service/store"
 	"isp-config-service/store/state"
 	"isp-config-service/subs"
-	"isp-config-service/ws"
 	"net"
 	"net/http"
 	"os"
@@ -51,6 +51,7 @@ func init() {
 // @host localhost:9003
 // @BasePath /api/config
 func main() {
+	ctx := context.Background()
 	cfg := config.Get().(*conf.Configuration)
 	handlers := helper.GetHandlers()
 	endpoints := backend.GetEndpoints(cfg.ModuleName, handlers)
@@ -64,10 +65,9 @@ func main() {
 
 	model.DbClient.ReceiveConfiguration(cfg.Database)
 	_, raftStore := initRaft(cfg.WS.Raft.GetAddress(), cfg.Cluster, declaration)
-	initWebsocket(cfg.WS.Rest.GetAddress(), raftStore)
+	initWebsocket(ctx, cfg.WS.Rest.GetAddress(), raftStore)
 	initGrpc(cfg.WS.Grpc, raftStore)
 
-	ctx := context.Background()
 	defer goodbye.Exit(ctx, -1)
 	goodbye.Notify(ctx)
 	goodbye.Register(onShutdown)
@@ -75,23 +75,22 @@ func main() {
 	<-shutdownChan
 }
 
-func initWebsocket(bindAddress string, raftStore *store.Store) {
-	socket, err := ws.NewWebsocketServer()
-	if err != nil {
-		// TODO уйдет при миграции
-		log.Fatalf(0, "init socket.io %s", err.Error())
+func initWebsocket(ctx context.Context, bindAddress string, raftStore *store.Store) {
+	etpConfig := etp.ServerConfig{
+		InsecureSkipVerify: true,
 	}
-	subs.NewSocketEventHandler(socket, raftStore).SubscribeAll()
+	etpServer := etp.NewServer(ctx, etpConfig)
+	subs.NewSocketEventHandler(etpServer, raftStore).SubscribeAll()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/socket.io/", socket.ServeHttp)
+	mux.HandleFunc("/isp-etp/", etpServer.ServeHttp)
 	httpServer := &http.Server{Addr: bindAddress, Handler: mux}
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {
-			log.Fatalf(codes.StartHttpServerError, "unable to start http server. %v", err)
+			log.Fatalf(codes.StartHttpServerError, "http server closed: %v", err)
 		}
 	}()
-	holder.Socket = socket
+	holder.EtpServer = etpServer
 	holder.HttpServer = httpServer
 }
 
@@ -161,12 +160,7 @@ func onShutdown(ctx context.Context, sig os.Signal) {
 		log.Info(codes.RaftShutdownInfo, "raft shutdown success")
 	}
 
-	if err := holder.Socket.Close(); err != nil {
-		// TODO уйдет при миграции
-		log.Warnf(0, "socket.io shutdown err: %s", err.Error())
-	} else {
-		log.Info(0, "socket.io shutdown success")
-	}
+	holder.EtpServer.Close()
 
 	if err := holder.HttpServer.Shutdown(ctx); err != nil {
 		log.Warnf(codes.ShutdownHttpServerError, "http server shutdown err: %v", err)

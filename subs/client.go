@@ -3,6 +3,7 @@ package subs
 import (
 	"fmt"
 	"github.com/asaskevich/govalidator"
+	etp "github.com/integration-system/isp-etp-go"
 	"github.com/integration-system/isp-lib/bootstrap"
 	schema2 "github.com/integration-system/isp-lib/config/schema"
 	"github.com/integration-system/isp-lib/structure"
@@ -11,23 +12,22 @@ import (
 	"isp-config-service/entity"
 	"isp-config-service/service"
 	"isp-config-service/store/state"
-	"isp-config-service/ws"
 )
 
-func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string {
-	moduleName, _ := conn.Parameters()                            // REMOVE
+func (h *socketEventHandler) handleModuleReady(conn etp.Conn, data []byte) []byte {
+	moduleName, _ := Parameters(conn)                             // REMOVE
 	log.Debugf(0, "handleModuleReady moduleName: %s", moduleName) // REMOVE
 	declaration := structure.BackendDeclaration{}
 	err := json.Unmarshal(data, &declaration)
 	if err != nil {
-		return err.Error()
+		return []byte(err.Error())
 	}
 
 	_, err = govalidator.ValidateStruct(declaration)
 	if err != nil {
-		return err.Error()
+		return []byte(err.Error())
 	}
-	conn.SetBackendDeclaration(declaration)
+	SetBackendDeclaration(conn, declaration)
 	var changed bool
 	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
 		changed = state.Mesh().CheckBackendChanged(declaration)
@@ -36,23 +36,23 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string
 		command := cluster.PrepareUpdateBackendDeclarationCommand(declaration)
 		_, err = SyncApplyCommand(command, "UpdateBackendDeclarationCommand")
 		if err != nil {
-			return err.Error()
+			return []byte(err.Error())
 		}
 	}
-	return Ok
+	return []byte(Ok)
 }
 
-func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte) string {
-	moduleName, err := conn.Parameters()
+func (h *socketEventHandler) handleModuleRequirements(conn etp.Conn, data []byte) []byte {
+	moduleName, err := Parameters(conn)
 	log.Debugf(0, "handleModuleRequirements moduleName: %s", moduleName) // REMOVE
 	if err != nil {
-		return err.Error()
+		return []byte(err.Error())
 	}
 
 	declaration := bootstrap.ModuleRequirements{}
 	err = json.Unmarshal(data, &declaration)
 	if err != nil {
-		return err.Error()
+		return []byte(err.Error())
 	}
 
 	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
@@ -61,19 +61,19 @@ func (h *socketEventHandler) handleModuleRequirements(conn ws.Conn, data []byte)
 			service.RoutesService.SubscribeRoutes(conn, state.Mesh())
 		}
 	})
-	return Ok
+	return []byte(Ok)
 }
 
-func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) string {
-	moduleName, err := conn.Parameters()
+func (h *socketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []byte {
+	moduleName, err := Parameters(conn)
 	log.Debugf(0, "handleConfigSchema moduleName: %s", moduleName) // REMOVE
 	if err != nil {
-		return err.Error()
+		return []byte(err.Error())
 	}
 
 	configSchema := schema2.ConfigSchema{}
 	if err := json.Unmarshal(data, &configSchema); err != nil {
-		return err.Error()
+		return []byte(err.Error())
 	}
 	// TODO Костыль. Дважды посылаем ModuleConnected, т.к с момента первой отправки в handleConnect,
 	//  состояние к конкретной ноде кластера может не успеть примениться
@@ -87,7 +87,7 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 	command := cluster.PrepareModuleConnectedCommand(newModule)
 	_, err = SyncApplyCommand(command, "ModuleConnectedCommand")
 	if err != nil {
-		return err.Error()
+		return []byte(err.Error())
 	}
 	// />
 
@@ -96,7 +96,7 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 		module = readState.Modules().GetByName(moduleName)
 	})
 	if module == nil {
-		return fmt.Sprintf("module with name %s not found", moduleName)
+		return []byte(fmt.Sprintf("module with name %s not found", moduleName))
 	}
 
 	schema := entity.ConfigSchema{
@@ -131,9 +131,9 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 		command := cluster.PrepareUpsertConfigCommand(upsertConfig)
 		_, _ = SyncApplyCommand(command, "UpsertConfigCommand")
 	}
-	return Ok
+	return []byte(Ok)
 }
 
-func (h *socketEventHandler) handleRequestConfig(conn ws.Conn, data []byte) {
-
+func (h *socketEventHandler) handleRequestConfig(conn etp.Conn, data []byte) []byte {
+	panic("not implemented")
 }

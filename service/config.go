@@ -119,20 +119,20 @@ func (cs configService) BroadcastNewConfig(state state.ReadonlyState, configs ..
 
 		compiledConfig, err := cs.GetCompiledConfig(moduleName, state)
 		if err != nil {
-			go cs.broadcast(room, utils.ConfigError, err.Error())
+			go cs.broadcast(room, utils.ConfigError, []byte(err.Error()))
 			continue
 		}
 		data, err := json.Marshal(compiledConfig)
 		if err != nil {
-			go cs.broadcast(room, utils.ConfigError, err.Error())
+			go cs.broadcast(room, utils.ConfigError, []byte(err.Error()))
 			continue
 		}
-		go cs.broadcast(room, utils.ConfigSendConfigWhenConnected, string(data))
+		go cs.broadcast(room, utils.ConfigSendConfigWhenConnected, data)
 	}
 }
 
-func (cs configService) broadcast(room, event, data string) {
-	err := holder.Socket.Broadcast(room, utils.ConfigSendConfigWhenConnected, data)
+func (cs configService) broadcast(room, event string, data []byte) {
+	err := holder.EtpServer.BroadcastToRoom(room, utils.ConfigSendConfigWhenConnected, data)
 	if err != nil {
 		log.Errorf(codes.ConfigServiceBroadcastConfigError, "broadcast %s err: %v", event, err)
 	}
