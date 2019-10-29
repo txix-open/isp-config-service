@@ -47,6 +47,7 @@ func (h *socketEventHandler) handleConnect(conn ws.Conn) {
 	log.Debugf(0, "handleConnect: %s", moduleName) // REMOVE
 	if err != nil {
 		EmitConn(conn, utils.ErrorConnection, err.Error())
+		conn.Disconnect()
 		return
 	}
 	holder.Socket.Rooms().Join(conn, moduleName+service.ConfigWatchersRoomSuffix)
@@ -58,7 +59,12 @@ func (h *socketEventHandler) handleConnect(conn ws.Conn) {
 		LastConnectedAt: now,
 	}
 	command := cluster.PrepareModuleConnectedCommand(module)
-	SyncApplyCommand(command, "ModuleConnectedCommand")
+	_, err = SyncApplyCommand(command, "ModuleConnectedCommand")
+	if err != nil {
+		EmitConn(conn, utils.ErrorConnection, err.Error())
+		conn.Disconnect()
+		return
+	}
 
 	var config map[string]interface{}
 	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
@@ -93,7 +99,7 @@ func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
 			LastDisconnectedAt: now,
 		}
 		command := cluster.PrepareModuleDisconnectedCommand(module)
-		SyncApplyCommand(command, "ModuleDisconnectedCommand")
+		_, _ = SyncApplyCommand(command, "ModuleDisconnectedCommand")
 
 	}
 	service.DiscoveryService.HandleDisconnect(conn.Id())
@@ -101,7 +107,7 @@ func (h *socketEventHandler) handleDisconnect(conn ws.Conn) {
 	backend := conn.GetBackendDeclaration()
 	if backend != nil {
 		command := cluster.PrepareDeleteBackendDeclarationCommand(*backend)
-		SyncApplyCommand(command, "DeleteBackendDeclarationCommand")
+		_, _ = SyncApplyCommand(command, "DeleteBackendDeclarationCommand")
 	}
 }
 

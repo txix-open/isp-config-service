@@ -77,7 +77,6 @@ definitions:
       updatedAt:
         type: string
     required:
-    - id
     - name
     type: object
   entity.Config:
@@ -106,7 +105,6 @@ definitions:
       version:
         type: integer
     required:
-    - id
     - moduleId
     - name
     type: object
@@ -129,8 +127,6 @@ definitions:
         type: string
       version:
         type: string
-    required:
-    - id
     type: object
   jsonschema.Definitions:
     additionalProperties: {}
@@ -176,11 +172,6 @@ definitions:
         type: string
       enum:
         description: section 5.20
-        items:
-          type: object
-        type: array
-      examples:
-        description: section 7.4
         items:
           type: object
         type: array
@@ -303,11 +294,6 @@ definitions:
         items:
           type: object
         type: array
-      examples:
-        description: section 7.4
-        items:
-          type: object
-        type: array
       exclusiveMaximum:
         description: section 5.3
         type: boolean
@@ -423,11 +409,6 @@ definitions:
         type: string
       enum:
         description: section 5.20
-        items:
-          type: object
-        type: array
-      examples:
-        description: section 7.4
         items:
           type: object
         type: array
@@ -571,7 +552,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/entity.Config'
+          $ref: '#/definitions/entity.CommonConfig'
           type: object
       produces:
       - application/json
@@ -579,7 +560,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/entity.Config'
+            $ref: '#/definitions/entity.CommonConfig'
         "404":
           description: если конфигурация не найдена
           schema:
@@ -864,7 +845,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/structure.GrpcError'
-      summary: Метод схемы конфигурации модуля
+      summary: Метод получения схемы конфигурации модуля
       tags:
       - Схема
 swagger: "2.0"

@@ -136,7 +136,7 @@ func (client *Client) listenLeader() {
 				}
 				if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
 					log.WithMetadata(map[string]interface{}{
-						"comment":    applyLogResponse.Result,
+						"comment":    string(applyLogResponse.Result),
 						"applyError": applyLogResponse.ApplyError,
 					}).Warn(codes.SyncApplyError, "cluster.SyncApply announce myself")
 				}

@@ -1,6 +1,7 @@
 package subs
 
 import (
+	"errors"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
 	"isp-config-service/holder"
@@ -16,10 +17,10 @@ func EmitConn(conn ws.Conn, event string, args ...interface{}) {
 	}
 }
 
-func SyncApplyCommand(command []byte, commandName string) {
+func SyncApplyCommand(command []byte, commandName string) (interface{}, error) {
 	applyLogResponse, err := holder.ClusterClient.SyncApply(command)
 	if err != nil {
-		log.Warnf(codes.SyncApplyError, "apply %s: %v", commandName, err)
+		return nil, err
 	}
 	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
 		log.WithMetadata(map[string]interface{}{
@@ -27,5 +28,7 @@ func SyncApplyCommand(command []byte, commandName string) {
 			"applyError":  applyLogResponse.ApplyError,
 			"commandName": commandName,
 		}).Warnf(codes.SyncApplyError, "apply command")
+		return applyLogResponse.Result, errors.New(applyLogResponse.ApplyError)
 	}
+	return applyLogResponse.Result, nil
 }

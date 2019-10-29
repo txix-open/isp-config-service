@@ -9,6 +9,7 @@ import (
 
 type Conn interface {
 	Id() string
+	Disconnect()
 	Parameters() (moduleName string, err error)
 	Emit(event string, args ...interface{}) error
 	IsConfigClusterNode() bool
@@ -29,6 +30,10 @@ func (c *wsConn) Parameters() (moduleName string, err error) {
 
 func (c *wsConn) Id() string {
 	return c.conn.Id()
+}
+
+func (c *wsConn) Disconnect() {
+	c.conn.Disconnect()
 }
 
 func (c *wsConn) Emit(event string, args ...interface{}) error {

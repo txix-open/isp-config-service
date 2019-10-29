@@ -8,9 +8,7 @@ import (
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
-	"isp-config-service/codes"
 	"isp-config-service/entity"
-	"isp-config-service/holder"
 	"isp-config-service/service"
 	"isp-config-service/store/state"
 	"isp-config-service/ws"
@@ -36,17 +34,9 @@ func (h *socketEventHandler) handleModuleReady(conn ws.Conn, data []byte) string
 	})
 	if changed {
 		command := cluster.PrepareUpdateBackendDeclarationCommand(declaration)
-		applyLogResponse, err := holder.ClusterClient.SyncApply(command)
+		_, err = SyncApplyCommand(command, "UpdateBackendDeclarationCommand")
 		if err != nil {
 			return err.Error()
-		}
-		if applyLogResponse.ApplyError != "" {
-			log.WithMetadata(map[string]interface{}{
-				"comment":     applyLogResponse.Result,
-				"applyError":  applyLogResponse.ApplyError,
-				"commandName": "UpdateBackendDeclarationCommand",
-			}).Warn(codes.SyncApplyError, "apply command")
-			return applyLogResponse.ApplyError
 		}
 	}
 	return Ok
@@ -95,7 +85,10 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 		LastConnectedAt: now,
 	}
 	command := cluster.PrepareModuleConnectedCommand(newModule)
-	SyncApplyCommand(command, "ModuleConnectedCommand")
+	_, err = SyncApplyCommand(command, "ModuleConnectedCommand")
+	if err != nil {
+		return err.Error()
+	}
 	// />
 
 	module := new(entity.Module)
@@ -115,12 +108,7 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 		UpdatedAt: now,
 	}
 	command = cluster.PrepareUpdateConfigSchemaCommand(schema)
-	i, err := holder.ClusterClient.SyncApply(command)
-	if err != nil {
-		log.WithMetadata(map[string]interface{}{
-			"answer": i,
-		}).Warnf(codes.SyncApplyError, "apply ModuleSendConfigSchemaCommand %v", err)
-	}
+	_, _ = SyncApplyCommand(command, "UpdateConfigSchemaCommand")
 
 	var configs []entity.Config
 	h.store.VisitReadonlyState(func(readState state.ReadonlyState) {
@@ -141,7 +129,7 @@ func (h *socketEventHandler) handleConfigSchema(conn ws.Conn, data []byte) strin
 		}
 
 		command := cluster.PrepareUpsertConfigCommand(upsertConfig)
-		SyncApplyCommand(command, "UpsertConfigCommand")
+		_, _ = SyncApplyCommand(command, "UpsertConfigCommand")
 	}
 	return Ok
 }
