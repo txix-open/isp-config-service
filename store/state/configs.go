@@ -19,6 +19,7 @@ type WriteableConfigStore interface {
 
 type ReadonlyConfigStore interface {
 	GetActiveByModuleId(moduleId string) *entity.Config
+	GetActiveByModuleName(moduleId string) *entity.Config
 	GetByIds(ids []string) []entity.Config
 	GetByModuleIds(ids []string) []entity.Config
 	FilterByCommonConfigs(commonIds []string) []entity.Config

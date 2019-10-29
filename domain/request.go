@@ -7,3 +7,7 @@ type ConfigIdRequest struct {
 type GetByModuleIdRequest struct {
 	ModuleId string `valid:"required~Required"`
 }
+
+type GetByModuleNameRequest struct {
+	ModuleName string `valid:"required~Required"`
+}

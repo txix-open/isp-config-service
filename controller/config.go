@@ -23,15 +23,18 @@ type config struct {
 // @Tags Конфигурация
 // @Accept  json
 // @Produce  json
-// @Param body body domain.GetByModuleIdRequest true "название модуля"
+// @Param body body domain.GetByModuleNameRequest true "название модуля"
 // @Success 200 {object} entity.Config
 // @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
 // @Failure 500 {object} structure.GrpcError
 // @Router /config/get_active_config_by_module_name [POST]
-func (c *config) GetActiveConfigByModuleName(request domain.GetByModuleIdRequest) (*entity.Config, error) {
+func (c *config) GetActiveConfigByModuleName(request domain.GetByModuleNameRequest) (*entity.Config, error) {
 	var response *entity.Config
 	c.rstore.VisitReadonlyState(func(state state.ReadonlyState) {
-		response = state.Configs().GetActiveByModuleId(request.ModuleId)
+		module := state.Modules().GetByName(request.ModuleName)
+		if module != nil {
+			response = state.Configs().GetActiveByModuleId(module.Id)
+		}
 	})
 	if response == nil {
 		return nil, status.Error(codes.NotFound, utils.ValidationError)
