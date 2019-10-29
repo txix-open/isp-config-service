@@ -20,6 +20,7 @@ func EmitConn(conn ws.Conn, event string, args ...interface{}) {
 func SyncApplyCommand(command []byte, commandName string) (interface{}, error) {
 	applyLogResponse, err := holder.ClusterClient.SyncApply(command)
 	if err != nil {
+		log.Warnf(codes.SyncApplyError, "apply %s: %v", commandName, err)
 		return nil, err
 	}
 	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
