@@ -108,7 +108,7 @@ func (h *socketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 	h.store.VisitReadonlyState(func(readState state.ReadonlyState) {
 		configs = readState.Configs().GetByModuleIds([]string{module.Id})
 	})
-	if len(configs) == 0 {
+	if len(configs) == 0 && len(configSchema.DefaultConfig) > 0 {
 		config := entity.Config{
 			Id:        state.GenerateId(),
 			Name:      module.Name,
