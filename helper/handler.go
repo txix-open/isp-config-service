@@ -22,8 +22,8 @@ type Handlers struct {
 	GetCommonConfigs         func(identities []string) []entity.CommonConfig                              `method:"get_configs" group:"common_config" inner:"true"`
 	CreateUpdateCommonConfig func(config entity.CommonConfig) (*entity.CommonConfig, error)               `method:"create_update_config" group:"common_config" inner:"true"`
 	DeleteCommonConfig       func(req domain.ConfigIdRequest) (*domain.DeleteCommonConfigResponse, error) `method:"delete_config" group:"common_config" inner:"true"`
-	CompileConfigs           func(req domain.CompileConfigsRequest) controller.CompiledConfig             `method:"delete_config" group:"compile" inner:"true"`
-	GetLinks                 func(req domain.ConfigIdRequest) domain.CommonConfigLinks                    `method:"delete_config" group:"get_links" inner:"true"`
+	CompileConfigs           func(req domain.CompileConfigsRequest) controller.CompiledConfig             `method:"compile" group:"common_config" inner:"true"`
+	GetLinks                 func(req domain.ConfigIdRequest) domain.CommonConfigLinks                    `method:"get_links" group:"common_config" inner:"true"`
 
 	// ===== ROUTING =====
 	GetRoutes func() ([]structure.BackendDeclaration, error) `method:"get_routes" group:"routing" inner:"true"`
