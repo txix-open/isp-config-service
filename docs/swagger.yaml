@@ -1,5 +1,21 @@
 basePath: /api/config
 definitions:
+  domain.CommonConfigLinks:
+    additionalProperties:
+      items: {}
+      type: array
+    type: object
+  domain.CompileConfigsRequest:
+    properties:
+      commonConfigsIdList:
+        items:
+          type: string
+        type: array
+      data:
+        type: object
+    required:
+    - commonConfigsIdList
+    type: object
   domain.ConfigIdRequest:
     properties:
       id:
@@ -23,6 +39,14 @@ definitions:
       version:
         type: string
     type: object
+  domain.DeleteCommonConfigResponse:
+    properties:
+      deleted:
+        type: boolean
+      links:
+        $ref: '#/definitions/domain.CommonConfigLinks'
+        type: object
+    type: object
   domain.DeleteResponse:
     properties:
       deleted:
@@ -34,6 +58,13 @@ definitions:
         type: string
     required:
     - moduleId
+    type: object
+  domain.GetByModuleNameRequest:
+    properties:
+      moduleName:
+        type: string
+    required:
+    - moduleName
     type: object
   domain.ModuleInfo:
     properties:
@@ -540,6 +571,29 @@ info:
   title: ISP configuration service
   version: 2.0.0
 paths:
+  /common_config/compile:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает скомпилированный объект конфигурации
+      parameters:
+      - description: перечисление идентификаторов общей конфигурации и исхдных конфиг
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CompileConfigsRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CompiledConfig'
+      summary: Метод компиляции итоговой конфигурации для модулей
+      tags:
+      - Общие конфигурации
   /common_config/create_update_config:
     post:
       consumes:
@@ -569,40 +623,35 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/structure.GrpcError'
-      summary: Метод обновления конфигурации
+      summary: Метод обновления оьщей конфигурации
       tags:
       - Общие конфигурации
   /common_config/delete_config:
     post:
       consumes:
       - application/json
-      description: Возвращает количество удаленных модулей
+      description: Возвращает флаг удаления и набор связей с модулями и конфигурациями,
+        в случае наличия связей deleted всегда false
       parameters:
-      - description: массив идентификаторов конфигураций
+      - description: id общей конфигурации
         in: body
         name: body
         required: true
         schema:
-          items:
-            type: string
-          type: array
+          $ref: '#/definitions/domain.ConfigIdRequest'
+          type: object
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.DeleteResponse'
-        "400":
-          description: если конфигурации где-то используются либо не указан объект
-            identities
-          schema:
-            $ref: '#/definitions/structure.GrpcError'
+            $ref: '#/definitions/domain.DeleteCommonConfigResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/structure.GrpcError'
-      summary: Метод удаления объектов конфигурации по идентификаторам
+      summary: Метод удаления объектов общей конфигурации по идентификаторам
       tags:
       - Общие конфигурации
   /common_config/get_configs:
@@ -621,6 +670,30 @@ paths:
               $ref: '#/definitions/entity.CommonConfig'
             type: array
       summary: Метод получения объектов конфигурации по идентификаторам
+      tags:
+      - Общие конфигурации
+  /common_config/get_links:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает ассоциативный массив, ключами которого являются название
+        модулей, а значения - название конфигурации модуля
+      parameters:
+      - description: id общей конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.CommonConfigLinks'
+      summary: Метод получения связей общей конфигурациями с конфигурацией модулей
       tags:
       - Общие конфигурации
   /config/create_update_config:
@@ -698,7 +771,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/domain.GetByModuleIdRequest'
+          $ref: '#/definitions/domain.GetByModuleNameRequest'
           type: object
       produces:
       - application/json

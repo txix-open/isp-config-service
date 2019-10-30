@@ -19,9 +19,11 @@ type Handlers struct {
 	DeleteConfig                func(identities []string) (*domain.DeleteResponse, error)           `method:"delete_config" group:"config" inner:"true"`
 
 	// ===== COMMON CONFIG =====
-	GetCommonConfigs         func(identities []string) []entity.CommonConfig                `method:"get_configs" group:"common_config" inner:"true"`
-	CreateUpdateCommonConfig func(config entity.CommonConfig) (*entity.CommonConfig, error) `method:"create_update_config" group:"common_config" inner:"true"`
-	DeleteCommonConfig       func(identities []string) (*domain.DeleteResponse, error)      `method:"delete_config" group:"common_config" inner:"true"`
+	GetCommonConfigs         func(identities []string) []entity.CommonConfig                              `method:"get_configs" group:"common_config" inner:"true"`
+	CreateUpdateCommonConfig func(config entity.CommonConfig) (*entity.CommonConfig, error)               `method:"create_update_config" group:"common_config" inner:"true"`
+	DeleteCommonConfig       func(req domain.ConfigIdRequest) (*domain.DeleteCommonConfigResponse, error) `method:"delete_config" group:"common_config" inner:"true"`
+	CompileConfigs           func(req domain.CompileConfigsRequest) controller.CompiledConfig             `method:"delete_config" group:"compile" inner:"true"`
+	GetLinks                 func(req domain.ConfigIdRequest) domain.CommonConfigLinks                    `method:"delete_config" group:"get_links" inner:"true"`
 
 	// ===== ROUTING =====
 	GetRoutes func() ([]structure.BackendDeclaration, error) `method:"get_routes" group:"routing" inner:"true"`
@@ -43,6 +45,8 @@ func GetHandlers() *Handlers {
 		GetCommonConfigs:         controller.CommonConfig.GetConfigs,
 		CreateUpdateCommonConfig: controller.CommonConfig.CreateUpdateConfig,
 		DeleteCommonConfig:       controller.CommonConfig.DeleteConfigs,
+		CompileConfigs:           controller.CommonConfig.CompileConfigs,
+		GetLinks:                 controller.CommonConfig.GetLinks,
 
 		GetRoutes: controller.Routes.GetRoutes,
 

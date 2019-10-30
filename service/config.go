@@ -23,7 +23,7 @@ const ConfigWatchersRoomSuffix = "_config"
 
 type configService struct{}
 
-func (configService) GetCompiledConfig(moduleName string, state state.ReadonlyState) (map[string]interface{}, error) {
+func (s configService) GetCompiledConfig(moduleName string, state state.ReadonlyState) (map[string]interface{}, error) {
 	module := state.Modules().GetByName(moduleName)
 	if module == nil {
 		return nil, errors.Errorf("module with name %s not found", moduleName)
@@ -32,15 +32,19 @@ func (configService) GetCompiledConfig(moduleName string, state state.ReadonlySt
 	if config == nil {
 		return nil, errors.Errorf("no active configs for moduleId %s", module.Id)
 	}
-	commonConfigs := state.CommonConfigs().GetByIds(config.CommonConfigs)
+
+	return s.CompileConfig(config.Data, state, config.CommonConfigs...), nil
+}
+
+func (configService) CompileConfig(data map[string]interface{}, state state.ReadonlyState, commonConfigsIds ...string) map[string]interface{} {
+	commonConfigs := state.CommonConfigs().GetByIds(commonConfigsIds)
 	configsToMerge := make([]map[string]interface{}, 0, len(commonConfigs))
 	for _, common := range commonConfigs {
 		configsToMerge = append(configsToMerge, common.Data)
 	}
-	configsToMerge = append(configsToMerge, config.Data)
+	configsToMerge = append(configsToMerge, data)
 
-	resultData := mergeNestedMaps(configsToMerge...)
-	return resultData, nil
+	return mergeNestedMaps(configsToMerge...)
 }
 
 func (configService) HandleActivateConfigCommand(activateConfig cluster.ActivateConfig, state state.WritableState) cluster.ResponseWithError {

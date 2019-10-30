@@ -30,3 +30,10 @@ type Connection struct {
 	Endpoints     []structure.EndpointConfig `json:",omitempty"`
 	EstablishedAt time.Time
 }
+
+type CommonConfigLinks map[string][]string
+
+type DeleteCommonConfigResponse struct {
+	Deleted bool
+	Links   CommonConfigLinks
+}
