@@ -6,7 +6,7 @@ type ConfigIdRequest struct {
 
 type CompileConfigsRequest struct {
 	Data                map[string]interface{}
-	CommonConfigsIdList []string `valid:"required~Required"`
+	CommonConfigsIdList []string
 }
 
 type GetByModuleIdRequest struct {

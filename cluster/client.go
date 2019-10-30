@@ -116,6 +116,8 @@ func (client *Client) listenLeader() {
 				log.Fatalf(codes.LeaderClientConnectionError, "could not connect to leader: %v", err)
 				continue
 			}
+			client.leaderClient = leaderClient
+
 			go func(declaration structure.BackendDeclaration) {
 				response, err := leaderClient.SendDeclaration(declaration, defaultApplyTimeout)
 				if err != nil {
@@ -124,8 +126,6 @@ func (client *Client) listenLeader() {
 					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader. response: %s", response)
 				}
 			}(client.declaration)
-
-			client.leaderClient = leaderClient
 		} else if n.LeaderElected && n.IsLeader {
 			go func(declaration structure.BackendDeclaration) {
 				now := state.GenerateDate()
