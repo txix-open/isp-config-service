@@ -1,11 +1,10 @@
 package controller
 
 import (
-	"github.com/integration-system/isp-lib/utils"
-	"google.golang.org/grpc/codes"
 	"isp-config-service/cluster"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
+	"isp-config-service/service"
 	"isp-config-service/store"
 	"isp-config-service/store/state"
 )
@@ -37,7 +36,7 @@ func (c *commonConfig) GetConfigs(identities []string) []entity.CommonConfig {
 }
 
 // CreateUpdateConfig godoc
-// @Summary Метод обновления конфигурации
+// @Summary Метод обновления общей конфигурации
 // @Description Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
 // В случае обновления рассылает все подключенным модулям актуальную конфигурацию
 // @Tags Общие конфигурации
@@ -69,31 +68,59 @@ func (c *commonConfig) CreateUpdateConfig(config entity.CommonConfig) (*entity.C
 }
 
 // DeleteConfigs godoc
-// @Summary Метод удаления объектов конфигурации по идентификаторам
-// @Description Возвращает количество удаленных модулей
+// @Summary Метод удаления объектов общей конфигурации по идентификаторам
+// @Description Возвращает флаг удаления и набор связей с модулями и конфигурациями, в случае наличия связей deleted всегда false
 // @Tags Общие конфигурации
 // @Accept  json
 // @Produce  json
-// @Param body body []string true "массив идентификаторов конфигураций"
-// @Success 200 {object} domain.DeleteResponse
-// @Failure 400 {object} structure.GrpcError "если конфигурации где-то используются либо не указан объект identities"
+// @Param body body domain.ConfigIdRequest true "id общей конфигурации"
+// @Success 200 {object} domain.DeleteCommonConfigResponse
 // @Failure 500 {object} structure.GrpcError
 // @Router /common_config/delete_config [POST]
-func (c *commonConfig) DeleteConfigs(identities []string) (*domain.DeleteResponse, error) {
-	if len(identities) == 0 {
-		validationErrors := map[string]string{
-			"ids": "Required",
-		}
-		return nil, utils.CreateValidationErrorDetails(codes.InvalidArgument, utils.ValidationError, validationErrors)
-	}
-
-	var response domain.DeleteResponse
-	command := cluster.PrepareDeleteCommonConfigsCommand(identities)
+func (c *commonConfig) DeleteConfigs(req domain.ConfigIdRequest) (*domain.DeleteCommonConfigResponse, error) {
+	var response domain.DeleteCommonConfigResponse
+	command := cluster.PrepareDeleteCommonConfigsCommand(req.Id)
 	err := PerformSyncApplyWithError(command, "DeleteCommonConfigsCommand", &response)
 	if err != nil {
 		return nil, err
 	}
 	return &response, nil
+}
+
+type CompiledConfig map[string]interface{}
+
+// CompileConfigs godoc
+// @Summary Метод компиляции итоговой конфигурации для модулей
+// @Description Возвращает скомпилированный объект конфигурации
+// @Tags Общие конфигурации
+// @Accept  json
+// @Produce  json
+// @Param body body domain.CompileConfigsRequest true "перечисление идентификаторов общей конфигурации и исхдных конфиг"
+// @Success 200 {object} CompiledConfig
+// @Router /common_config/compile [POST]
+func (c *commonConfig) CompileConfigs(req domain.CompileConfigsRequest) CompiledConfig {
+	var result map[string]interface{}
+	c.rstore.VisitReadonlyState(func(state state.ReadonlyState) {
+		result = service.ConfigService.CompileConfig(req.Data, state, req.CommonConfigsIdList...)
+	})
+	return result
+}
+
+// GetLinks godoc
+// @Summary Метод получения связей общей конфигурациями с конфигурацией модулей
+// @Description Возвращает ассоциативный массив, ключами которого являются название модулей, а значения - название конфигурации модуля
+// @Tags Общие конфигурации
+// @Accept  json
+// @Produce  json
+// @Param body body domain.ConfigIdRequest true "id общей конфигурации"
+// @Success 200 {object} domain.CommonConfigLinks
+// @Router /common_config/get_links [POST]
+func (c *commonConfig) GetLinks(req domain.ConfigIdRequest) domain.CommonConfigLinks {
+	var result domain.CommonConfigLinks
+	c.rstore.VisitReadonlyState(func(state state.ReadonlyState) {
+		result = service.CommonConfigService.GetCommonConfigLinks(req.Id, state)
+	})
+	return result
 }
 
 func NewCommonConfig(rstore *store.Store) *commonConfig {

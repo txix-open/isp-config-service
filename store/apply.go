@@ -103,7 +103,7 @@ func (s *Store) applyUpsertConfigCommand(data []byte) (interface{}, error) {
 }
 
 func (s *Store) applyDeleteCommonConfigsCommand(data []byte) (interface{}, error) {
-	deleteConfigs := cluster.DeleteConfigs{}
+	deleteConfigs := cluster.DeleteCommonConfig{}
 	err := json.Unmarshal(data, &deleteConfigs)
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal cluster.DeleteConfigs")

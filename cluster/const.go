@@ -72,8 +72,8 @@ func PrepareUpdateConfigSchemaCommand(schema entity.ConfigSchema) []byte {
 	return prepareCommand(UpdateConfigSchemaCommand, schema)
 }
 
-func PrepareDeleteCommonConfigsCommand(ids []string) []byte {
-	return prepareCommand(DeleteCommonConfigsCommand, DeleteModules{Ids: ids})
+func PrepareDeleteCommonConfigsCommand(id string) []byte {
+	return prepareCommand(DeleteCommonConfigsCommand, DeleteCommonConfig{Id: id})
 }
 
 func PrepareUpsertCommonConfigCommand(config UpsertCommonConfig) []byte {

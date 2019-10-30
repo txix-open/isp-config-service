@@ -17,13 +17,12 @@ var (
 
 type commonConfigService struct{}
 
-func (commonConfigService) HandleDeleteConfigsCommand(deleteConfigs cluster.DeleteConfigs, state state.WritableState) cluster.ResponseWithError {
-	ids := deleteConfigs.Ids
-	affectedConfigs := state.Configs().FilterByCommonConfigs(ids)
-	if len(affectedConfigs) > 0 {
-		// TODO обсудить формат и сделать ошибку содержательнее
-		return cluster.NewResponseErrorf(codes2.InvalidArgument, "cant delete, common configs are in use")
+func (s commonConfigService) HandleDeleteConfigsCommand(deleteCommonConfig cluster.DeleteCommonConfig, state state.WritableState) cluster.ResponseWithError {
+	links := s.GetCommonConfigLinks(deleteCommonConfig.Id, state)
+	if len(links) > 0 {
+		return cluster.NewResponse(domain.DeleteCommonConfigResponse{Deleted: false, Links: links})
 	}
+	ids := []string{deleteCommonConfig.Id}
 	deleted := state.WritableCommonConfigs().DeleteByIds(ids)
 	if holder.ClusterClient.IsLeader() {
 		// TODO handle db errors
@@ -34,10 +33,10 @@ func (commonConfigService) HandleDeleteConfigsCommand(deleteConfigs cluster.Dele
 			}).Errorf(codes.DatabaseOperationError, "delete configs: %v", err)
 		}
 	}
-	return cluster.NewResponse(domain.DeleteResponse{Deleted: deleted})
+	return cluster.NewResponse(domain.DeleteCommonConfigResponse{Deleted: deleted > 0})
 }
 
-func (commonConfigService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCommonConfig, state state.WritableState) cluster.ResponseWithError {
+func (s commonConfigService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCommonConfig, state state.WritableState) cluster.ResponseWithError {
 	config := upsertConfig.Config
 	configsByName := state.CommonConfigs().GetByName(config.Name)
 	if upsertConfig.Create {
@@ -72,4 +71,20 @@ func (commonConfigService) HandleUpsertConfigCommand(upsertConfig cluster.Upsert
 		ConfigService.BroadcastNewConfig(state, configsToBroadcast...)
 	}
 	return cluster.NewResponse(config)
+}
+
+func (s commonConfigService) GetCommonConfigLinks(commonConfigId string, state state.ReadonlyState) domain.CommonConfigLinks {
+	configs := state.Configs().FilterByCommonConfigs([]string{commonConfigId})
+	result := make(domain.CommonConfigLinks)
+	for _, c := range configs {
+		module := state.Modules().GetById(c.ModuleId)
+		if module != nil {
+			if configs, ok := result[module.Name]; ok {
+				result[module.Name] = append(configs, c.Name)
+			} else {
+				result[module.Name] = []string{c.Name}
+			}
+		}
+	}
+	return result
 }
