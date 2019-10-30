@@ -83,20 +83,14 @@ func (r *Raft) listenLeader() {
 	}
 }
 
-func NewRaft(bind string, configuration conf.ClusterConfiguration, state raft.FSM) (*Raft, error) {
+func NewRaft(tcpListener net.Listener, configuration conf.ClusterConfiguration, state raft.FSM) (*Raft, error) {
 	logStore, store, snapshotStore, err := makeStores(configuration)
 	if err != nil {
 		return nil, err
 	}
 
-	outerAddr, err := net.ResolveTCPAddr("tcp", configuration.OuterAddress)
-	if err != nil {
-		return nil, errors.WithMessage(err, "resolve outer address")
-	}
-	trans, err := raft.NewTCPTransport(bind, outerAddr, len(configuration.Peers), defaultConnectTimeout, os.Stdout)
-	if err != nil {
-		return nil, errors.WithMessage(err, "create tcp transport")
-	}
+	streamLayer := &StreamLayer{Listener: tcpListener}
+	trans := raft.NewNetworkTransport(streamLayer, len(configuration.Peers), defaultConnectTimeout, os.Stdout)
 
 	cfg := raft.DefaultConfig()
 	cfg.Logger = &LoggerAdapter{name: "RAFT"}

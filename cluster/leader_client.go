@@ -14,7 +14,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 )
 
@@ -93,27 +92,12 @@ func getUrl(address string) string {
 	if err != nil {
 		panic(err) // must never occurred
 	}
-
 	cfg := config.Get().(*conf.Configuration)
-	port, err := strconv.Atoi(cfg.WS.Rest.Port)
-	if err != nil {
-		panic(err)
-	}
-	// TODO логика для определения порта пира, т.к всё тестируется на одной машине
-	//peerNumber := addr.Port - 9000
-	//switch peerNumber {
-	//case 2:
-	//	port = 9011
-	//case 3:
-	//	port = 9021
-	//case 4:
-	//	port = 9031
-	//}
-	//
+
 	params := url.Values{}
 	params.Add(ClusterParam, "true")
 	// TODO вынести ключи в константы в isp-lib и выпилить instance_uuid
 	params.Add("module_name", cfg.ModuleName)
 	params.Add("instance_uuid", "9d89354b-c728-4b48-b002-a7d3b229f151")
-	return fmt.Sprintf("ws://%s:%d/isp-etp/?%s", addr.IP.String(), port, params.Encode())
+	return fmt.Sprintf("ws://%s:%d/isp-etp/?%s", addr.IP.String(), addr.Port, params.Encode())
 }

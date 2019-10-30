@@ -72,7 +72,7 @@ func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, mesh sta
 		if err != nil {
 			log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected %v", err)
 		}
-	}(moduleName, event, addressList)
+	}(event, event, addressList)
 }
 
 func (ds *discoveryService) broadcastAddrList(room string, event string, addressList []structure.AddressConfiguration) error {

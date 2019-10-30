@@ -33,4 +33,7 @@ const (
 	DiscoveryServiceSendModulesError  = 1019
 	RoutesServiceSendRoutesError      = 1020
 	ConfigServiceBroadcastConfigError = 1021
+
+	// Cmux
+	InitCmuxError = 1022
 )

@@ -20,7 +20,7 @@ ws:
     port: "9092"
     ip: "127.0.0.1"
   raft:
-    port: "9003"
+    port: "9001"
     ip: "0.0.0.0"
 
 metrics:
@@ -35,6 +35,6 @@ metrics:
 cluster:
   dataDir: ./data
   inMemory: true
-  outerAddress: 127.0.0.1:9003
+  outerAddress: 127.0.0.1:9001
   peers:
-    - 127.0.0.1:9003
+    - 127.0.0.1:9001

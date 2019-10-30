@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/integration-system/isp-etp-go"
 	"github.com/integration-system/isp-lib/backend"
 	"github.com/integration-system/isp-lib/bootstrap"
 	"github.com/integration-system/isp-lib/config"
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
+	"github.com/soheilhy/cmux"
 	"github.com/thecodeteam/goodbye"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
@@ -24,7 +26,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 )
 
 const (
@@ -64,8 +65,14 @@ func main() {
 	}
 
 	model.DbClient.ReceiveConfiguration(cfg.Database)
-	_, raftStore := initRaft(cfg.WS.Raft.GetAddress(), cfg.Cluster, declaration)
-	initWebsocket(ctx, cfg.WS.Rest.GetAddress(), raftStore)
+
+	httpListener, raftListener, err := initMultiplexer(cfg.WS.Rest)
+	if err != nil {
+		log.Fatalf(codes.InitCmuxError, "init cmux: %v", err)
+	}
+
+	_, raftStore := initRaft(raftListener, cfg.Cluster, declaration)
+	initWebsocket(ctx, httpListener, raftStore)
 	initGrpc(cfg.WS.Grpc, raftStore)
 
 	defer goodbye.Exit(ctx, -1)
@@ -75,7 +82,29 @@ func main() {
 	<-shutdownChan
 }
 
-func initWebsocket(ctx context.Context, bindAddress string, raftStore *store.Store) {
+func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.Listener, net.Listener, error) {
+	outerAddr, err := net.ResolveTCPAddr("tcp4", addressConfiguration.GetAddress())
+	if err != nil {
+		return nil, nil, fmt.Errorf("resolve outer address: %v", err)
+	}
+	tcpListener, err := net.ListenTCP("tcp4", outerAddr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("create tcp transport: %v", err)
+	}
+
+	m := cmux.New(tcpListener)
+	httpListener := m.Match(cmux.HTTP1())
+	raftListener := m.Match(cmux.Any())
+
+	go func() {
+		if err := m.Serve(); err != nil {
+			log.Fatalf(codes.InitCmuxError, "serve cmux: %v", err)
+		}
+	}()
+	return httpListener, raftListener, nil
+}
+
+func initWebsocket(ctx context.Context, listener net.Listener, raftStore *store.Store) {
 	etpConfig := etp.ServerConfig{
 		InsecureSkipVerify: true,
 	}
@@ -84,9 +113,9 @@ func initWebsocket(ctx context.Context, bindAddress string, raftStore *store.Sto
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/isp-etp/", etpServer.ServeHttp)
-	httpServer := &http.Server{Addr: bindAddress, Handler: mux}
+	httpServer := &http.Server{Handler: mux}
 	go func() {
-		if err := httpServer.ListenAndServe(); err != nil {
+		if err := httpServer.Serve(listener); err != nil {
 			log.Fatalf(codes.StartHttpServerError, "http server closed: %v", err)
 		}
 	}()
@@ -94,14 +123,14 @@ func initWebsocket(ctx context.Context, bindAddress string, raftStore *store.Sto
 	holder.HttpServer = httpServer
 }
 
-func initRaft(bindAddress string, clusterCfg conf.ClusterConfiguration, declaration structure.BackendDeclaration) (*cluster.Client, *store.Store) {
+func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration, declaration structure.BackendDeclaration) (*cluster.Client, *store.Store) {
 	raftState, err := store.NewStateFromRepository()
 	if err != nil {
 		log.Fatal(codes.RestoreFromRepositoryError, err)
 		return nil, nil
 	}
 	raftStore := store.NewStateStore(raftState)
-	r, err := raft.NewRaft(bindAddress, clusterCfg, raftStore)
+	r, err := raft.NewRaft(listener, clusterCfg, raftStore)
 	if err != nil {
 		log.Fatalf(codes.InitRaftError, "unable to create raft server. %v", err)
 		return nil, nil
