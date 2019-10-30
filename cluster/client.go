@@ -6,7 +6,9 @@ import (
 	log "github.com/integration-system/isp-log"
 	jsoniter "github.com/json-iterator/go"
 	"isp-config-service/codes"
+	"isp-config-service/entity"
 	"isp-config-service/raft"
+	"isp-config-service/store/state"
 	"sync"
 	"time"
 )
@@ -126,18 +128,18 @@ func (client *Client) listenLeader() {
 			client.leaderClient = leaderClient
 		} else if n.LeaderElected && n.IsLeader {
 			go func(declaration structure.BackendDeclaration) {
-				command := PrepareUpdateBackendDeclarationCommand(declaration)
+				now := state.GenerateDate()
+				module := entity.Module{
+					Id:              state.GenerateId(),
+					Name:            declaration.ModuleName,
+					CreatedAt:       now,
+					LastConnectedAt: now,
+				}
+				command := PrepareModuleConnectedCommand(module)
+				syncApplyCommand(client, command, "ModuleConnectedCommand")
 
-				applyLogResponse, err := client.SyncApply(command)
-				if err != nil {
-					log.Warnf(codes.SyncApplyError, "cluster.SyncApply announce myself: %v", err)
-				}
-				if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
-					log.WithMetadata(map[string]interface{}{
-						"comment":    string(applyLogResponse.Result),
-						"applyError": applyLogResponse.ApplyError,
-					}).Warn(codes.SyncApplyError, "cluster.SyncApply announce myself")
-				}
+				declarationCommand := PrepareUpdateBackendDeclarationCommand(declaration)
+				syncApplyCommand(client, declarationCommand, "UpdateBackendDeclarationCommand")
 			}(client.declaration)
 		}
 		client.leaderState = leaderState{
@@ -166,4 +168,18 @@ func NewRaftClusterClient(r *raft.Raft, declaration structure.BackendDeclaration
 	go client.listenLeader()
 
 	return client
+}
+
+func syncApplyCommand(clusterClient *Client, command []byte, commandName string) {
+	applyLogResponse, err := clusterClient.SyncApply(command)
+	if err != nil {
+		log.Warnf(codes.SyncApplyError, "announce myself. apply %s: %v", commandName, err)
+	}
+	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
+		log.WithMetadata(map[string]interface{}{
+			"result":      string(applyLogResponse.Result),
+			"applyError":  applyLogResponse.ApplyError,
+			"commandName": commandName,
+		}).Warnf(codes.SyncApplyError, "announce myself. apply command")
+	}
 }
