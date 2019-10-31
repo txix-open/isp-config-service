@@ -67,8 +67,8 @@ func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, mesh sta
 	defer ds.lock.RUnlock()
 	event := utils.ModuleConnected(moduleName)
 	addressList := mesh.GetModuleAddresses(moduleName)
-	go func(moduleName, event string, addressList []structure.AddressConfiguration) {
-		err := ds.broadcastAddrList(moduleName, event, addressList)
+	go func(room, event string, addressList []structure.AddressConfiguration) {
+		err := ds.broadcastAddrList(room, event, addressList)
 		if err != nil {
 			log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected %v", err)
 		}

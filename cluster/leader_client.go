@@ -43,10 +43,11 @@ func (c *SocketLeaderClient) SendDeclaration(backend structure.BackendDeclaratio
 func (c *SocketLeaderClient) Dial(timeout time.Duration) error {
 	backOff := backoff.NewExponentialBackOff()
 	backOff.MaxElapsedTime = timeout
+	bf := backoff.WithContext(backOff, c.globalCtx)
 	dial := func() error {
-		return c.client.Dial(context.Background(), c.url)
+		return c.client.Dial(c.globalCtx, c.url)
 	}
-	return backoff.Retry(dial, backOff)
+	return backoff.Retry(dial, bf)
 }
 
 func (c *SocketLeaderClient) Close() {

@@ -34,3 +34,11 @@ func SyncApplyCommand(command []byte, commandName string) (interface{}, error) {
 	}
 	return applyLogResponse.Result, nil
 }
+
+func FormatErrorConnection(err error) []byte {
+	errMap := map[string]interface{}{
+		"error": err,
+	}
+	data, _ := json.Marshal(errMap)
+	return data
+}

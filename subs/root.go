@@ -47,7 +47,7 @@ func (h *socketEventHandler) handleConnect(conn etp.Conn) {
 	moduleName, err := Parameters(conn)
 	log.Debugf(0, "handleConnect: %s", moduleName) // REMOVE
 	if err != nil {
-		EmitConn(conn, utils.ErrorConnection, []byte(err.Error()))
+		EmitConn(conn, utils.ErrorConnection, FormatErrorConnection(err))
 		_ = conn.Close()
 		return
 	}
@@ -62,7 +62,7 @@ func (h *socketEventHandler) handleConnect(conn etp.Conn) {
 	command := cluster.PrepareModuleConnectedCommand(module)
 	_, err = SyncApplyCommand(command, "ModuleConnectedCommand")
 	if err != nil && !isClusterNode {
-		EmitConn(conn, utils.ErrorConnection, []byte(err.Error()))
+		EmitConn(conn, utils.ErrorConnection, FormatErrorConnection(err))
 		_ = conn.Close()
 		return
 	}
