@@ -102,7 +102,7 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 	config := upsertConfig.Config
 	module := state.Modules().GetById(config.ModuleId)
 	if module == nil {
-		return cluster.NewResponseErrorf(codes2.InvalidArgument, "invalid moduleId %s", config.ModuleId)
+		return cluster.NewResponseErrorf(codes2.NotFound, "invalid moduleId %s", config.ModuleId)
 	}
 
 	if !upsertConfig.Unsafe {
