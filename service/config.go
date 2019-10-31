@@ -189,16 +189,14 @@ func (configService) validateSchema(schema entity.ConfigSchema, data map[string]
 	documentLoader := gojsonschema.NewGoLoader(data)
 	if result, err := gojsonschema.Validate(schemaLoader, documentLoader); err != nil {
 		return false, err
-	} else if len(result.Errors()) > 0 {
+	} else if result.Valid() {
+		return true, nil
+	} else {
 		desc := make(map[string]string)
 		for _, value := range result.Errors() {
 			desc[value.Field()] = value.Description()
 		}
 		return false, validationSchemaError{Description: desc}
-	} else if result.Valid() {
-		return true, nil
-	} else {
-		return false, nil
 	}
 }
 
