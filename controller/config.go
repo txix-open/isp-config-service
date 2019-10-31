@@ -54,13 +54,14 @@ func (c *config) GetActiveConfigByModuleName(request domain.GetByModuleNameReque
 // @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
 // @Failure 500 {object} structure.GrpcError
 // @Router /config/create_update_config [POST]
-func (c *config) CreateUpdateConfig(config entity.Config) (*entity.Config, error) {
-	var response entity.Config
+func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*entity.Config, error) {
+	var response domain.CreateUpdateConfigInvalidResponse
 	now := state.GenerateDate()
 	config.CreatedAt = now
 	config.UpdatedAt = now
 	upsertConfig := cluster.UpsertConfig{
-		Config: config,
+		Config: config.Config,
+		Unsafe: config.Unsafe,
 	}
 	if config.Id == "" {
 		upsertConfig.Config.Id = state.GenerateId()
@@ -70,8 +71,11 @@ func (c *config) CreateUpdateConfig(config entity.Config) (*entity.Config, error
 	err := PerformSyncApplyWithError(command, "UpsertConfigCommand", &response)
 	if err != nil {
 		return nil, err
+	} else if response.Valid {
+		return response.Config, nil
+	} else {
+		return nil, utils.CreateValidationErrorDetails(codes.InvalidArgument, utils.ValidationError, response.Details)
 	}
-	return &response, nil
 }
 
 // MarkConfigAsActive godoc

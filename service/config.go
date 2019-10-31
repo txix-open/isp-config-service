@@ -2,13 +2,16 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/integration-system/bellows"
 	"github.com/integration-system/isp-lib/utils"
 	log "github.com/integration-system/isp-log"
 	"github.com/pkg/errors"
+	"github.com/xeipuuv/gojsonschema"
 	codes2 "google.golang.org/grpc/codes"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
+	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/holder"
 	"isp-config-service/model"
@@ -22,6 +25,18 @@ var (
 const ConfigWatchersRoomSuffix = "_config"
 
 type configService struct{}
+
+type validationSchemaError struct {
+	Description map[string]string
+}
+
+func (e validationSchemaError) Error() string {
+	resp := ""
+	for field, desc := range e.Description {
+		resp = fmt.Sprintf("%s- %s%s\n", resp, field, desc)
+	}
+	return resp
+}
 
 func (s configService) GetCompiledConfig(moduleName string, state state.ReadonlyState) (map[string]interface{}, error) {
 	module := state.Modules().GetByName(moduleName)
@@ -87,8 +102,31 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 	config := upsertConfig.Config
 	module := state.Modules().GetById(config.ModuleId)
 	if module == nil {
-		return cluster.NewResponseErrorf(codes2.InvalidArgument, "invalid moduleId %s", config.ModuleId)
+		return cluster.NewResponseErrorf(codes2.NotFound, "moduleId %s not found", config.ModuleId)
 	}
+
+	if !upsertConfig.Unsafe {
+		schemaStorage := state.Schemas().GetByModuleIds([]string{config.ModuleId})
+		if len(schemaStorage) == 0 {
+			return cluster.NewResponseErrorf(codes2.NotFound, "schema for moduleId %s not found", config.ModuleId)
+		}
+
+		dataForValidate := cs.CompileConfig(config.Data, state, config.CommonConfigs...)
+		if _, err := cs.validateSchema(schemaStorage[0], dataForValidate); err != nil {
+			switch err := err.(type) {
+			case validationSchemaError:
+				return cluster.NewResponse(
+					domain.CreateUpdateConfigInvalidResponse{
+						Config:  nil,
+						Valid:   false,
+						Details: err.Description,
+					})
+			default:
+				return cluster.NewResponseErrorf(codes2.Internal, "%v", err)
+			}
+		}
+	}
+
 	if upsertConfig.Create {
 		config = state.WritableConfigs().Create(config)
 	} else {
@@ -111,7 +149,11 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 		}
 	}
 	cs.BroadcastNewConfig(state, config)
-	return cluster.NewResponse(config)
+	return cluster.NewResponse(domain.CreateUpdateConfigInvalidResponse{
+		Config:  &config,
+		Valid:   true,
+		Details: nil,
+	})
 }
 
 func (cs configService) BroadcastNewConfig(state state.ReadonlyState, configs ...entity.Config) {
@@ -139,6 +181,22 @@ func (cs configService) broadcast(room, event, data string) {
 	err := holder.Socket.Broadcast(room, utils.ConfigSendConfigWhenConnected, data)
 	if err != nil {
 		log.Errorf(codes.ConfigServiceBroadcastConfigError, "broadcast %s err: %v", event, err)
+	}
+}
+
+func (configService) validateSchema(schema entity.ConfigSchema, data map[string]interface{}) (bool, error) {
+	schemaLoader := gojsonschema.NewGoLoader(schema.Schema)
+	documentLoader := gojsonschema.NewGoLoader(data)
+	if result, err := gojsonschema.Validate(schemaLoader, documentLoader); err != nil {
+		return false, err
+	} else if result.Valid() {
+		return true, nil
+	} else {
+		desc := make(map[string]string)
+		for _, value := range result.Errors() {
+			desc[value.Field()] = value.Description()
+		}
+		return false, validationSchemaError{Description: desc}
 	}
 }
 

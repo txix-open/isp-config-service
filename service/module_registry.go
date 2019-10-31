@@ -126,7 +126,11 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 	configs := state.Configs().GetByModuleIds(idList)
 	for _, cfg := range configs {
 		info := resMap[cfg.ModuleId]
-		info.Configs = append(info.Configs, cfg)
+		info.Configs = append(info.Configs, domain.ConfigModuleInfo{
+			Config: cfg,
+			Valid:  false,
+		})
+
 		resMap[cfg.ModuleId] = info
 	}
 	schemas := state.Schemas().GetByModuleIds(idList)
@@ -134,6 +138,12 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 		info := resMap[s.ModuleId]
 		schema := s.Schema
 		info.ConfigSchema = &schema
+
+		for i, config := range info.Configs {
+			dataForValidate := ConfigService.CompileConfig(config.Data, state, config.CommonConfigs...)
+			info.Configs[i].Valid, _ = ConfigService.validateSchema(s, dataForValidate)
+		}
+
 		resMap[s.ModuleId] = info
 	}
 
