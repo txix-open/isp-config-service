@@ -1,12 +1,14 @@
 package domain
 
+import "isp-config-service/entity"
+
 type ConfigIdRequest struct {
 	Id string `json:"id" valid:"required~Required"`
 }
 
 type CompileConfigsRequest struct {
 	Data                map[string]interface{}
-	CommonConfigsIdList []string `valid:"required~Required"`
+	CommonConfigsIdList []string
 }
 
 type GetByModuleIdRequest struct {
@@ -15,4 +17,9 @@ type GetByModuleIdRequest struct {
 
 type GetByModuleNameRequest struct {
 	ModuleName string `valid:"required~Required"`
+}
+
+type CreateUpdateConfigRequest struct {
+	entity.Config
+	Unsafe bool
 }
