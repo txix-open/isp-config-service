@@ -38,7 +38,7 @@
 
 [[override]]
   name = "github.com/integration-system/isp-lib"
-  branch = "master"
+  branch = "v2"
 
 [[override]]
   name = "github.com/googollee/go-socket.io"

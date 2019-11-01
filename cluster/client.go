@@ -3,6 +3,7 @@ package cluster
 import (
 	"errors"
 	"github.com/integration-system/isp-lib/structure"
+	"github.com/integration-system/isp-lib/utils"
 	log "github.com/integration-system/isp-log"
 	jsoniter "github.com/json-iterator/go"
 	"isp-config-service/codes"
@@ -122,7 +123,7 @@ func (client *Client) listenLeader() {
 				response, err := leaderClient.SendDeclaration(declaration, defaultApplyTimeout)
 				if err != nil {
 					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader. err: %v", err)
-				} else if response != Ok {
+				} else if response != utils.WsOkResponse {
 					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader. response: %s", response)
 				}
 			}(client.declaration)

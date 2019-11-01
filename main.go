@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -98,7 +99,7 @@ func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.L
 	raftListener := m.Match(cmux.Any())
 
 	go func() {
-		if err := m.Serve(); err != nil {
+		if err := m.Serve(); !strings.Contains(err.Error(), "use of closed network connection") {
 			log.Fatalf(codes.InitCmuxError, "serve cmux: %v", err)
 		}
 	}()
@@ -116,7 +117,7 @@ func initWebsocket(ctx context.Context, listener net.Listener, raftStore *store.
 	mux.HandleFunc("/isp-etp/", etpServer.ServeHttp)
 	httpServer := &http.Server{Handler: mux}
 	go func() {
-		if err := httpServer.Serve(listener); err != nil {
+		if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
 			log.Fatalf(codes.StartHttpServerError, "http server closed: %v", err)
 		}
 	}()
@@ -183,18 +184,17 @@ func onShutdown(ctx context.Context, sig os.Signal) {
 	defer close(shutdownChan)
 
 	backend.StopGrpcServer()
-
-	if err := holder.ClusterClient.Shutdown(); err != nil {
-		log.Warnf(codes.RaftShutdownError, "raft shutdown err: %v", err)
-	} else {
-		log.Info(codes.RaftShutdownInfo, "raft shutdown success")
-	}
-
 	holder.EtpServer.Close()
 
 	if err := holder.HttpServer.Shutdown(ctx); err != nil {
 		log.Warnf(codes.ShutdownHttpServerError, "http server shutdown err: %v", err)
 	} else {
 		log.Info(codes.ShutdownHttpServerInfo, "http server shutdown success")
+	}
+
+	if err := holder.ClusterClient.Shutdown(); err != nil {
+		log.Warnf(codes.RaftShutdownError, "raft shutdown err: %v", err)
+	} else {
+		log.Info(codes.RaftShutdownInfo, "raft shutdown success")
 	}
 }

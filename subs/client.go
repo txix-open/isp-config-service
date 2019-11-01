@@ -7,6 +7,7 @@ import (
 	"github.com/integration-system/isp-lib/bootstrap"
 	schema2 "github.com/integration-system/isp-lib/config/schema"
 	"github.com/integration-system/isp-lib/structure"
+	"github.com/integration-system/isp-lib/utils"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
 	"isp-config-service/entity"
@@ -33,7 +34,7 @@ func (h *socketEventHandler) handleModuleReady(conn etp.Conn, data []byte) []byt
 	if err != nil {
 		return []byte(err.Error())
 	}
-	return []byte(Ok)
+	return []byte(utils.WsOkResponse)
 }
 
 func (h *socketEventHandler) handleModuleRequirements(conn etp.Conn, data []byte) []byte {
@@ -55,7 +56,7 @@ func (h *socketEventHandler) handleModuleRequirements(conn etp.Conn, data []byte
 			service.RoutesService.SubscribeRoutes(conn, state.Mesh())
 		}
 	})
-	return []byte(Ok)
+	return []byte(utils.WsOkResponse)
 }
 
 func (h *socketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []byte {
@@ -69,21 +70,6 @@ func (h *socketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 	if err := json.Unmarshal(data, &configSchema); err != nil {
 		return []byte(err.Error())
 	}
-	// TODO Костыль. Дважды посылаем ModuleConnected, т.к с момента первой отправки в handleConnect,
-	//  состояние к конкретной ноде кластера может не успеть примениться
-	now := state.GenerateDate()
-	newModule := entity.Module{
-		Id:              state.GenerateId(),
-		Name:            moduleName,
-		CreatedAt:       now,
-		LastConnectedAt: now,
-	}
-	command := cluster.PrepareModuleConnectedCommand(newModule)
-	_, err = SyncApplyCommand(command, "ModuleConnectedCommand")
-	if err != nil {
-		return []byte(err.Error())
-	}
-	// />
 
 	module := new(entity.Module)
 	h.store.VisitReadonlyState(func(readState state.ReadonlyState) {
@@ -93,6 +79,7 @@ func (h *socketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 		return []byte(fmt.Sprintf("module with name %s not found", moduleName))
 	}
 
+	now := state.GenerateDate()
 	schema := entity.ConfigSchema{
 		Id:        state.GenerateId(),
 		Version:   configSchema.Version,
@@ -101,7 +88,7 @@ func (h *socketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	command = cluster.PrepareUpdateConfigSchemaCommand(schema)
+	command := cluster.PrepareUpdateConfigSchemaCommand(schema)
 	_, _ = SyncApplyCommand(command, "UpdateConfigSchemaCommand")
 
 	var configs []entity.Config
@@ -125,7 +112,7 @@ func (h *socketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 		command := cluster.PrepareUpsertConfigCommand(upsertConfig)
 		_, _ = SyncApplyCommand(command, "UpsertConfigCommand")
 	}
-	return []byte(Ok)
+	return []byte(utils.WsOkResponse)
 }
 
 func (h *socketEventHandler) handleRequestConfig(conn etp.Conn, data []byte) []byte {

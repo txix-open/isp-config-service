@@ -97,8 +97,8 @@ func getUrl(address string) string {
 
 	params := url.Values{}
 	params.Add(ClusterParam, "true")
-	// TODO вынести ключи в константы в isp-lib и выпилить instance_uuid
-	params.Add("module_name", cfg.ModuleName)
-	params.Add("instance_uuid", "9d89354b-c728-4b48-b002-a7d3b229f151")
+	// TODO выпилить instance_uuid ?
+	params.Add(utils.ModuleNameGetParamKey, cfg.ModuleName)
+	params.Add(utils.InstanceUuidGetParamKey, "9d89354b-c728-4b48-b002-a7d3b229f151")
 	return fmt.Sprintf("ws://%s:%d/isp-etp/?%s", addr.IP.String(), addr.Port, params.Encode())
 }

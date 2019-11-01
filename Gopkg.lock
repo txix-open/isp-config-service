@@ -83,14 +83,6 @@
   version = "v1.3.2"
 
 [[projects]]
-  digest = "1:e62657cca9badaa308d86e7716083e4c5933bb78e30a17743fc67f50be26f6f4"
-  name = "github.com/gorilla/websocket"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "c3e18be99d19e6b3e8f1559eea2c161a665c4b6b"
-  version = "v1.4.1"
-
-[[projects]]
   digest = "1:0ade334594e69404d80d9d323445d2297ff8161637f9b2d347cc6973d2d6f05b"
   name = "github.com/hashicorp/errwrap"
   packages = ["."]
@@ -195,18 +187,6 @@
   revision = "ac5582987a2f25e8743e0ebb7259312adda05c23"
 
 [[projects]]
-  digest = "1:12bcebed6dfc45cedc650f6dce60fe6ce6d27de88d9bfa8893a5b144c010d317"
-  name = "github.com/integration-system/golang-socketio"
-  packages = [
-    ".",
-    "protocol",
-    "transport",
-  ]
-  pruneopts = "UT"
-  revision = "7513a9b590e428674e3c22ea82f46b28890cc17a"
-  version = "v1.0.0"
-
-[[projects]]
   digest = "1:4a70938660ae196961d0285062fa7ae5b8abcf1c800f4c750803c06c2150a716"
   name = "github.com/integration-system/isp-etp-go"
   packages = [
@@ -222,8 +202,8 @@
   version = "v2.0.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:eb4023353677406a3c3beeb8c30e0b2f255e59287a5abca81b9eeb20a730b58a"
+  branch = "v2"
+  digest = "1:3088a1b37acb8f8717bcf73d3efa4176c03b325a9abc438b8368f3cf370bb63e"
   name = "github.com/integration-system/isp-lib"
   packages = [
     "backend",
@@ -238,7 +218,7 @@
     "utils",
   ]
   pruneopts = "UT"
-  revision = "5060d1348219abd8fad3628668b229779a5314c7"
+  revision = "fe9b6eaee9792492dcc73cc7d158b9c8fc3d6dc1"
 
 [[projects]]
   branch = "master"

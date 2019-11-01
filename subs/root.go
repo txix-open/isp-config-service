@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	Ok            = "ok"
 	followersRoom = "cluster_followers"
 )
 
