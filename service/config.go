@@ -105,25 +105,23 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 		return cluster.NewResponseErrorf(codes2.NotFound, "moduleId %s not found", config.ModuleId)
 	}
 
-	if !upsertConfig.Unsafe {
-		schemaStorage := state.Schemas().GetByModuleIds([]string{config.ModuleId})
-		if len(schemaStorage) == 0 {
-			return cluster.NewResponseErrorf(codes2.NotFound, "schema for moduleId %s not found", config.ModuleId)
-		}
+	schemaStorage := state.Schemas().GetByModuleIds([]string{config.ModuleId})
+	if len(schemaStorage) == 0 {
+		return cluster.NewResponseErrorf(codes2.NotFound, "schema for moduleId %s not found", config.ModuleId)
+	}
+	dataForValidate := cs.CompileConfig(config.Data, state, config.CommonConfigs...)
+	validSchema, err := cs.validateSchema(schemaStorage[0], dataForValidate)
 
-		dataForValidate := cs.CompileConfig(config.Data, state, config.CommonConfigs...)
-		if _, err := cs.validateSchema(schemaStorage[0], dataForValidate); err != nil {
-			switch err := err.(type) {
-			case validationSchemaError:
-				return cluster.NewResponse(
-					domain.CreateUpdateConfigInvalidResponse{
-						Config:  nil,
-						Valid:   false,
-						Details: err.Description,
-					})
-			default:
-				return cluster.NewResponseErrorf(codes2.Internal, "%v", err)
-			}
+	if !upsertConfig.Unsafe && err != nil {
+		switch err := err.(type) {
+		case validationSchemaError:
+			return cluster.NewResponse(
+				domain.CreateUpdateConfigResponse{
+					Config:       nil,
+					ErrorDetails: err.Description,
+				})
+		default:
+			return cluster.NewResponseErrorf(codes2.Internal, "%v", err)
 		}
 	}
 
@@ -149,10 +147,12 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 		}
 	}
 	cs.BroadcastNewConfig(state, config)
-	return cluster.NewResponse(domain.CreateUpdateConfigInvalidResponse{
-		Config:  &config,
-		Valid:   true,
-		Details: nil,
+	return cluster.NewResponse(domain.CreateUpdateConfigResponse{
+		Config: &domain.ConfigModuleInfo{
+			Config: config,
+			Valid:  validSchema,
+		},
+		ErrorDetails: nil,
 	})
 }
 

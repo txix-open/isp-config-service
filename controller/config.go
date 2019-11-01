@@ -49,13 +49,13 @@ func (c *config) GetActiveConfigByModuleName(request domain.GetByModuleNameReque
 // @Tags Конфигурация
 // @Accept  json
 // @Produce  json
-// @Param body body entity.Config true "объект для сохранения"
-// @Success 200 {object} entity.Config
+// @Param body body domain.CreateUpdateConfigRequest true "объект для сохранения"
+// @Success 200 {object} domain.ConfigModuleInfo
 // @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
 // @Failure 500 {object} structure.GrpcError
 // @Router /config/create_update_config [POST]
-func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*entity.Config, error) {
-	var response domain.CreateUpdateConfigInvalidResponse
+func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*domain.ConfigModuleInfo, error) {
+	var response domain.CreateUpdateConfigResponse
 	now := state.GenerateDate()
 	config.CreatedAt = now
 	config.UpdatedAt = now
@@ -71,10 +71,10 @@ func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*e
 	err := PerformSyncApplyWithError(command, "UpsertConfigCommand", &response)
 	if err != nil {
 		return nil, err
-	} else if response.Valid {
+	} else if response.Config != nil {
 		return response.Config, nil
 	} else {
-		return nil, utils.CreateValidationErrorDetails(codes.InvalidArgument, utils.ValidationError, response.Details)
+		return nil, utils.CreateValidationErrorDetails(codes.InvalidArgument, utils.ValidationError, response.ErrorDetails)
 	}
 }
 
