@@ -13,16 +13,16 @@ type Handlers struct {
 	GetModulesInfo func() ([]domain.ModuleInfo, error)                       `method:"get_modules_info" group:"module" inner:"true"`
 
 	// ===== CONFIG =====
-	GetActiveConfigByModuleName func(request domain.GetByModuleNameRequest) (*entity.Config, error)   `method:"get_active_config_by_module_name" group:"config" inner:"true"`
-	CreateUpdateConfig          func(config domain.CreateUpdateConfigRequest) (*entity.Config, error) `method:"create_update_config" group:"config" inner:"true"`
-	MarkConfigAsActive          func(identity domain.ConfigIdRequest) (*entity.Config, error)         `method:"mark_config_as_active" group:"config" inner:"true"`
-	DeleteConfig                func(identities []string) (*domain.DeleteResponse, error)             `method:"delete_config" group:"config" inner:"true"`
+	GetActiveConfigByModuleName func(request domain.GetByModuleNameRequest) (*entity.Config, error)             `method:"get_active_config_by_module_name" group:"config" inner:"true"`
+	CreateUpdateConfig          func(config domain.CreateUpdateConfigRequest) (*domain.ConfigModuleInfo, error) `method:"create_update_config" group:"config" inner:"true"`
+	MarkConfigAsActive          func(identity domain.ConfigIdRequest) (*entity.Config, error)                   `method:"mark_config_as_active" group:"config" inner:"true"`
+	DeleteConfig                func(identities []string) (*domain.DeleteResponse, error)                       `method:"delete_config" group:"config" inner:"true"`
 
 	// ===== COMMON CONFIG =====
 	GetCommonConfigs         func(identities []string) []entity.CommonConfig                              `method:"get_configs" group:"common_config" inner:"true"`
 	CreateUpdateCommonConfig func(config entity.CommonConfig) (*entity.CommonConfig, error)               `method:"create_update_config" group:"common_config" inner:"true"`
 	DeleteCommonConfig       func(req domain.ConfigIdRequest) (*domain.DeleteCommonConfigResponse, error) `method:"delete_config" group:"common_config" inner:"true"`
-	CompileConfigs           func(req domain.CompileConfigsRequest) controller.CompiledConfig             `method:"compile" group:"common_config" inner:"true"`
+	CompileConfigs           func(req domain.CompileConfigsRequest) domain.CompiledConfigResponse         `method:"compile" group:"common_config" inner:"true"`
 	GetLinks                 func(req domain.ConfigIdRequest) domain.CommonConfigLinks                    `method:"get_links" group:"common_config" inner:"true"`
 
 	// ===== ROUTING =====

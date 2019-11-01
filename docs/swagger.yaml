@@ -13,8 +13,10 @@ definitions:
         type: array
       data:
         type: object
-    required:
-    - commonConfigsIdList
+    type: object
+  domain.CompiledConfigResponse:
+    additionalProperties:
+      type: object
     type: object
   domain.ConfigIdRequest:
     properties:
@@ -22,6 +24,37 @@ definitions:
         type: string
     required:
     - id
+    type: object
+  domain.ConfigModuleInfo:
+    properties:
+      active:
+        type: boolean
+      commonConfigs:
+        items:
+          type: string
+        type: array
+      createdAt:
+        type: string
+      data:
+        $ref: '#/definitions/entity.ConfigData'
+        type: object
+      description:
+        type: string
+      id:
+        type: string
+      moduleId:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+      valid:
+        type: boolean
+      version:
+        type: integer
+    required:
+    - moduleId
+    - name
     type: object
   domain.Connection:
     properties:
@@ -38,6 +71,37 @@ definitions:
         type: string
       version:
         type: string
+    type: object
+  domain.CreateUpdateConfigRequest:
+    properties:
+      active:
+        type: boolean
+      commonConfigs:
+        items:
+          type: string
+        type: array
+      createdAt:
+        type: string
+      data:
+        $ref: '#/definitions/entity.ConfigData'
+        type: object
+      description:
+        type: string
+      id:
+        type: string
+      moduleId:
+        type: string
+      name:
+        type: string
+      unsafe:
+        type: boolean
+      updatedAt:
+        type: string
+      version:
+        type: integer
+    required:
+    - moduleId
+    - name
     type: object
   domain.DeleteCommonConfigResponse:
     properties:
@@ -75,7 +139,7 @@ definitions:
         type: object
       configs:
         items:
-          $ref: '#/definitions/entity.Config'
+          $ref: '#/definitions/domain.ConfigModuleInfo'
         type: array
       createdAt:
         type: string
@@ -590,7 +654,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/CompiledConfig'
+            $ref: '#/definitions/domain.CompiledConfigResponse'
       summary: Метод компиляции итоговой конфигурации для модулей
       tags:
       - Общие конфигурации
@@ -623,7 +687,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/structure.GrpcError'
-      summary: Метод обновления оьщей конфигурации
+      summary: Метод обновления общей конфигурации
       tags:
       - Общие конфигурации
   /common_config/delete_config:
@@ -708,7 +772,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/entity.Config'
+          $ref: '#/definitions/domain.CreateUpdateConfigRequest'
           type: object
       produces:
       - application/json
@@ -716,7 +780,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/entity.Config'
+            $ref: '#/definitions/domain.ConfigModuleInfo'
         "404":
           description: если конфигурация не найдена
           schema:

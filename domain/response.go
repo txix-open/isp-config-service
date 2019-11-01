@@ -33,15 +33,16 @@ type Connection struct {
 
 type CommonConfigLinks map[string][]string
 
+type CompiledConfigResponse map[string]interface{}
+
 type DeleteCommonConfigResponse struct {
 	Deleted bool
 	Links   CommonConfigLinks
 }
 
-type CreateUpdateConfigInvalidResponse struct {
-	Valid   bool
-	Details map[string]string
-	Config  *entity.Config
+type CreateUpdateConfigResponse struct {
+	ErrorDetails map[string]string
+	Config       *ConfigModuleInfo
 }
 
 type ConfigModuleInfo struct {
