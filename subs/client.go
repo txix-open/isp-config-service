@@ -107,6 +107,7 @@ func (h *socketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 		upsertConfig := cluster.UpsertConfig{
 			Config: config,
 			Create: true,
+			Unsafe: true,
 		}
 
 		command := cluster.PrepareUpsertConfigCommand(upsertConfig)

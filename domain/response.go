@@ -18,9 +18,9 @@ type ModuleInfo struct {
 	CreatedAt          time.Time
 	LastConnectedAt    time.Time
 	LastDisconnectedAt time.Time
-	Configs            []entity.Config `json:",omitempty"`
-	ConfigSchema       *schema.Schema  `json:",omitempty"`
-	Status             []Connection    `json:",omitempty"`
+	Configs            []ConfigModuleInfo `json:",omitempty"`
+	ConfigSchema       *schema.Schema     `json:",omitempty"`
+	Status             []Connection       `json:",omitempty"`
 }
 
 type Connection struct {
@@ -33,7 +33,19 @@ type Connection struct {
 
 type CommonConfigLinks map[string][]string
 
+type CompiledConfigResponse map[string]interface{}
+
 type DeleteCommonConfigResponse struct {
 	Deleted bool
 	Links   CommonConfigLinks
+}
+
+type CreateUpdateConfigResponse struct {
+	ErrorDetails map[string]string
+	Config       *ConfigModuleInfo
+}
+
+type ConfigModuleInfo struct {
+	entity.Config
+	Valid bool
 }

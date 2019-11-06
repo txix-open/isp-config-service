@@ -87,8 +87,6 @@ func (c *commonConfig) DeleteConfigs(req domain.ConfigIdRequest) (*domain.Delete
 	return &response, nil
 }
 
-type CompiledConfig map[string]interface{}
-
 // CompileConfigs godoc
 // @Summary Метод компиляции итоговой конфигурации для модулей
 // @Description Возвращает скомпилированный объект конфигурации
@@ -96,9 +94,9 @@ type CompiledConfig map[string]interface{}
 // @Accept  json
 // @Produce  json
 // @Param body body domain.CompileConfigsRequest true "перечисление идентификаторов общей конфигурации и исхдных конфиг"
-// @Success 200 {object} CompiledConfig
+// @Success 200 {object} domain.CompiledConfigResponse
 // @Router /common_config/compile [POST]
-func (c *commonConfig) CompileConfigs(req domain.CompileConfigsRequest) CompiledConfig {
+func (c *commonConfig) CompileConfigs(req domain.CompileConfigsRequest) domain.CompiledConfigResponse {
 	var result map[string]interface{}
 	c.rstore.VisitReadonlyState(func(state state.ReadonlyState) {
 		result = service.ConfigService.CompileConfig(req.Data, state, req.CommonConfigsIdList...)

@@ -29,6 +29,7 @@ type ActivateConfig struct {
 type UpsertConfig struct {
 	Config entity.Config
 	Create bool
+	Unsafe bool
 }
 
 type DeleteConfigs struct {
