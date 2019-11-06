@@ -11,7 +11,6 @@ type Configuration struct {
 	WS               struct {
 		Rest structure.AddressConfiguration `valid:"required~Required"`
 		Grpc structure.AddressConfiguration `valid:"required~Required"`
-		Raft structure.AddressConfiguration `valid:"required~Required"`
 	}
 	Metrics structure.MetricConfiguration
 	Cluster ClusterConfiguration `valid:"required~Required"`

@@ -17,11 +17,8 @@ ws:
     port: "9001"
     ip: "127.0.0.1"
   grpc:
-    port: "9092"
+    port: "9002"
     ip: "127.0.0.1"
-  raft:
-    port: "9001"
-    ip: "0.0.0.0"
 
 metrics:
   gc: true
