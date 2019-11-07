@@ -1,3 +1,5 @@
+### v1.2.2
+* add migrations temp
 ### v1.2.1
 * fix doc generate
 ### v1.2.0
