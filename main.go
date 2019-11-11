@@ -58,12 +58,18 @@ func main() {
 	cfg := config.Get().(*conf.Configuration)
 	handlers := helper.GetHandlers()
 	endpoints := backend.GetEndpoints(cfg.ModuleName, handlers)
+	address := cfg.WS.Grpc
+	ip, err := getOutboundIp()
+	if err != nil {
+		panic(err)
+	}
+	address.IP = ip
 	declaration := structure.BackendDeclaration{
 		ModuleName: cfg.ModuleName,
 		Version:    version,
 		LibVersion: bootstrap.LibraryVersion,
 		Endpoints:  endpoints,
-		Address:    cfg.WS.Grpc,
+		Address:    address,
 	}
 
 	model.DbClient.ReceiveConfiguration(cfg.Database)
@@ -99,7 +105,7 @@ func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.L
 	raftListener := m.Match(cmux.Any())
 
 	go func() {
-		if err := m.Serve(); !strings.Contains(err.Error(), "use of closed network connection") {
+		if err := m.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
 			log.Fatalf(codes.InitCmuxError, "serve cmux: %v", err)
 		}
 	}()
@@ -197,4 +203,13 @@ func onShutdown(ctx context.Context, sig os.Signal) {
 	} else {
 		log.Info(codes.RaftShutdownInfo, "raft shutdown success")
 	}
+}
+
+func getOutboundIp() (string, error) {
+	conn, err := net.Dial("udp", "9.9.9.9:80")
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close()
+	return conn.LocalAddr().(*net.UDPAddr).IP.To4().String(), nil
 }
