@@ -17,8 +17,9 @@ type Configuration struct {
 }
 
 type ClusterConfiguration struct {
-	InMemory     bool
-	DataDir      string   `valid:"required~Required"`
-	Peers        []string `valid:"required~Required"`
-	OuterAddress string   `valid:"required~Required"`
+	InMemory              bool
+	DataDir               string   `valid:"required~Required"`
+	Peers                 []string `valid:"required~Required"`
+	OuterAddress          string   `valid:"required~Required"`
+	ConnectTimeoutSeconds int      `valid:"required~Required"`
 }

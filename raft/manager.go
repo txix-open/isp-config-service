@@ -12,9 +12,8 @@ import (
 )
 
 const (
-	defaultConnectTimeout = 1 * time.Second
-	defaultSyncTimeout    = 3 * time.Second
-	dbFile                = "raft_db"
+	defaultSyncTimeout = 3 * time.Second
+	dbFile             = "raft_db"
 )
 
 type ChangeLeaderNotification struct {
@@ -90,7 +89,8 @@ func NewRaft(tcpListener net.Listener, configuration conf.ClusterConfiguration, 
 	}
 
 	streamLayer := &StreamLayer{Listener: tcpListener}
-	trans := raft.NewNetworkTransport(streamLayer, len(configuration.Peers), defaultConnectTimeout, os.Stdout)
+	timeout := time.Duration(configuration.ConnectTimeoutSeconds) * time.Second
+	trans := raft.NewNetworkTransport(streamLayer, len(configuration.Peers), timeout, os.Stdout)
 
 	cfg := raft.DefaultConfig()
 	cfg.Logger = &LoggerAdapter{name: "RAFT"}

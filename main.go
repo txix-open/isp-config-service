@@ -162,7 +162,9 @@ func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration, decla
 			//	port = 9042
 			//}
 			//
-			addressConfiguration := structure.AddressConfiguration{Port: strconv.Itoa(port), IP: addr.IP.String()}
+			port2 := strconv.Itoa(port)
+			port2 = cfg.GrpcOuterAddress.Port
+			addressConfiguration := structure.AddressConfiguration{Port: port2, IP: addr.IP.String()}
 			back := structure.BackendDeclaration{ModuleName: cfg.ModuleName, Address: addressConfiguration}
 			service.ClusterMeshService.HandleDeleteBackendDeclarationCommand(back, s)
 		})

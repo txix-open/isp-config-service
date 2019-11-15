@@ -33,5 +33,6 @@ cluster:
   dataDir: ./data
   inMemory: true
   outerAddress: 127.0.0.1:9001
+  connectTimeoutSeconds: 5
   peers:
     - 127.0.0.1:9001
