@@ -26,7 +26,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -150,30 +149,19 @@ func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration, decla
 			if err != nil {
 				panic(err) // must never occured
 			}
-			port := addr.Port
-			// TODO логика для определения порта пира, т.к всё тестируется на одной машине
-			//peerNumber := addr.Port - 9000
-			//switch peerNumber {
-			//case 2:
-			//	port = 9022
-			//case 3:
-			//	port = 9032
-			//case 4:
-			//	port = 9042
-			//}
-			//
-			port2 := strconv.Itoa(port)
-			port2 = cfg.GrpcOuterAddress.Port
-			addressConfiguration := structure.AddressConfiguration{Port: port2, IP: addr.IP.String()}
+			port := cfg.GrpcOuterAddress.Port
+			addressConfiguration := structure.AddressConfiguration{Port: port, IP: addr.IP.String()}
 			back := structure.BackendDeclaration{ModuleName: cfg.ModuleName, Address: addressConfiguration}
 			service.ClusterMeshService.HandleDeleteBackendDeclarationCommand(back, s)
 		})
 	})
 	holder.ClusterClient = clusterClient
 
-	err = r.BootstrapCluster() // err can be ignored
-	if err != nil {
-		log.Errorf(codes.BootstrapClusterError, "bootstrap cluster. %v", err)
+	if clusterCfg.BootstrapCluster {
+		err = r.BootstrapCluster() // err can be ignored
+		if err != nil {
+			log.Errorf(codes.BootstrapClusterError, "bootstrap cluster. %v", err)
+		}
 	}
 	return clusterClient, raftStore
 }
@@ -194,16 +182,16 @@ func onShutdown(ctx context.Context, sig os.Signal) {
 	backend.StopGrpcServer()
 	holder.EtpServer.Close()
 
-	if err := holder.HttpServer.Shutdown(ctx); err != nil {
-		log.Warnf(codes.ShutdownHttpServerError, "http server shutdown err: %v", err)
-	} else {
-		log.Info(codes.ShutdownHttpServerInfo, "http server shutdown success")
-	}
-
 	if err := holder.ClusterClient.Shutdown(); err != nil {
 		log.Warnf(codes.RaftShutdownError, "raft shutdown err: %v", err)
 	} else {
 		log.Info(codes.RaftShutdownInfo, "raft shutdown success")
+	}
+
+	if err := holder.HttpServer.Shutdown(ctx); err != nil {
+		log.Warnf(codes.ShutdownHttpServerError, "http server shutdown err: %v", err)
+	} else {
+		log.Info(codes.ShutdownHttpServerInfo, "http server shutdown success")
 	}
 }
 

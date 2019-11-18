@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/integration-system/isp-lib-test/ctx"
 	"github.com/integration-system/isp-lib-test/docker"
@@ -11,9 +12,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"io"
+	"io/ioutil"
 	"isp-config-service/conf"
 	"isp-config-service/domain"
 	"log"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -83,10 +86,12 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 				Grpc: grpcAddr,
 			},
 			Cluster: conf.ClusterConfiguration{
-				InMemory:     true,
-				DataDir:      "./data",
-				Peers:        nil,
-				OuterAddress: httpAddr.GetAddress(),
+				InMemory:              true,
+				DataDir:               "./data",
+				Peers:                 nil,
+				OuterAddress:          httpAddr.GetAddress(),
+				ConnectTimeoutSeconds: 10,
+				BootstrapCluster:      false,
 			},
 		}
 		configsGrpcAddrs[i] = grpcAddr
@@ -95,13 +100,15 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 		peersAddrs[i] = httpAddr.GetAddress()
 	}
 
+	configs[0].Cluster.BootstrapCluster = true
+
 	for i := 0; i < configsNumber; i++ {
 		c := configs[i]
 		peersAddrsEnv := generatePeersConfigEnv(peersAddrs)
 		ctx := env.RunAppContainer(
 			cfg.Images.Module, c, nil,
 			docker.WithName(c.GrpcOuterAddress.IP),
-			//docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard)),
+			docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard, "DeleteCommonConfigsCommand")),
 			//docker.PullImage(cfg.Registry.Username, cfg.Registry.Password),
 			docker.WithEnv(peersAddrsEnv),
 		)
@@ -129,20 +136,27 @@ func TestClusterElection(t *testing.T) {
 	}()
 	a := assert.New(t)
 
-	testClusterReady(a)
+	testClusterReady(a, -1)
 
 	for i := 0; i < configsNumber; i++ {
-		log.Printf("\nstopping %d container\n", i)
-		err := configsCtxs[i].StopContainer(20 * time.Second)
-		a.NoError(err)
+		fmt.Println()
+		log.Printf("stopping %d container\n", i)
+		a.NoError(configsCtxs[i].StopContainer(20 * time.Second))
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(9 * time.Second)
+		fmt.Println()
+		log.Printf("checking cluster except %d\n", i)
+		ready := testClusterReady(a, i)
+		if !ready {
+			return
+		}
+
+		fmt.Println()
 		log.Printf("starting %d container\n", i)
-		err = configsCtxs[i].StartContainer()
-		a.NoError(err)
+		a.NoError(configsCtxs[i].StartContainer())
 
 		log.Println("checking cluster")
-		ready := testClusterReady(a)
+		ready = testClusterReady(a, -1)
 		if !ready {
 			return
 		}
@@ -156,8 +170,11 @@ func getConfigServiceAddress(num int, port string) structure.AddressConfiguratio
 	}
 }
 
-func testClusterReady(a *assert.Assertions) bool {
+func testClusterReady(a *assert.Assertions, except int) bool {
 	for j := 0; j < configsNumber; j++ {
+		if j == except {
+			continue
+		}
 		configAddr := configsGrpcAddrs[j]
 		client := testGrpcReady(configAddr, a)
 		if client == nil {
@@ -189,7 +206,7 @@ func testGrpcReady(configAddr structure.AddressConfiguration, a *assert.Assertio
 	if !a.NoError(err) {
 		return nil
 	}
-	log.Println("waiting until grpc ready:", time.Now().Sub(start))
+	log.Println("waiting until grpc ready:", time.Now().Sub(start).Round(time.Second))
 	return client
 }
 
@@ -210,12 +227,14 @@ func testRaftReady(client *backend.InternalGrpcClient, a *assert.Assertions) boo
 		return nil, err
 	}
 	_, _ = await(f, maxAwaitingTime)
-	log.Println("waiting until raft ready:", time.Now().Sub(start))
+	log.Println("waiting until raft ready:", time.Now().Sub(start).Round(time.Second))
 	return a.NoError(err)
 }
 
 func await(dialer func() (interface{}, error), timeout time.Duration) (interface{}, error) {
-	return utils.NewRetryer(dialer, timeout).Do()
+	retryer := utils.NewRetryer(dialer, timeout)
+	retryer.AttemptTimeout = 300 * time.Millisecond
+	return retryer.Do()
 }
 
 func generatePeersConfigEnv(peers []string) map[string]string {
@@ -229,21 +248,29 @@ func generatePeersConfigEnv(peers []string) map[string]string {
 type writeLogger struct {
 	prefix string
 	w      io.Writer
+	filter string
 }
 
-func (l *writeLogger) Write(p []byte) (n int, err error) {
-	n, err = l.w.Write(p)
-	if err != nil {
-		fmt.Printf("%s %s: %v", l.prefix, p[0:n], err)
-	} else {
-		fmt.Printf("%s %s", l.prefix, p[0:n])
+func (l *writeLogger) Write(p []byte) (int, error) {
+	lines := bytes.SplitAfter(p, []byte("\n"))
+	for _, line := range lines {
+		s := string(line)
+		if strings.Contains(s, l.filter) || strings.TrimSpace(s) == "" {
+			continue
+		}
+		_, err := l.w.Write(p)
+		if err != nil {
+			fmt.Printf("%s %s: %v", l.prefix, s, err)
+		} else {
+			fmt.Printf("%s %s", l.prefix, s)
+		}
 	}
-	return
+	return len(p), nil
 }
 
 // NewWriteLogger returns a writer that behaves like w except
 // that it logs (using fmt.Printf) each write to standard error,
 // printing the prefix and the string data written.
-func NewWriteLogger(prefix string, w io.Writer) io.Writer {
-	return &writeLogger{prefix, w}
+func NewWriteLogger(prefix string, w io.Writer, filter string) io.Writer {
+	return &writeLogger{prefix, w, filter}
 }

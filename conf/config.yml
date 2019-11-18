@@ -34,5 +34,6 @@ cluster:
   inMemory: true
   outerAddress: 127.0.0.1:9001
   connectTimeoutSeconds: 5
+  bootstrapCluster: true
   peers:
     - 127.0.0.1:9001

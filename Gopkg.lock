@@ -296,7 +296,7 @@
   version = "v2.0.0"
 
 [[projects]]
-  digest = "1:f5f42d335df14458b5b5987a3d4314c3093ca25d7f563f69154152bd391b7313"
+  digest = "1:128d52b9a5403f1317ca63303eba69d540e4e4ec23fbd3f4961d29b46583dcc5"
   name = "github.com/integration-system/isp-lib-test"
   packages = [
     "ctx",
@@ -305,8 +305,8 @@
     "utils/postgres",
   ]
   pruneopts = "UT"
-  revision = "39151a14e595a5993712b449bb44abace58e86f5"
-  version = "v1.3.0"
+  revision = "6fa261f607e7948466ebdcac2dad9283705e265f"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
