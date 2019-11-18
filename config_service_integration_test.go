@@ -31,6 +31,7 @@ const (
 	maxAwaitingTime = 25 * time.Second
 
 	deleteCommonConfigsCommand = "config/common_config/delete_config"
+	getRoutesCommand           = "config/routing/get_routes"
 )
 
 var (
@@ -171,6 +172,13 @@ func getConfigServiceAddress(num int, port string) structure.AddressConfiguratio
 }
 
 func testClusterReady(a *assert.Assertions, except int) bool {
+	var clients []*backend.InternalGrpcClient
+	defer func() {
+		for _, client := range clients {
+			client.CloseQuietly()
+		}
+	}()
+
 	for j := 0; j < configsNumber; j++ {
 		if j == except {
 			continue
@@ -181,12 +189,22 @@ func testClusterReady(a *assert.Assertions, except int) bool {
 			a.Fail(fmt.Sprintf("unable to connect to %d config", j))
 			return false
 		}
+		clients = append(clients, client)
 		ready := testRaftReady(client, a)
 		if !ready {
 			return ready
 		}
-		client.CloseQuietly()
 	}
+
+	var prevRoutes = getRoutes(clients[0], a)
+	for i := 1; i < len(clients); i++ {
+		routes := getRoutes(clients[i], a)
+		match := a.ElementsMatch(prevRoutes, routes, "different backend declarations")
+		if !match {
+			return match
+		}
+	}
+
 	return true
 }
 
@@ -229,6 +247,18 @@ func testRaftReady(client *backend.InternalGrpcClient, a *assert.Assertions) boo
 	_, _ = await(f, maxAwaitingTime)
 	log.Println("waiting until raft ready:", time.Now().Sub(start).Round(time.Second))
 	return a.NoError(err)
+}
+
+func getRoutes(client *backend.InternalGrpcClient, a *assert.Assertions) []structure.BackendDeclaration {
+	var response []structure.BackendDeclaration
+	err := client.Invoke(
+		getRoutesCommand,
+		-1,
+		nil,
+		&response,
+	)
+	a.NoError(err)
+	return response
 }
 
 func await(dialer func() (interface{}, error), timeout time.Duration) (interface{}, error) {
