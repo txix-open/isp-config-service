@@ -139,6 +139,7 @@ func TestClusterElection(t *testing.T) {
 
 	testClusterReady(a, -1)
 
+	var ready bool
 	for i := 0; i < configsNumber; i++ {
 		fmt.Println()
 		log.Printf("stopping %d container\n", i)
@@ -147,7 +148,7 @@ func TestClusterElection(t *testing.T) {
 		time.Sleep(9 * time.Second)
 		fmt.Println()
 		log.Printf("checking cluster except %d\n", i)
-		ready := testClusterReady(a, i)
+		ready = testClusterReady(a, i)
 		if !ready {
 			return
 		}

@@ -100,7 +100,7 @@ func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.L
 	}
 
 	m := cmux.New(tcpListener)
-	httpListener := m.Match(cmux.HTTP1())
+	httpListener := m.Match(cmux.HTTP1Fast())
 	raftListener := m.Match(cmux.Any())
 
 	go func() {
