@@ -87,7 +87,7 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 				Grpc: grpcAddr,
 			},
 			Cluster: conf.ClusterConfiguration{
-				InMemory:              true,
+				InMemory:              false,
 				DataDir:               "./data",
 				Peers:                 nil,
 				OuterAddress:          httpAddr.GetAddress(),
@@ -106,6 +106,7 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 	for i := 0; i < configsNumber; i++ {
 		c := configs[i]
 		peersAddrsEnv := generatePeersConfigEnv(peersAddrs)
+		peersAddrsEnv["LOG_LEVEL"] = "debug"
 		ctx := env.RunAppContainer(
 			cfg.Images.Module, c, nil,
 			docker.WithName(c.GrpcOuterAddress.IP),
@@ -136,16 +137,19 @@ func TestClusterElection(t *testing.T) {
 		}
 	}()
 	a := assert.New(t)
-
-	testClusterReady(a, -1)
-
 	var ready bool
+
+	ready = testClusterReady(a, -1)
+	if !ready {
+		return
+	}
+
 	for i := 0; i < configsNumber; i++ {
 		fmt.Println()
 		log.Printf("stopping %d container\n", i)
 		a.NoError(configsCtxs[i].StopContainer(20 * time.Second))
 
-		time.Sleep(9 * time.Second)
+		time.Sleep(5 * time.Second)
 		fmt.Println()
 		log.Printf("checking cluster except %d\n", i)
 		ready = testClusterReady(a, i)
@@ -157,7 +161,7 @@ func TestClusterElection(t *testing.T) {
 		log.Printf("starting %d container\n", i)
 		a.NoError(configsCtxs[i].StartContainer())
 
-		log.Println("checking cluster")
+		log.Printf("checking cluster, iteration %d\n", i+1)
 		ready = testClusterReady(a, -1)
 		if !ready {
 			return
@@ -197,9 +201,14 @@ func testClusterReady(a *assert.Assertions, except int) bool {
 		}
 	}
 
-	var prevRoutes = getRoutes(clients[0], a)
+	prevRoutes := getRoutes(clients[0], a)
+	routesLen := len(clients)
 	for i := 1; i < len(clients); i++ {
 		routes := getRoutes(clients[i], a)
+		t := a.Lenf(routes, routesLen, "invalid length")
+		if !t {
+			return t
+		}
 		match := a.ElementsMatch(prevRoutes, routes, "different backend declarations")
 		if !match {
 			return match
@@ -258,6 +267,7 @@ func getRoutes(client *backend.InternalGrpcClient, a *assert.Assertions) []struc
 		nil,
 		&response,
 	)
+	//log.Println("routes:", response)
 	a.NoError(err)
 	return response
 }
@@ -286,7 +296,7 @@ func (l *writeLogger) Write(p []byte) (int, error) {
 	lines := bytes.SplitAfter(p, []byte("\n"))
 	for _, line := range lines {
 		s := string(line)
-		if strings.Contains(s, l.filter) || strings.TrimSpace(s) == "" {
+		if l.filter != "" && strings.Contains(s, l.filter) || strings.TrimSpace(s) == "" {
 			continue
 		}
 		_, err := l.w.Write(p)

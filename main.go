@@ -8,6 +8,7 @@ import (
 	"github.com/integration-system/isp-lib/bootstrap"
 	"github.com/integration-system/isp-lib/config"
 	"github.com/integration-system/isp-lib/structure"
+	"github.com/integration-system/isp-lib/utils"
 	log "github.com/integration-system/isp-log"
 	"github.com/soheilhy/cmux"
 	"github.com/thecodeteam/goodbye"
@@ -42,6 +43,9 @@ var (
 
 func init() {
 	config.InitConfig(&conf.Configuration{})
+	if utils.LOG_LEVEL != "" {
+		_ = log.SetLevel(utils.LOG_LEVEL)
+	}
 }
 
 // @title ISP configuration service
