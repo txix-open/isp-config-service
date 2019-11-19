@@ -66,6 +66,10 @@ func (h *socketEventHandler) handleConnect(conn etp.Conn) {
 		return
 	}
 
+	if isClusterNode {
+		return
+	}
+
 	var config map[string]interface{}
 	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
 		config, err = service.ConfigService.GetCompiledConfig(moduleName, state)
@@ -100,8 +104,8 @@ func (h *socketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error
 		}
 		command := cluster.PrepareModuleDisconnectedCommand(module)
 		_, _ = SyncApplyCommand(command, "ModuleDisconnectedCommand")
-
 	}
+
 	service.DiscoveryService.HandleDisconnect(conn.ID())
 	service.RoutesService.HandleDisconnect(conn.ID())
 	backend, ok := ExtractBackendDeclaration(conn)

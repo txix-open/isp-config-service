@@ -156,6 +156,8 @@ func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration, decla
 			port := cfg.GrpcOuterAddress.Port
 			addressConfiguration := structure.AddressConfiguration{Port: port, IP: addr.IP.String()}
 			back := structure.BackendDeclaration{ModuleName: cfg.ModuleName, Address: addressConfiguration}
+			log.WithMetadata(map[string]interface{}{"declaration": back}).
+				Debugf(0, "delete disconnected leader's declaration")
 			service.ClusterMeshService.HandleDeleteBackendDeclarationCommand(back, s)
 		})
 	})
@@ -181,6 +183,7 @@ func initGrpc(bindAddress structure.AddressConfiguration, raftStore *store.Store
 }
 
 func onShutdown(ctx context.Context, sig os.Signal) {
+	log.Debugf(0, "received shutdown signal: %s", sig.String())
 	defer close(shutdownChan)
 
 	backend.StopGrpcServer()

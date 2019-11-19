@@ -106,6 +106,7 @@ func (client *Client) listenLeader() {
 	for n := range client.r.LeaderCh() {
 		client.leaderMu.Lock()
 		if client.leaderClient != nil {
+			log.Debugf(0, "close previous leader ws connection %s", client.leaderState.leaderAddr)
 			client.leaderClient.Close()
 			client.leaderClient = nil
 		}
