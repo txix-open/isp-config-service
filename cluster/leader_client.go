@@ -95,6 +95,9 @@ func getUrl(address string) string {
 	}
 	cfg := config.Get().(*conf.Configuration)
 
+	// REMOVE
+	addr.Port = addr.Port + 5
+
 	params := url.Values{}
 	params.Add(ClusterParam, "true")
 	// TODO выпилить instance_uuid ?

@@ -10,7 +10,6 @@ import (
 	"github.com/integration-system/isp-lib/structure"
 	"github.com/integration-system/isp-lib/utils"
 	log "github.com/integration-system/isp-log"
-	"github.com/soheilhy/cmux"
 	"github.com/thecodeteam/goodbye"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
@@ -27,7 +26,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
 )
 
 const (
@@ -103,16 +101,24 @@ func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.L
 		return nil, nil, fmt.Errorf("create tcp transport: %v", err)
 	}
 
-	m := cmux.New(tcpListener)
-	httpListener := m.Match(cmux.HTTP1Fast())
-	raftListener := m.Match(cmux.Any())
+	// REMOVE
+	outerAddr.Port = outerAddr.Port + 5
+	httpListener, err := net.ListenTCP("tcp4", outerAddr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("create tcp transport: %v", err)
+	}
+	return httpListener, tcpListener, nil
 
-	go func() {
-		if err := m.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
-			log.Fatalf(codes.InitCmuxError, "serve cmux: %v", err)
-		}
-	}()
-	return httpListener, raftListener, nil
+	//m := cmux.New(tcpListener)
+	//httpListener := m.Match(cmux.HTTP1Fast())
+	//raftListener := m.Match(cmux.Any())
+	//
+	//go func() {
+	//	if err := m.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
+	//		log.Fatalf(codes.InitCmuxError, "serve cmux: %v", err)
+	//	}
+	//}()
+	//return httpListener, raftListener, nil
 }
 
 func initWebsocket(ctx context.Context, listener net.Listener, raftStore *store.Store) {
