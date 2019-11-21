@@ -9,7 +9,7 @@ database:
 
 moduleName: "config"
 grpcOuterAddress:
-  #ip: 127.0.0.1
+  ip: ""
   port: 9002
 
 ws:

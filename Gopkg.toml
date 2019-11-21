@@ -39,7 +39,3 @@
 [[override]]
   name = "github.com/hashicorp/raft"
   branch = "master"
-
-[[constraint]]
-  name = "github.com/soheilhy/cmux"
-  version = "0.1.4"
