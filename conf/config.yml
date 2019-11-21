@@ -9,16 +9,16 @@ database:
 
 moduleName: "config"
 grpcOuterAddress:
-  ip: 127.0.0.1
+  #ip: 127.0.0.1
   port: 9002
 
 ws:
   rest:
     port: "9001"
-    ip: "127.0.0.1"
+    ip: "0.0.0.0"
   grpc:
     port: "9002"
-    ip: "127.0.0.1"
+    ip: "0.0.0.0"
 
 metrics:
   gc: true

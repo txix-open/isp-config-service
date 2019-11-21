@@ -59,12 +59,14 @@ func main() {
 	cfg := config.Get().(*conf.Configuration)
 	handlers := helper.GetHandlers()
 	endpoints := backend.GetEndpoints(cfg.ModuleName, handlers)
-	address := cfg.WS.Grpc
-	ip, err := getOutboundIp()
-	if err != nil {
-		panic(err)
+	address := cfg.GrpcOuterAddress
+	if address.IP == "" {
+		ip, err := getOutboundIp()
+		if err != nil {
+			panic(err)
+		}
+		address.IP = ip
 	}
-	address.IP = ip
 	declaration := structure.BackendDeclaration{
 		ModuleName: cfg.ModuleName,
 		Version:    version,
