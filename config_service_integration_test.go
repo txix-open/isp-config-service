@@ -16,6 +16,7 @@ import (
 	"isp-config-service/conf"
 	"isp-config-service/domain"
 	"log"
+	"net"
 	"strconv"
 	"strings"
 	"testing"
@@ -147,19 +148,19 @@ func TestClusterElection(t *testing.T) {
 	}
 
 	for i := 0; i < configsNumber; i++ {
-		fmt.Println()
+		fmt.Print("\n\n\n")
 		log.Printf("stopping %d container\n", i)
 		a.NoError(configsCtxs[i].StopContainer(20 * time.Second))
 
 		time.Sleep(5 * time.Second)
-		fmt.Println()
+		fmt.Print("\n\n\n")
 		log.Printf("checking cluster except %d\n", i)
 		ready = testClusterReady(a, i)
 		if !ready {
 			return
 		}
 
-		fmt.Println()
+		fmt.Print("\n\n\n")
 		log.Printf("starting %d container\n", i)
 		a.NoError(configsCtxs[i].StartContainer())
 
@@ -172,8 +173,12 @@ func TestClusterElection(t *testing.T) {
 }
 
 func getConfigServiceAddress(num int, port string) structure.AddressConfiguration {
+	lastIp := pgCfg.Address
+	ip := net.ParseIP(lastIp).To4()
+	ip[3] = byte(int(ip[3]) + num + 1)
 	return structure.AddressConfiguration{
-		IP:   fmt.Sprintf("%s-%d", "isp-config-service", num),
+		//IP:   fmt.Sprintf("%s-%d", "isp-config-service", num),
+		IP:   ip.String(),
 		Port: port,
 	}
 }
@@ -207,7 +212,7 @@ func testClusterReady(a *assert.Assertions, except int) bool {
 	routesLen := len(clients)
 	for i := 1; i < len(clients); i++ {
 		routes := getRoutes(clients[i], a)
-		t := a.Lenf(routes, routesLen, "invalid length")
+		t := a.Len(routes, routesLen, "invalid length")
 		if !t {
 			return t
 		}
