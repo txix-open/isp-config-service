@@ -18,6 +18,7 @@ import (
 	"isp-config-service/helper"
 	"isp-config-service/holder"
 	"isp-config-service/model"
+	"isp-config-service/mux"
 	"isp-config-service/raft"
 	"isp-config-service/service"
 	"isp-config-service/store"
@@ -37,6 +38,7 @@ var (
 	date    = "undefined"
 
 	shutdownChan = make(chan struct{})
+	muxer        mux.Mux
 )
 
 func init() {
@@ -79,7 +81,7 @@ func main() {
 
 	httpListener, raftListener, err := initMultiplexer(cfg.WS.Rest)
 	if err != nil {
-		log.Fatalf(codes.InitCmuxError, "init cmux: %v", err)
+		log.Fatalf(codes.InitMuxError, "init mux: %v", err)
 	}
 
 	_, raftStore := initRaft(raftListener, cfg.Cluster, declaration)
@@ -103,24 +105,16 @@ func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.L
 		return nil, nil, fmt.Errorf("create tcp transport: %v", err)
 	}
 
-	// REMOVE
-	outerAddr.Port = outerAddr.Port + 5
-	httpListener, err := net.ListenTCP("tcp4", outerAddr)
-	if err != nil {
-		return nil, nil, fmt.Errorf("create tcp transport: %v", err)
-	}
-	return httpListener, tcpListener, nil
+	muxer = mux.New(tcpListener)
+	httpListener := muxer.Match(mux.HTTP1())
+	raftListener := muxer.Match(mux.Any())
 
-	//m := cmux.New(tcpListener)
-	//httpListener := m.Match(cmux.HTTP1Fast())
-	//raftListener := m.Match(cmux.Any())
-	//
-	//go func() {
-	//	if err := m.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
-	//		log.Fatalf(codes.InitCmuxError, "serve cmux: %v", err)
-	//	}
-	//}()
-	//return httpListener, raftListener, nil
+	go func() {
+		if err := muxer.Serve(); err != nil {
+			log.Fatalf(codes.InitMuxError, "serve mux: %v", err)
+		}
+	}()
+	return httpListener, raftListener, nil
 }
 
 func initWebsocket(ctx context.Context, listener net.Listener, raftStore *store.Store) {
@@ -190,12 +184,17 @@ func initGrpc(bindAddress structure.AddressConfiguration, raftStore *store.Store
 	backend.StartBackendGrpcServer(bindAddress, defaultService)
 }
 
-func onShutdown(ctx context.Context, sig os.Signal) {
-	log.Debugf(0, "received shutdown signal: %s", sig.String())
+func onShutdown(ctx context.Context, _ os.Signal) {
 	defer close(shutdownChan)
 
 	backend.StopGrpcServer()
 	holder.EtpServer.Close()
+
+	if err := holder.HttpServer.Shutdown(ctx); err != nil {
+		log.Warnf(codes.ShutdownHttpServerError, "http server shutdown err: %v", err)
+	} else {
+		log.Info(codes.ShutdownHttpServerInfo, "http server shutdown success")
+	}
 
 	if err := holder.ClusterClient.Shutdown(); err != nil {
 		log.Warnf(codes.RaftShutdownError, "raft shutdown err: %v", err)
@@ -203,11 +202,7 @@ func onShutdown(ctx context.Context, sig os.Signal) {
 		log.Info(codes.RaftShutdownInfo, "raft shutdown success")
 	}
 
-	if err := holder.HttpServer.Shutdown(ctx); err != nil {
-		log.Warnf(codes.ShutdownHttpServerError, "http server shutdown err: %v", err)
-	} else {
-		log.Info(codes.ShutdownHttpServerInfo, "http server shutdown success")
-	}
+	_ = muxer.Close()
 }
 
 func getOutboundIp() (string, error) {

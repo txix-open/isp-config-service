@@ -34,6 +34,6 @@ const (
 	RoutesServiceSendRoutesError      = 1020
 	ConfigServiceBroadcastConfigError = 1021
 
-	// Cmux
-	InitCmuxError = 1022
+	// Mux
+	InitMuxError = 1022
 )

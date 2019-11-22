@@ -97,9 +97,7 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 			},
 		}
 		configsGrpcAddrs[i] = grpcAddr
-		//configsHttpAddrs[i] = httpAddr
-		// REMOVE
-		configsHttpAddrs[i] = getConfigServiceAddress(i, "9006")
+		configsHttpAddrs[i] = httpAddr
 		configs[i] = cfg
 		peersAddrs[i] = httpAddr.GetAddress()
 	}
