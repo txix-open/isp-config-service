@@ -13,7 +13,6 @@ import (
 const (
 	ApplyCommandEvent = "CONFIG_CLUSTER:APPLY_COMMAND"
 
-	TokenParam   = "token"
 	ClusterParam = "cluster"
 )
 const (

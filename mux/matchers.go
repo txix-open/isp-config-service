@@ -1,7 +1,7 @@
 package mux
 
 import (
-	"strings"
+	"bytes"
 )
 
 type Matcher func([]byte) bool
@@ -34,11 +34,11 @@ func HTTP1() Matcher {
 			l = len(data)
 		}
 		methodB := data[:l]
-		ss := strings.Split(string(methodB), " ")
-		if len(ss) == 0 {
+		words := bytes.Split(methodB, []byte(" "))
+		if len(words) == 0 {
 			return false
 		}
-		_, knownMethod := httpMethods[ss[0]]
-		return knownMethod
+		_, ok := httpMethods[string(words[0])]
+		return ok
 	}
 }
