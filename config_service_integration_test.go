@@ -159,6 +159,7 @@ func TestClusterElection(t *testing.T) {
 		log.Printf("starting %d container\n", i)
 		a.NoError(configsCtxs[i].StartContainer())
 
+		time.Sleep(3 * time.Second)
 		log.Printf("checking cluster, iteration %d\n", i+1)
 		ready = testClusterReady(a, -1)
 		if !ready {
