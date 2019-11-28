@@ -80,10 +80,7 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 			Database:         pgCfg,
 			ModuleName:       moduleName,
 			GrpcOuterAddress: grpcAddr,
-			WS: struct {
-				Rest structure.AddressConfiguration `valid:"required~Required"`
-				Grpc structure.AddressConfiguration `valid:"required~Required"`
-			}{
+			WS: conf.WebService{
 				Rest: httpAddr,
 				Grpc: grpcAddr,
 			},

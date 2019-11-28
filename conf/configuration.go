@@ -8,20 +8,22 @@ type Configuration struct {
 	Database         structure.DBConfiguration      `valid:"required~Required" schema:"База данных,настройка параметров подключения к базе данных"`
 	GrpcOuterAddress structure.AddressConfiguration `valid:"required~Required" json:"grpcOuterAddress"`
 	ModuleName       string                         `valid:"required~Required"`
-	WS               struct {
-		Rest                    structure.AddressConfiguration `valid:"required~Required"`
-		Grpc                    structure.AddressConfiguration `valid:"required~Required"`
-		WsConnectionReadLimitKB int64                          `schema:"Максимальное количество килобайт на чтение по вебсокету,при превышении соединение закрывается с ошибкой"`
-	}
-	Metrics structure.MetricConfiguration
-	Cluster ClusterConfiguration `valid:"required~Required"`
+	WS               WebService                     `valid:"required~Required" schema:"Конфигурация веб сервиса"`
+	Metrics          structure.MetricConfiguration
+	Cluster          ClusterConfiguration `valid:"required~Required"`
 }
 
 type ClusterConfiguration struct {
-	InMemory              bool
-	DataDir               string `valid:"required~Required"`
-	BootstrapCluster      bool
-	Peers                 []string `valid:"required~Required"`
-	OuterAddress          string   `valid:"required~Required"`
-	ConnectTimeoutSeconds int      `valid:"required~Required"`
+	InMemory              bool     `schema:"Хранить логи и снэпшоты только в памяти"`
+	DataDir               string   `valid:"required~Required" schema:"Пусть до директории для логов и снэпшотов рафта"`
+	BootstrapCluster      bool     `schema:"Поднимать кластер и объявлять лидером"`
+	Peers                 []string `valid:"required~Required" schema:"Адреса всех нод в кластере,формат address:port"`
+	OuterAddress          string   `valid:"required~Required" schema:"Внешний адрес ноды"`
+	ConnectTimeoutSeconds int      `valid:"required~Required" schema:"Таймаут подключения"`
+}
+
+type WebService struct {
+	Rest                    structure.AddressConfiguration `valid:"required~Required"`
+	Grpc                    structure.AddressConfiguration `valid:"required~Required"`
+	WsConnectionReadLimitKB int64                          `schema:"Максимальное количество килобайт на чтение по вебсокету,при превышении соединение закрывается с ошибкой"`
 }
