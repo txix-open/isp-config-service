@@ -32,6 +32,9 @@ func (r *configRepPg) Upsert(config entity.Config) (*entity.Config, error) {
 			Insert()
 		return err
 	})
+	if err != nil {
+		return nil, err
+	}
 	return &config, err
 }
 
@@ -44,5 +47,8 @@ func (r *configRepPg) Delete(identities []string) (int, error) {
 			Delete()
 		return err
 	})
+	if err != nil {
+		return 0, err
+	}
 	return res.RowsAffected(), err
 }

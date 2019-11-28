@@ -30,7 +30,8 @@ import (
 )
 
 const (
-	moduleName = "config"
+	moduleName                         = "config"
+	defaultWsConnectionReadLimit int64 = 4 << 20 // 4 MB
 )
 
 var (
@@ -85,7 +86,7 @@ func main() {
 	}
 
 	_, raftStore := initRaft(raftListener, cfg.Cluster, declaration)
-	initWebsocket(ctx, httpListener, raftStore)
+	initWebsocket(ctx, cfg.WS.WsConnectionReadLimitKB, httpListener, raftStore)
 	initGrpc(cfg.WS.Grpc, raftStore)
 
 	defer goodbye.Exit(ctx, -1)
@@ -117,9 +118,14 @@ func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.L
 	return httpListener, raftListener, nil
 }
 
-func initWebsocket(ctx context.Context, listener net.Listener, raftStore *store.Store) {
+func initWebsocket(ctx context.Context, wsConnectionReadLimitKB int64, listener net.Listener, raftStore *store.Store) {
+	connectionReadLimit := defaultWsConnectionReadLimit
+	if wsConnectionReadLimitKB > 0 {
+		connectionReadLimit = wsConnectionReadLimitKB << 10
+	}
 	etpConfig := etp.ServerConfig{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify:  true,
+		ConnectionReadLimit: connectionReadLimit,
 	}
 	etpServer := etp.NewServer(ctx, etpConfig)
 	subs.NewSocketEventHandler(etpServer, raftStore).SubscribeAll()

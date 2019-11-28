@@ -9,8 +9,9 @@ type Configuration struct {
 	GrpcOuterAddress structure.AddressConfiguration `valid:"required~Required" json:"grpcOuterAddress"`
 	ModuleName       string                         `valid:"required~Required"`
 	WS               struct {
-		Rest structure.AddressConfiguration `valid:"required~Required"`
-		Grpc structure.AddressConfiguration `valid:"required~Required"`
+		Rest                    structure.AddressConfiguration `valid:"required~Required"`
+		Grpc                    structure.AddressConfiguration `valid:"required~Required"`
+		WsConnectionReadLimitKB int64                          `schema:"Максимальное количество килобайт на чтение по вебсокету,при превышении соединение закрывается с ошибкой"`
 	}
 	Metrics structure.MetricConfiguration
 	Cluster ClusterConfiguration `valid:"required~Required"`

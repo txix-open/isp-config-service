@@ -32,6 +32,9 @@ func (r *commonConfigRepPg) Upsert(config entity.CommonConfig) (*entity.CommonCo
 			Insert()
 		return err
 	})
+	if err != nil {
+		return nil, err
+	}
 	return &config, err
 }
 
@@ -44,5 +47,8 @@ func (r *commonConfigRepPg) Delete(identities []string) (int, error) {
 			Delete()
 		return err
 	})
+	if err != nil {
+		return 0, err
+	}
 	return res.RowsAffected(), err
 }

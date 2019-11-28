@@ -8,7 +8,7 @@ import (
 
 type SchemaRepository interface {
 	Snapshot() ([]entity.ConfigSchema, error)
-	Upsert(s entity.ConfigSchema) (*entity.ConfigSchema, error)
+	Upsert(schema entity.ConfigSchema) (*entity.ConfigSchema, error)
 	Delete(identities []string) (int, error)
 }
 
@@ -24,15 +24,18 @@ func (r *schemaRepPg) Snapshot() ([]entity.ConfigSchema, error) {
 	return schemas, err
 }
 
-func (r *schemaRepPg) Upsert(s entity.ConfigSchema) (*entity.ConfigSchema, error) {
+func (r *schemaRepPg) Upsert(schema entity.ConfigSchema) (*entity.ConfigSchema, error) {
 	err := r.rxClient.Visit(func(db *pg.DB) error {
-		_, err := db.Model(&s).
+		_, err := db.Model(&schema).
 			OnConflict("(id) DO UPDATE").
 			Returning("*").
 			Insert()
 		return err
 	})
-	return &s, err
+	if err != nil {
+		return nil, err
+	}
+	return &schema, err
 }
 
 func (r *schemaRepPg) Delete(identities []string) (int, error) {
@@ -43,5 +46,8 @@ func (r *schemaRepPg) Delete(identities []string) (int, error) {
 			Where("id IN (?)", pg.In(identities)).Delete()
 		return err
 	})
+	if err != nil {
+		return 0, err
+	}
 	return res.RowsAffected(), err
 }
