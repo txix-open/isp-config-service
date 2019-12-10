@@ -1,3 +1,6 @@
+### v2.0.2
+* fix raft server address announcing (serverId == serverAddress == cluster.outerAddress)
+
 ### v2.0.1
 * fix nil pointer dereference in repositories
 * increase default websocket ConnectionReadLimit to 4 MB, add to configuration

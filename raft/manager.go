@@ -88,9 +88,17 @@ func NewRaft(tcpListener net.Listener, configuration conf.ClusterConfiguration, 
 		return nil, err
 	}
 
+	netLogger := &LoggerAdapter{name: "RAFT-NET"}
 	streamLayer := &StreamLayer{Listener: tcpListener}
 	timeout := time.Duration(configuration.ConnectTimeoutSeconds) * time.Second
-	trans := raft.NewNetworkTransport(streamLayer, len(configuration.Peers), timeout, os.Stdout)
+	config := &raft.NetworkTransportConfig{
+		Stream:                streamLayer,
+		MaxPool:               len(configuration.Peers),
+		Timeout:               timeout,
+		Logger:                netLogger,
+		ServerAddressProvider: transparentAddressProvider{},
+	}
+	trans := raft.NewNetworkTransportWithConfig(config)
 
 	cfg := raft.DefaultConfig()
 	cfg.Logger = &LoggerAdapter{name: "RAFT"}
