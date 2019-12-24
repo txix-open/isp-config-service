@@ -25,7 +25,8 @@ type SocketLeaderClient struct {
 }
 
 func (c *SocketLeaderClient) Ack(data []byte, timeout time.Duration) ([]byte, error) {
-	ctx, _ := context.WithTimeout(c.globalCtx, timeout)
+	ctx, cancel := context.WithTimeout(c.globalCtx, timeout)
+	defer cancel()
 	response, err := c.client.EmitWithAck(ctx, ApplyCommandEvent, data)
 	return response, err
 }
@@ -35,7 +36,8 @@ func (c *SocketLeaderClient) SendDeclaration(backend structure.BackendDeclaratio
 	if err != nil {
 		return "", err
 	}
-	ctx, _ := context.WithTimeout(c.globalCtx, timeout)
+	ctx, cancel := context.WithTimeout(c.globalCtx, timeout)
+	defer cancel()
 	response, err := c.client.EmitWithAck(ctx, utils.ModuleReady, data)
 	return string(response), err
 }

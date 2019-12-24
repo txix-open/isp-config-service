@@ -14,10 +14,6 @@ import (
 	"isp-config-service/store/state"
 )
 
-const (
-	followersRoom = "cluster_followers"
-)
-
 var (
 	json = jsoniter.ConfigFastest
 )
@@ -40,9 +36,6 @@ func (h *socketEventHandler) SubscribeAll() {
 
 func (h *socketEventHandler) handleConnect(conn etp.Conn) {
 	isClusterNode := IsConfigClusterNode(conn)
-	if isClusterNode {
-		holder.EtpServer.Rooms().Join(conn, followersRoom)
-	}
 	moduleName, err := Parameters(conn)
 	log.Debugf(0, "handleConnect: %s", moduleName) // REMOVE
 	if err != nil {
@@ -87,9 +80,6 @@ func (h *socketEventHandler) handleConnect(conn etp.Conn) {
 }
 
 func (h *socketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error) {
-	if IsConfigClusterNode(conn) {
-		holder.EtpServer.Rooms().Leave(conn, followersRoom)
-	}
 	moduleName, _ := Parameters(conn)
 	log.Debugf(0, "handleDisconnect: %s", moduleName) // REMOVE
 	if moduleName != "" {
@@ -115,7 +105,7 @@ func (h *socketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error
 	}
 }
 
-func (h *socketEventHandler) handleError(conn etp.Conn, err error) {
+func (h *socketEventHandler) handleError(_ etp.Conn, err error) {
 	log.Warnf(codes.WebsocketError, "isp-etp: %v", err)
 }
 

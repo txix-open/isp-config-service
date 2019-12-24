@@ -2,6 +2,7 @@ package store
 
 import (
 	"encoding/binary"
+	"fmt"
 	"github.com/hashicorp/raft"
 	log "github.com/integration-system/isp-log"
 	jsoniter "github.com/json-iterator/go"
@@ -41,7 +42,11 @@ func (s *Store) Apply(l *raft.Log) interface{} {
 	if handler, ok := s.handlers[command]; ok {
 		result, err = handler(l.Data[8:])
 	} else {
-		log.Errorf(codes.ApplyLogCommandError, "unknown log command %d", command)
+		err = fmt.Errorf("unknown log command %d", command)
+		log.WithMetadata(map[string]interface{}{
+			"command": command,
+			"body":    string(l.Data),
+		}).Error(codes.ApplyLogCommandError, "unknown log command")
 	}
 
 	bytes, e := json.Marshal(result)

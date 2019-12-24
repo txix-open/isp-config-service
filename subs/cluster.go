@@ -8,8 +8,10 @@ import (
 	"isp-config-service/holder"
 )
 
-func (h *socketEventHandler) applyCommandOnLeader(conn etp.Conn, cmd []byte) []byte {
-	obj, err := holder.ClusterClient.SyncApplyOnLeader(cmd)
+func (h *socketEventHandler) applyCommandOnLeader(_ etp.Conn, cmd []byte) []byte {
+	cmdCopy := make([]byte, len(cmd))
+	copy(cmdCopy, cmd)
+	obj, err := holder.ClusterClient.SyncApplyOnLeader(cmdCopy)
 	if err != nil {
 		var logResponse cluster.ApplyLogResponse
 		logResponse.ApplyError = err.Error()

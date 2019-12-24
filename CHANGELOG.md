@@ -1,3 +1,7 @@
+### v2.0.3
+* fix data race when applyCommandOnLeader in websocket handler
+* update dependencies
+
 ### v2.0.2
 * fix raft server address announcing (serverId == serverAddress == cluster.outerAddress)
 

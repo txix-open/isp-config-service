@@ -262,7 +262,7 @@
   revision = "ac5582987a2f25e8743e0ebb7259312adda05c23"
 
 [[projects]]
-  digest = "1:4a70938660ae196961d0285062fa7ae5b8abcf1c800f4c750803c06c2150a716"
+  digest = "1:af0185228b5f1c08939721c26a61787c65d6d4cdd6ce5078d0bb86cb1d7a907a"
   name = "github.com/integration-system/isp-etp-go"
   packages = [
     ".",
@@ -273,8 +273,8 @@
     "parser",
   ]
   pruneopts = "UT"
-  revision = "6e92a3dda2cf7c6ec82fc1a1ae922248754e49d9"
-  version = "v2.0.0"
+  revision = "aab01a1b29ac06ebeb0216b9b43708491b8d5aee"
+  version = "v2.0.2"
 
 [[projects]]
   digest = "1:d30832edf4ae7a45e863e216c89bb5f1d66c10ff5b3255b9e007598a048594d7"
