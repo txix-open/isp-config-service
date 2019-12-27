@@ -55,11 +55,13 @@ func (r *Raft) LeaderCh() <-chan ChangeLeaderNotification {
 func (r *Raft) GracefulShutdown() error {
 	r.r.DeregisterObserver(r.leaderObs)
 	close(r.closer)
-	close(r.changeLeaderCh)
+	close(r.leaderObsCh)
 	return r.r.Shutdown().Error()
 }
 
 func (r *Raft) listenLeader() {
+	defer close(r.changeLeaderCh)
+
 	for {
 		select {
 		case _, ok := <-r.leaderObsCh:
@@ -73,6 +75,8 @@ func (r *Raft) listenLeader() {
 				CurrentLeaderAddress: string(currentLeader),
 				LeaderElected:        currentLeader != "",
 			}:
+			case <-r.closer:
+				return
 			default:
 				continue
 			}
