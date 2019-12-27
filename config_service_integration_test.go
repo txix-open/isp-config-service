@@ -111,9 +111,8 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 			cfg.Images.Module, c, nil,
 			docker.WithName(c.GrpcOuterAddress.IP),
 			docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard, "DeleteCommonConfigsCommand")),
-			//docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard, "")),
 			//docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard, "Apply 10 command")),
-			docker.PullImage(cfg.Registry.Username, cfg.Registry.Password),
+			//docker.PullImage(cfg.Registry.Username, cfg.Registry.Password),
 			docker.WithEnv(peersAddrsEnv),
 		)
 		grpcAddr := configsGrpcAddrs[i]
