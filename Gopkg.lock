@@ -277,10 +277,9 @@
   version = "v2.0.2"
 
 [[projects]]
-  digest = "1:d30832edf4ae7a45e863e216c89bb5f1d66c10ff5b3255b9e007598a048594d7"
+  digest = "1:b6f5c19baa132c1bb51fa07430738948910b516326dc923febb8ba6e24b0f7dc"
   name = "github.com/integration-system/isp-lib"
   packages = [
-    "atomic",
     "backend",
     "bootstrap",
     "config",
@@ -327,6 +326,14 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "5475a8b08e62e41fa886641861ac225e7f91e4e5"
+
+[[projects]]
+  digest = "1:965f8051786df58d7d62c8ffa2d90cb84000aab1a167e5c4713ff572cd7e164e"
+  name = "github.com/integration-system/net-mux"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9dc223fe46d293b528c8e2a04c43d991bc23a2de"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:01ed62f8f4f574d8aff1d88caee113700a2b44c42351943fa73cc1808f736a50"
@@ -756,7 +763,6 @@
     "github.com/integration-system/isp-lib-test/docker",
     "github.com/integration-system/isp-lib-test/utils",
     "github.com/integration-system/isp-lib-test/utils/postgres",
-    "github.com/integration-system/isp-lib/atomic",
     "github.com/integration-system/isp-lib/backend",
     "github.com/integration-system/isp-lib/bootstrap",
     "github.com/integration-system/isp-lib/config",
@@ -766,6 +772,7 @@
     "github.com/integration-system/isp-lib/utils",
     "github.com/integration-system/isp-log",
     "github.com/integration-system/isp-log/stdcodes",
+    "github.com/integration-system/net-mux",
     "github.com/json-iterator/go",
     "github.com/mohae/deepcopy",
     "github.com/pkg/errors",
