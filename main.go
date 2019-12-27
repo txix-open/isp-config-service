@@ -64,7 +64,7 @@ func main() {
 	endpoints := backend.GetEndpoints(cfg.ModuleName, handlers)
 	address := cfg.GrpcOuterAddress
 	if address.IP == "" {
-		ip, err := getOutboundIp()
+		ip, err := getOutboundIP()
 		if err != nil {
 			panic(err)
 		}
@@ -139,7 +139,7 @@ func initWebsocket(ctx context.Context, wsConnectionReadLimitKB int64, listener 
 		}
 	}()
 	holder.EtpServer = etpServer
-	holder.HttpServer = httpServer
+	holder.HTTPServer = httpServer
 }
 
 func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration, declaration structure.BackendDeclaration) (*cluster.Client, *store.Store) {
@@ -159,7 +159,7 @@ func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration, decla
 			cfg := config.Get().(*conf.Configuration)
 			addr, err := net.ResolveTCPAddr("tcp", address)
 			if err != nil {
-				panic(err) // must never occured
+				panic(err) // must never occurred
 			}
 			port := cfg.GrpcOuterAddress.Port
 			addressConfiguration := structure.AddressConfiguration{Port: port, IP: addr.IP.String()}
@@ -196,7 +196,7 @@ func onShutdown(ctx context.Context, _ os.Signal) {
 	backend.StopGrpcServer()
 	holder.EtpServer.Close()
 
-	if err := holder.HttpServer.Shutdown(ctx); err != nil {
+	if err := holder.HTTPServer.Shutdown(ctx); err != nil {
 		log.Warnf(codes.ShutdownHttpServerError, "http server shutdown err: %v", err)
 	} else {
 		log.Info(codes.ShutdownHttpServerInfo, "http server shutdown success")
@@ -211,7 +211,7 @@ func onShutdown(ctx context.Context, _ os.Signal) {
 	_ = muxer.Close()
 }
 
-func getOutboundIp() (string, error) {
+func getOutboundIP() (string, error) {
 	conn, err := net.Dial("udp", "9.9.9.9:80")
 	if err != nil {
 		return "", err

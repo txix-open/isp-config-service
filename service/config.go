@@ -158,8 +158,8 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 
 func (cs configService) BroadcastNewConfig(state state.ReadonlyState, configs ...entity.Config) {
 	for _, cfg := range configs {
-		moduleId := cfg.ModuleId
-		module := state.Modules().GetById(moduleId)
+		moduleID := cfg.ModuleId
+		module := state.Modules().GetById(moduleID)
 		moduleName := module.Name
 		room := moduleName + ConfigWatchersRoomSuffix
 

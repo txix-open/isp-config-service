@@ -18,12 +18,12 @@ var (
 	json = jsoniter.ConfigFastest
 )
 
-type socketEventHandler struct {
+type SocketEventHandler struct {
 	server etp.Server
 	store  *store.Store
 }
 
-func (h *socketEventHandler) SubscribeAll() {
+func (h *SocketEventHandler) SubscribeAll() {
 	h.server.
 		OnConnect(h.handleConnect).
 		OnDisconnect(h.handleDisconnect).
@@ -34,7 +34,7 @@ func (h *socketEventHandler) SubscribeAll() {
 		OnWithAck(utils.ModuleSendConfigSchema, h.handleConfigSchema)
 }
 
-func (h *socketEventHandler) handleConnect(conn etp.Conn) {
+func (h *SocketEventHandler) handleConnect(conn etp.Conn) {
 	isClusterNode := IsConfigClusterNode(conn)
 	moduleName, err := Parameters(conn)
 	log.Debugf(0, "handleConnect: %s", moduleName) // REMOVE
@@ -79,7 +79,7 @@ func (h *socketEventHandler) handleConnect(conn etp.Conn) {
 	EmitConn(conn, utils.ConfigSendConfigWhenConnected, data)
 }
 
-func (h *socketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error) {
+func (h *SocketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error) {
 	moduleName, _ := Parameters(conn)
 	log.Debugf(0, "handleDisconnect: %s", moduleName) // REMOVE
 	if moduleName != "" {
@@ -105,12 +105,12 @@ func (h *socketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error
 	}
 }
 
-func (h *socketEventHandler) handleError(_ etp.Conn, err error) {
+func (h *SocketEventHandler) handleError(_ etp.Conn, err error) {
 	log.Warnf(codes.WebsocketError, "isp-etp: %v", err)
 }
 
-func NewSocketEventHandler(server etp.Server, store *store.Store) *socketEventHandler {
-	return &socketEventHandler{
+func NewSocketEventHandler(server etp.Server, store *store.Store) *SocketEventHandler {
+	return &SocketEventHandler{
 		server: server,
 		store:  store,
 	}

@@ -169,8 +169,8 @@ func TestClusterElection(t *testing.T) {
 }
 
 func getConfigServiceAddress(num int, port string) structure.AddressConfiguration {
-	lastIp := pgCfg.Address
-	ip := net.ParseIP(lastIp).To4()
+	lastIP := pgCfg.Address
+	ip := net.ParseIP(lastIP).To4()
 	ip[3] = byte(int(ip[3]) + num + 1)
 	return structure.AddressConfiguration{
 		//IP:   fmt.Sprintf("%s-%d", "isp-config-service", num),
@@ -237,7 +237,7 @@ func testGrpcReady(configAddr structure.AddressConfiguration, a *assert.Assertio
 	if !a.NoError(err) {
 		return nil
 	}
-	log.Println("waiting until grpc ready:", time.Now().Sub(start).Round(time.Second))
+	log.Println("waiting until grpc ready:", time.Since(start).Round(time.Second))
 	return client
 }
 
@@ -258,7 +258,7 @@ func testRaftReady(client *backend.InternalGrpcClient, a *assert.Assertions) boo
 		return nil, err
 	}
 	_, _ = await(f, maxAwaitingTime)
-	log.Println("waiting until raft ready:", time.Now().Sub(start).Round(time.Second))
+	log.Println("waiting until raft ready:", time.Since(start).Round(time.Second))
 	return a.NoError(err)
 }
 

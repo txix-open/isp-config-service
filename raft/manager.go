@@ -17,8 +17,8 @@ const (
 )
 
 type ChangeLeaderNotification struct {
-	IsLeader             bool
 	CurrentLeaderAddress string
+	IsLeader             bool
 	LeaderElected        bool
 }
 

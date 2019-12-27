@@ -24,12 +24,12 @@ type discoveryService struct {
 	lock sync.RWMutex
 }
 
-func (ds *discoveryService) HandleDisconnect(connId string) {
+func (ds *discoveryService) HandleDisconnect(connID string) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
-	if events, ok := ds.subs[connId]; ok {
-		holder.EtpServer.Rooms().LeaveByConnId(connId, events...)
-		delete(ds.subs, connId)
+	if events, ok := ds.subs[connID]; ok {
+		holder.EtpServer.Rooms().LeaveByConnId(connID, events...)
+		delete(ds.subs, connID)
 	}
 }
 
@@ -76,28 +76,28 @@ func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, mesh sta
 }
 
 func (ds *discoveryService) broadcastAddrList(room string, event string, addressList []structure.AddressConfiguration) error {
-	if bytes, err := json.Marshal(addressList); err != nil {
+	bytes, err := json.Marshal(addressList)
+	if err != nil {
 		return err
-	} else {
-		err = holder.EtpServer.BroadcastToRoom(room, event, bytes)
-		if err != nil {
-			return err
-		}
+	}
+	err = holder.EtpServer.BroadcastToRoom(room, event, bytes)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
 func (ds *discoveryService) sendAddrList(conn etp.Conn, event string, addressList []structure.AddressConfiguration) error {
-	if bytes, err := json.Marshal(addressList); err != nil {
+	bytes, err := json.Marshal(addressList)
+	if err != nil {
 		return err
-	} else {
-		bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 3)
-		err := backoff.Retry(func() error {
-			return conn.Emit(context.Background(), event, bytes)
-		}, bf)
-		if err != nil {
-			return err
-		}
+	}
+	bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 3)
+	err = backoff.Retry(func() error {
+		return conn.Emit(context.Background(), event, bytes)
+	}, bf)
+	if err != nil {
+		return err
 	}
 	return nil
 }

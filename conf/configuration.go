@@ -15,8 +15,8 @@ type Configuration struct {
 
 type ClusterConfiguration struct {
 	InMemory              bool     `schema:"Хранить логи и снэпшоты только в памяти"`
-	DataDir               string   `valid:"required~Required" schema:"Пусть до директории для логов и снэпшотов рафта"`
 	BootstrapCluster      bool     `schema:"Поднимать кластер и объявлять лидером"`
+	DataDir               string   `valid:"required~Required" schema:"Пусть до директории для логов и снэпшотов рафта"`
 	Peers                 []string `valid:"required~Required" schema:"Адреса всех нод в кластере,формат address:port"`
 	OuterAddress          string   `valid:"required~Required" schema:"Внешний адрес ноды"`
 	ConnectTimeoutSeconds int      `valid:"required~Required" schema:"Таймаут подключения"`

@@ -8,7 +8,7 @@ import (
 	"isp-config-service/holder"
 )
 
-func (h *socketEventHandler) applyCommandOnLeader(_ etp.Conn, cmd []byte) []byte {
+func (h *SocketEventHandler) applyCommandOnLeader(_ etp.Conn, cmd []byte) []byte {
 	cmdCopy := make([]byte, len(cmd))
 	copy(cmdCopy, cmd)
 	obj, err := holder.ClusterClient.SyncApplyOnLeader(cmdCopy)

@@ -9,5 +9,5 @@ import (
 var (
 	ClusterClient *cluster.Client
 	EtpServer     etp.Server
-	HttpServer    *http.Server
+	HTTPServer    *http.Server
 )

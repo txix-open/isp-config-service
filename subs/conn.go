@@ -14,7 +14,6 @@ type connectionState struct {
 func IsConfigClusterNode(conn etp.Conn) bool {
 	isCluster := conn.URL().Query().Get(cluster.ClusterParam)
 	return isCluster == "true"
-
 }
 
 func Parameters(conn etp.Conn) (moduleName string, err error) {

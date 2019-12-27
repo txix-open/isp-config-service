@@ -15,7 +15,7 @@ import (
 	"isp-config-service/store/state"
 )
 
-func (h *socketEventHandler) handleModuleReady(conn etp.Conn, data []byte) []byte {
+func (h *SocketEventHandler) handleModuleReady(conn etp.Conn, data []byte) []byte {
 	moduleName, _ := Parameters(conn)                             // REMOVE
 	log.Debugf(0, "handleModuleReady moduleName: %s", moduleName) // REMOVE
 	declaration := structure.BackendDeclaration{}
@@ -37,7 +37,7 @@ func (h *socketEventHandler) handleModuleReady(conn etp.Conn, data []byte) []byt
 	return []byte(utils.WsOkResponse)
 }
 
-func (h *socketEventHandler) handleModuleRequirements(conn etp.Conn, data []byte) []byte {
+func (h *SocketEventHandler) handleModuleRequirements(conn etp.Conn, data []byte) []byte {
 	moduleName, err := Parameters(conn)
 	log.Debugf(0, "handleModuleRequirements moduleName: %s", moduleName) // REMOVE
 	if err != nil {
@@ -59,7 +59,7 @@ func (h *socketEventHandler) handleModuleRequirements(conn etp.Conn, data []byte
 	return []byte(utils.WsOkResponse)
 }
 
-func (h *socketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []byte {
+func (h *SocketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []byte {
 	moduleName, err := Parameters(conn)
 	log.Debugf(0, "handleConfigSchema moduleName: %s", moduleName) // REMOVE
 	if err != nil {
@@ -114,8 +114,4 @@ func (h *socketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 		_, _ = SyncApplyCommand(command, "UpsertConfigCommand")
 	}
 	return []byte(utils.WsOkResponse)
-}
-
-func (h *socketEventHandler) handleRequestConfig(conn etp.Conn, data []byte) []byte {
-	panic("not implemented")
 }

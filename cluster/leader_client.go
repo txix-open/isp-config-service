@@ -68,7 +68,7 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 	client := etp.NewClient(etpConfig)
 	leaderClient := &SocketLeaderClient{
 		client: client,
-		url:    getUrl(address),
+		url:    getURL(address),
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	leaderClient.globalCtx = ctx
@@ -90,7 +90,7 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 	return leaderClient
 }
 
-func getUrl(address string) string {
+func getURL(address string) string {
 	addr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		panic(err) // must never occurred

@@ -73,8 +73,8 @@ func (s commonConfigService) HandleUpsertConfigCommand(upsertConfig cluster.Upse
 	return cluster.NewResponse(config)
 }
 
-func (s commonConfigService) GetCommonConfigLinks(commonConfigId string, state state.ReadonlyState) domain.CommonConfigLinks {
-	configs := state.Configs().FilterByCommonConfigs([]string{commonConfigId})
+func (s commonConfigService) GetCommonConfigLinks(commonConfigID string, state state.ReadonlyState) domain.CommonConfigLinks {
+	configs := state.Configs().FilterByCommonConfigs([]string{commonConfigID})
 	result := make(domain.CommonConfigLinks)
 	for _, c := range configs {
 		module := state.Modules().GetById(c.ModuleId)

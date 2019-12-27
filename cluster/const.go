@@ -54,8 +54,8 @@ func PrepareDeleteModulesCommand(ids []string) []byte {
 	return prepareCommand(DeleteModulesCommand, DeleteModules{Ids: ids})
 }
 
-func PrepareActivateConfigCommand(configId string, date time.Time) []byte {
-	return prepareCommand(ActivateConfigCommand, ActivateConfig{ConfigId: configId, Date: date})
+func PrepareActivateConfigCommand(configID string, date time.Time) []byte {
+	return prepareCommand(ActivateConfigCommand, ActivateConfig{ConfigId: configID, Date: date})
 }
 
 func PrepareDeleteConfigsCommand(ids []string) []byte {

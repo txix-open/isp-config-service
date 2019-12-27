@@ -22,8 +22,8 @@ var RoutesService routesService
 
 type routesService struct{}
 
-func (rs *routesService) HandleDisconnect(connId string) {
-	holder.EtpServer.Rooms().LeaveByConnId(connId, RoutesSubscribersRoom)
+func (rs *routesService) HandleDisconnect(connID string) {
+	holder.EtpServer.Rooms().LeaveByConnId(connID, RoutesSubscribersRoom)
 }
 
 func (rs *routesService) SubscribeRoutes(conn etp.Conn, mesh state.ReadonlyMesh) {
@@ -48,13 +48,13 @@ func (rs *routesService) BroadcastRoutes(mesh state.ReadonlyMesh) {
 }
 
 func (rs *routesService) broadcastRoutes(event string, routes structure.RoutingConfig) error {
-	if bytes, err := json.Marshal(routes); err != nil {
+	bytes, err := json.Marshal(routes)
+	if err != nil {
 		return err
-	} else {
-		err = holder.EtpServer.BroadcastToRoom(RoutesSubscribersRoom, event, bytes)
-		if err != nil {
-			return err
-		}
+	}
+	err = holder.EtpServer.BroadcastToRoom(RoutesSubscribersRoom, event, bytes)
+	if err != nil {
+		return err
 	}
 	return nil
 }
