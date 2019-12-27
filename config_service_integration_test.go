@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/integration-system/isp-lib-test/ctx"
 	"github.com/integration-system/isp-lib-test/docker"
@@ -30,6 +31,7 @@ const (
 
 	configsNumber   = 3
 	maxAwaitingTime = 25 * time.Second
+	attemptTimeout  = 300 * time.Millisecond
 
 	deleteCommonConfigsCommand = "config/common_config/delete_config"
 	getRoutesCommand           = "config/routing/get_routes"
@@ -109,7 +111,9 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 			cfg.Images.Module, c, nil,
 			docker.WithName(c.GrpcOuterAddress.IP),
 			docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard, "DeleteCommonConfigsCommand")),
-			//docker.PullImage(cfg.Registry.Username, cfg.Registry.Password),
+			//docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard, "")),
+			//docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard, "Apply 10 command")),
+			docker.PullImage(cfg.Registry.Username, cfg.Registry.Password),
 			docker.WithEnv(peersAddrsEnv),
 		)
 		grpcAddr := configsGrpcAddrs[i]
@@ -233,7 +237,7 @@ func testGrpcReady(configAddr structure.AddressConfiguration, a *assert.Assertio
 		)
 		//log.Println("connect to grpc err:", err)
 		return nil, err
-	}, maxAwaitingTime)
+	}, maxAwaitingTime, attemptTimeout)
 	if !a.NoError(err) {
 		return nil
 	}
@@ -257,27 +261,39 @@ func testRaftReady(client *backend.InternalGrpcClient, a *assert.Assertions) boo
 		//log.Println("send grpc request. response: ", response, "err: ", err)
 		return nil, err
 	}
-	_, _ = await(f, maxAwaitingTime)
+	_, _ = await(f, maxAwaitingTime, attemptTimeout)
 	log.Println("waiting until raft ready:", time.Since(start).Round(time.Second))
 	return a.NoError(err)
 }
 
 func getRoutes(client *backend.InternalGrpcClient, a *assert.Assertions) []structure.BackendDeclaration {
 	var response []structure.BackendDeclaration
-	err := client.Invoke(
-		getRoutesCommand,
-		-1,
-		nil,
-		&response,
-	)
-	//log.Println("routes:", response)
+	var err error
+	f := func() (interface{}, error) {
+		err = client.Invoke(
+			getRoutesCommand,
+			-1,
+			nil,
+			&response,
+		)
+		if err != nil {
+			return nil, err
+		} else if len(response) == 0 {
+			return nil, errors.New("zero routes")
+		}
+
+		//log.Println("routes:", response)
+		return nil, nil
+	}
+
+	_, _ = await(f, time.Second, 50*time.Millisecond)
 	a.NoError(err)
 	return response
 }
 
-func await(dialer func() (interface{}, error), timeout time.Duration) (interface{}, error) {
+func await(dialer func() (interface{}, error), timeout, attemptTimeout time.Duration) (interface{}, error) {
 	retryer := utils.NewRetryer(dialer, timeout)
-	retryer.AttemptTimeout = 300 * time.Millisecond
+	retryer.AttemptTimeout = attemptTimeout
 	return retryer.Do()
 }
 
