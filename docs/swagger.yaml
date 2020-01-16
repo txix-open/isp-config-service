@@ -63,7 +63,7 @@ definitions:
         type: object
       endpoints:
         items:
-          $ref: '#/definitions/structure.EndpointConfig'
+          $ref: '#/definitions/structure.EndpointDescriptor'
         type: array
       establishedAt:
         type: string
@@ -610,7 +610,7 @@ definitions:
         type: object
       endpoints:
         items:
-          $ref: '#/definitions/structure.EndpointConfig'
+          $ref: '#/definitions/structure.EndpointDescriptor'
         type: array
       libVersion:
         type: string
@@ -619,14 +619,16 @@ definitions:
       version:
         type: string
     type: object
-  structure.EndpointConfig:
+  structure.EndpointDescriptor:
     properties:
-      ignoreOnRouter:
-        type: boolean
+      extra:
+        type: object
       inner:
         type: boolean
       path:
         type: string
+      userAuthRequired:
+        type: boolean
     required:
     - path
     type: object

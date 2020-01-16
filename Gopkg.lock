@@ -277,7 +277,7 @@
   version = "v2.0.2"
 
 [[projects]]
-  digest = "1:b6f5c19baa132c1bb51fa07430738948910b516326dc923febb8ba6e24b0f7dc"
+  digest = "1:194932f6894a42dd62acd1092c529befbe576abf50fe929a0e30ae3544ceb6ee"
   name = "github.com/integration-system/isp-lib"
   packages = [
     "backend",
@@ -292,8 +292,8 @@
     "utils",
   ]
   pruneopts = "UT"
-  revision = "abfa9a9776d64e6d04d495bfe00db8ca4dcbe7fc"
-  version = "v2.0.1"
+  revision = "4ea9449f1b3f2565b9038b0d4cdda3b02089aa8c"
+  version = "v2.1.0"
 
 [[projects]]
   digest = "1:1562269205ab0c6685c8b0b99511e91b9d3627e4cac3f0288378bc8930e658f1"

@@ -27,7 +27,7 @@ type Connection struct {
 	LibVersion    string
 	Version       string
 	Address       structure.AddressConfiguration
-	Endpoints     []structure.EndpointConfig `json:",omitempty"`
+	Endpoints     []structure.EndpointDescriptor `json:",omitempty"`
 	EstablishedAt time.Time
 }
 

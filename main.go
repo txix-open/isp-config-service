@@ -57,6 +57,9 @@ func init() {
 
 // @host localhost:9003
 // @BasePath /api/config
+
+//go:generate swag init --parseVendor
+//go:generate rm -f docs/docs.go docs/swagger.json
 func main() {
 	ctx := context.Background()
 	cfg := config.Get().(*conf.Configuration)
