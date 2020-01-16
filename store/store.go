@@ -63,7 +63,7 @@ func (s *Store) Apply(l *raft.Log) interface{} {
 
 func (s *Store) Snapshot() (raft.FSMSnapshot, error) {
 	s.lock.Lock()
-	copied := deepcopy.Copy(s.state).(state.State)
+	copied := deepcopy.Copy(s.state).(*state.State)
 	s.lock.Unlock()
 	return &fsmSnapshot{copied}, nil
 }
@@ -91,7 +91,7 @@ func (s *Store) VisitState(f func(writableState state.WritableState)) {
 }
 
 type fsmSnapshot struct {
-	state state.State
+	state *state.State
 }
 
 func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
@@ -114,9 +114,9 @@ func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
 
 func (f *fsmSnapshot) Release() {}
 
-func NewStateStore(st state.State) *Store {
+func NewStateStore(st *state.State) *Store {
 	store := &Store{
-		state: &st,
+		state: st,
 	}
 	store.handlers = map[uint64]func([]byte) (interface{}, error){
 		cluster.UpdateBackendDeclarationCommand: store.applyUpdateBackendDeclarationCommand,

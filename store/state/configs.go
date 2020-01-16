@@ -25,11 +25,11 @@ type ReadonlyConfigStore interface {
 }
 
 type ConfigStore struct {
-	configs []entity.Config
+	Configs []entity.Config
 }
 
 func (cs ConfigStore) GetActiveByModuleId(moduleId string) *entity.Config {
-	for _, conf := range cs.configs {
+	for _, conf := range cs.Configs {
 		if conf.ModuleId == moduleId && conf.Active {
 			return &conf
 		}
@@ -40,7 +40,7 @@ func (cs ConfigStore) GetActiveByModuleId(moduleId string) *entity.Config {
 func (cs ConfigStore) GetByIds(ids []string) []entity.Config {
 	idsMap := StringsToMap(ids)
 	result := make([]entity.Config, 0, len(ids))
-	for _, conf := range cs.configs {
+	for _, conf := range cs.Configs {
 		if _, ok := idsMap[conf.Id]; ok {
 			result = append(result, conf)
 		}
@@ -51,7 +51,7 @@ func (cs ConfigStore) GetByIds(ids []string) []entity.Config {
 func (cs ConfigStore) GetByModuleIds(ids []string) []entity.Config {
 	idsMap := StringsToMap(ids)
 	result := make([]entity.Config, 0, len(ids))
-	for _, conf := range cs.configs {
+	for _, conf := range cs.Configs {
 		if _, ok := idsMap[conf.ModuleId]; ok {
 			result = append(result, conf)
 		}
@@ -73,14 +73,14 @@ func (cs *ConfigStore) Create(config entity.Config) entity.Config {
 	if config.CommonConfigs == nil {
 		config.CommonConfigs = make([]string, 0)
 	}
-	cs.configs = append(cs.configs, config)
+	cs.Configs = append(cs.Configs, config)
 	return config
 }
 
 func (cs *ConfigStore) UpdateById(config entity.Config) {
-	for i := range cs.configs {
-		if cs.configs[i].Id == config.Id {
-			cs.configs[i] = config
+	for i := range cs.Configs {
+		if cs.Configs[i].Id == config.Id {
+			cs.Configs[i] = config
 			break
 		}
 	}
@@ -88,10 +88,10 @@ func (cs *ConfigStore) UpdateById(config entity.Config) {
 
 func (cs *ConfigStore) calcNewVersion(moduleId string) int32 {
 	var maxVersion int32 = 0
-	for i := range cs.configs {
-		if cs.configs[i].ModuleId == moduleId {
-			if cs.configs[i].Version > maxVersion {
-				maxVersion = cs.configs[i].Version
+	for i := range cs.Configs {
+		if cs.Configs[i].ModuleId == moduleId {
+			if cs.Configs[i].Version > maxVersion {
+				maxVersion = cs.Configs[i].Version
 			}
 		}
 	}
@@ -101,12 +101,12 @@ func (cs *ConfigStore) calcNewVersion(moduleId string) int32 {
 func (cs *ConfigStore) DeleteByIds(ids []string) int {
 	idsMap := StringsToMap(ids)
 	var deleted int
-	for i := 0; i < len(cs.configs); i++ {
-		id := cs.configs[i].Id
+	for i := 0; i < len(cs.Configs); i++ {
+		id := cs.Configs[i].Id
 		if _, ok := idsMap[id]; ok {
 			// change configs ordering
-			cs.configs[i] = cs.configs[len(cs.configs)-1]
-			cs.configs = cs.configs[:len(cs.configs)-1]
+			cs.Configs[i] = cs.Configs[len(cs.Configs)-1]
+			cs.Configs = cs.Configs[:len(cs.Configs)-1]
 			deleted++
 		}
 	}
@@ -124,11 +124,11 @@ func (cs *ConfigStore) Activate(config entity.Config, date time.Time) []entity.C
 
 func (cs *ConfigStore) deactivate(moduleId string, date time.Time) []entity.Config {
 	affected := make([]entity.Config, 0)
-	for i := range cs.configs {
-		if cs.configs[i].ModuleId == moduleId && cs.configs[i].Active {
-			cs.configs[i].Active = false
-			cs.configs[i].UpdatedAt = date
-			affected = append(affected, cs.configs[i])
+	for i := range cs.Configs {
+		if cs.Configs[i].ModuleId == moduleId && cs.Configs[i].Active {
+			cs.Configs[i].Active = false
+			cs.Configs[i].UpdatedAt = date
+			affected = append(affected, cs.Configs[i])
 		}
 	}
 	return affected
@@ -137,7 +137,7 @@ func (cs *ConfigStore) deactivate(moduleId string, date time.Time) []entity.Conf
 func (cs *ConfigStore) FilterByCommonConfigs(commonIds []string) []entity.Config {
 	idsMap := StringsToMap(commonIds)
 	result := make([]entity.Config, 0)
-	for _, cfg := range cs.configs {
+	for _, cfg := range cs.Configs {
 		for _, commonId := range cfg.CommonConfigs {
 			if _, ok := idsMap[commonId]; ok {
 				result = append(result, cfg)
@@ -149,5 +149,5 @@ func (cs *ConfigStore) FilterByCommonConfigs(commonIds []string) []entity.Config
 }
 
 func NewConfigStore() *ConfigStore {
-	return &ConfigStore{configs: make([]entity.Config, 0)}
+	return &ConfigStore{Configs: make([]entity.Config, 0)}
 }

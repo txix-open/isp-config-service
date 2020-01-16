@@ -15,13 +15,13 @@ type ReadonlySchemaStore interface {
 }
 
 type SchemaStore struct {
-	schemas []entity.ConfigSchema
+	Schemas []entity.ConfigSchema
 }
 
 func (ss SchemaStore) GetByModuleIds(ids []string) []entity.ConfigSchema {
 	idsMap := StringsToMap(ids)
 	result := make([]entity.ConfigSchema, 0, len(ids))
-	for _, schema := range ss.schemas {
+	for _, schema := range ss.Schemas {
 		if _, ok := idsMap[schema.ModuleId]; ok {
 			result = append(result, schema)
 		}
@@ -32,12 +32,12 @@ func (ss SchemaStore) GetByModuleIds(ids []string) []entity.ConfigSchema {
 func (ss *SchemaStore) DeleteByIds(ids []string) int {
 	idsMap := StringsToMap(ids)
 	var deleted int
-	for i := 0; i < len(ss.schemas); i++ {
-		id := ss.schemas[i].Id
+	for i := 0; i < len(ss.Schemas); i++ {
+		id := ss.Schemas[i].Id
 		if _, ok := idsMap[id]; ok {
 			// change schemas ordering
-			ss.schemas[i] = ss.schemas[len(ss.schemas)-1]
-			ss.schemas = ss.schemas[:len(ss.schemas)-1]
+			ss.Schemas[i] = ss.Schemas[len(ss.Schemas)-1]
+			ss.Schemas = ss.Schemas[:len(ss.Schemas)-1]
 			deleted++
 		}
 	}
@@ -45,18 +45,18 @@ func (ss *SchemaStore) DeleteByIds(ids []string) int {
 }
 
 func (ss *SchemaStore) Upsert(schema entity.ConfigSchema) entity.ConfigSchema {
-	for key, value := range ss.schemas {
+	for key, value := range ss.Schemas {
 		if value.ModuleId == schema.ModuleId {
 			schema.Id = value.Id
 			schema.CreatedAt = value.CreatedAt
-			ss.schemas[key] = schema
+			ss.Schemas[key] = schema
 			return schema
 		}
 	}
-	ss.schemas = append(ss.schemas, schema)
+	ss.Schemas = append(ss.Schemas, schema)
 	return schema
 }
 
 func NewSchemaStore() *SchemaStore {
-	return &SchemaStore{schemas: make([]entity.ConfigSchema, 0)}
+	return &SchemaStore{Schemas: make([]entity.ConfigSchema, 0)}
 }

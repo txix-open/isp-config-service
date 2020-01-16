@@ -5,51 +5,51 @@ import (
 )
 
 type State struct {
-	mesh          *Mesh
-	configs       *ConfigStore
-	schemas       *SchemaStore
-	modules       *ModuleStore
-	commonConfigs *CommonConfigStore
+	MeshStore          *Mesh
+	ConfigsStore       *ConfigStore
+	SchemasStore       *SchemaStore
+	ModulesStore       *ModuleStore
+	CommonConfigsStore *CommonConfigStore
 }
 
 func (s State) Mesh() ReadonlyMesh {
-	return s.mesh
+	return s.MeshStore
 }
 
 func (s State) Configs() ReadonlyConfigStore {
-	return s.configs
+	return s.ConfigsStore
 }
 
 func (s State) Schemas() ReadonlySchemaStore {
-	return s.schemas
+	return s.SchemasStore
 }
 
 func (s State) Modules() ReadonlyModuleStore {
-	return s.modules
+	return s.ModulesStore
 }
 
 func (s State) CommonConfigs() ReadonlyCommonConfigStore {
-	return s.commonConfigs
+	return s.CommonConfigsStore
 }
 
 func (s *State) WritableMesh() WriteableMesh {
-	return s.mesh
+	return s.MeshStore
 }
 
 func (s *State) WritableConfigs() WriteableConfigStore {
-	return s.configs
+	return s.ConfigsStore
 }
 
 func (s *State) WritableSchemas() WriteableSchemaStore {
-	return s.schemas
+	return s.SchemasStore
 }
 
 func (s *State) WritableModules() WriteableModuleStore {
-	return s.modules
+	return s.ModulesStore
 }
 
 func (s *State) WritableCommonConfigs() WriteableCommonConfigStore {
-	return s.commonConfigs
+	return s.CommonConfigsStore
 }
 
 type WritableState interface {
@@ -69,22 +69,22 @@ type ReadonlyState interface {
 	CommonConfigs() ReadonlyCommonConfigStore
 }
 
-func NewState() State {
-	return State{
-		mesh:          NewMesh(),
-		configs:       NewConfigStore(),
-		schemas:       NewSchemaStore(),
-		modules:       NewModuleStore(),
-		commonConfigs: NewCommonConfigStore(),
+func NewState() *State {
+	return &State{
+		MeshStore:          NewMesh(),
+		ConfigsStore:       NewConfigStore(),
+		SchemasStore:       NewSchemaStore(),
+		ModulesStore:       NewModuleStore(),
+		CommonConfigsStore: NewCommonConfigStore(),
 	}
 }
 
-func NewStateFromSnapshot(configs []entity.Config, schemas []entity.ConfigSchema, modules []entity.Module, commConfigs []entity.CommonConfig) State {
-	return State{
-		mesh:          NewMesh(),
-		configs:       &ConfigStore{configs: configs},
-		schemas:       &SchemaStore{schemas: schemas},
-		modules:       &ModuleStore{modules: modules},
-		commonConfigs: &CommonConfigStore{configs: commConfigs},
+func NewStateFromSnapshot(configs []entity.Config, schemas []entity.ConfigSchema, modules []entity.Module, commConfigs []entity.CommonConfig) *State {
+	return &State{
+		MeshStore:          NewMesh(),
+		ConfigsStore:       &ConfigStore{Configs: configs},
+		SchemasStore:       &SchemaStore{Schemas: schemas},
+		ModulesStore:       &ModuleStore{Modules: modules},
+		CommonConfigsStore: &CommonConfigStore{Configs: commConfigs},
 	}
 }

@@ -18,13 +18,13 @@ type ReadonlyCommonConfigStore interface {
 }
 
 type CommonConfigStore struct {
-	configs []entity.CommonConfig
+	Configs []entity.CommonConfig
 }
 
 func (cs CommonConfigStore) GetByIds(ids []string) []entity.CommonConfig {
 	idsMap := StringsToMap(ids)
 	configs := make([]entity.CommonConfig, 0, len(ids))
-	for _, config := range cs.configs {
+	for _, config := range cs.Configs {
 		if _, found := idsMap[config.Id]; found {
 			configs = append(configs, config)
 		}
@@ -34,7 +34,7 @@ func (cs CommonConfigStore) GetByIds(ids []string) []entity.CommonConfig {
 
 func (cs CommonConfigStore) GetByName(name string) []entity.CommonConfig {
 	configs := make([]entity.CommonConfig, 0)
-	for _, config := range cs.configs {
+	for _, config := range cs.Configs {
 		if config.Name == name {
 			configs = append(configs, config)
 		}
@@ -49,14 +49,14 @@ func (cs *CommonConfigStore) Create(config entity.CommonConfig) entity.CommonCon
 	if config.Data == nil {
 		config.Data = make(entity.ConfigData)
 	}
-	cs.configs = append(cs.configs, config)
+	cs.Configs = append(cs.Configs, config)
 	return config
 }
 
 func (cs *CommonConfigStore) UpdateById(config entity.CommonConfig) {
-	for i := range cs.configs {
-		if cs.configs[i].Id == config.Id {
-			cs.configs[i] = config
+	for i := range cs.Configs {
+		if cs.Configs[i].Id == config.Id {
+			cs.Configs[i] = config
 			break
 		}
 	}
@@ -65,12 +65,12 @@ func (cs *CommonConfigStore) UpdateById(config entity.CommonConfig) {
 func (cs *CommonConfigStore) DeleteByIds(ids []string) int {
 	idsMap := StringsToMap(ids)
 	var deleted int
-	for i := 0; i < len(cs.configs); i++ {
-		id := cs.configs[i].Id
+	for i := 0; i < len(cs.Configs); i++ {
+		id := cs.Configs[i].Id
 		if _, ok := idsMap[id]; ok {
 			// change configs ordering
-			cs.configs[i] = cs.configs[len(cs.configs)-1]
-			cs.configs = cs.configs[:len(cs.configs)-1]
+			cs.Configs[i] = cs.Configs[len(cs.Configs)-1]
+			cs.Configs = cs.Configs[:len(cs.Configs)-1]
 			deleted++
 		}
 	}
@@ -78,11 +78,11 @@ func (cs *CommonConfigStore) DeleteByIds(ids []string) int {
 }
 
 func (cs *CommonConfigStore) GetAll() []entity.CommonConfig {
-	response := make([]entity.CommonConfig, len(cs.configs))
-	copy(response, cs.configs)
+	response := make([]entity.CommonConfig, len(cs.Configs))
+	copy(response, cs.Configs)
 	return response
 }
 
 func NewCommonConfigStore() *CommonConfigStore {
-	return &CommonConfigStore{configs: make([]entity.CommonConfig, 0)}
+	return &CommonConfigStore{Configs: make([]entity.CommonConfig, 0)}
 }
