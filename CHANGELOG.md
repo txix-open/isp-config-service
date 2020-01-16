@@ -1,3 +1,6 @@
+### v2.1.1
+* update to new endpoint descriptor struct with extra fields introduced in isp-lib v2.1.0
+
 ### v2.1.0
 * fix panic type casting in shapshot
 * create empty default config now
