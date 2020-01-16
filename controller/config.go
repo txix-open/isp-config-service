@@ -29,17 +29,23 @@ type config struct {
 // @Failure 500 {object} structure.GrpcError
 // @Router /config/get_active_config_by_module_name [POST]
 func (c *config) GetActiveConfigByModuleName(request domain.GetByModuleNameRequest) (*entity.Config, error) {
-	var response *entity.Config
+	var (
+		module *entity.Module
+		config *entity.Config
+	)
 	c.rstore.VisitReadonlyState(func(state state.ReadonlyState) {
-		module := state.Modules().GetByName(request.ModuleName)
+		module = state.Modules().GetByName(request.ModuleName)
 		if module != nil {
-			response = state.Configs().GetActiveByModuleId(module.Id)
+			config = state.Configs().GetActiveByModuleId(module.Id)
 		}
 	})
-	if response == nil {
-		return nil, status.Error(codes.NotFound, utils.ValidationError)
+	if module == nil {
+		return nil, status.Errorf(codes.NotFound, "module with name '%s' not found", request.ModuleName)
 	}
-	return response, nil
+	if config == nil {
+		return nil, status.Errorf(codes.NotFound, "active config for module '%s' not found", request.ModuleName)
+	}
+	return config, nil
 }
 
 // CreateUpdateConfig godoc

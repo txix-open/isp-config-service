@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"google.golang.org/grpc/status"
 	"isp-config-service/cluster"
 	"isp-config-service/domain"
+	"isp-config-service/entity"
 	"isp-config-service/service"
 	"isp-config-service/store"
 	"isp-config-service/store/state"
@@ -59,6 +61,28 @@ func (*module) DeleteModules(identities []string) (*domain.DeleteResponse, error
 		return nil, err
 	}
 	return &deleteResponse, err
+}
+
+// GetModuleByName godoc
+// @Summary Метод получения модуля по имени
+// @Description Модуль
+// @Tags Модули
+// @Accept json
+// @Produce json
+// @Param body body domain.GetByModuleNameRequest true "название модуля"
+// @Success 200 {object} entity.Module
+// @Failure 500 {object} structure.GrpcError
+// @Failure 404 {object} structure.GrpcError "модуль с указанным названием не найден"
+// @Router /module/get_by_name [POST]
+func (c *module) GetModuleByName(req domain.GetByModuleNameRequest) (*entity.Module, error) {
+	var module *entity.Module
+	c.rstore.VisitReadonlyState(func(readonlyState state.ReadonlyState) {
+		module = readonlyState.Modules().GetByName(req.ModuleName)
+	})
+	if module == nil {
+		return nil, status.Errorf(codes.NotFound, "module with name '%s' not found", req.ModuleName)
+	}
+	return module, nil
 }
 
 func NewModule(rstore *store.Store) *module {

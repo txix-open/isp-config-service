@@ -1,3 +1,8 @@
+### v2.1.0
+* fix panic type casting in shapshot
+* create empty default config now
+* add method `/module/get_by_name` to fetch module object by name
+
 ### v2.0.3
 * fix data race when applyCommandOnLeader in websocket handler
 * update dependencies

@@ -9,9 +9,9 @@ import (
 
 type Handlers struct {
 	// ===== MODULE =====
-	DeleteModules  func(identities []string) (*domain.DeleteResponse, error) `method:"delete_module" group:"module" inner:"true"`
-	GetModulesInfo func() ([]domain.ModuleInfo, error)                       `method:"get_modules_info" group:"module" inner:"true"`
-
+	DeleteModules   func(identities []string) (*domain.DeleteResponse, error)       `method:"delete_module" group:"module" inner:"true"`
+	GetModulesInfo  func() ([]domain.ModuleInfo, error)                             `method:"get_modules_info" group:"module" inner:"true"`
+	GetModuleByName func(req domain.GetByModuleNameRequest) (*entity.Module, error) `method:"get_by_name" group:"module" inner:"true"`
 	// ===== CONFIG =====
 	GetActiveConfigByModuleName func(request domain.GetByModuleNameRequest) (*entity.Config, error)             `method:"get_active_config_by_module_name" group:"config" inner:"true"`
 	CreateUpdateConfig          func(config domain.CreateUpdateConfigRequest) (*domain.ConfigModuleInfo, error) `method:"create_update_config" group:"config" inner:"true"`
@@ -34,8 +34,9 @@ type Handlers struct {
 
 func GetHandlers() *Handlers {
 	return &Handlers{
-		DeleteModules:  controller.Module.DeleteModules,
-		GetModulesInfo: controller.Module.GetModulesAggregatedInfo,
+		DeleteModules:   controller.Module.DeleteModules,
+		GetModulesInfo:  controller.Module.GetModulesAggregatedInfo,
+		GetModuleByName: controller.Module.GetModuleByName,
 
 		GetActiveConfigByModuleName: controller.Config.GetActiveConfigByModuleName,
 		CreateUpdateConfig:          controller.Config.CreateUpdateConfig,

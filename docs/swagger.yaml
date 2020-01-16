@@ -223,6 +223,21 @@ definitions:
       version:
         type: string
     type: object
+  entity.Module:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      lastConnectedAt:
+        type: string
+      lastDisconnectedAt:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
   jsonschema.Definitions:
     additionalProperties: {}
     type: object
@@ -236,7 +251,7 @@ definitions:
         type: string
       additionalItems:
         description: section 5.9
-        type: integer
+        type: string
       additionalProperties:
         description: section 5.18
         type: string
@@ -281,7 +296,7 @@ definitions:
         type: string
       items:
         description: section 5.9
-        type: integer
+        type: string
       maxItems:
         description: section 5.10
         type: integer
@@ -296,7 +311,7 @@ definitions:
         type: integer
       media:
         description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: integer
+        type: string
       minItems:
         description: section 5.11
         type: integer
@@ -314,7 +329,7 @@ definitions:
         type: integer
       not:
         description: section 5.25
-        type: integer
+        type: string
       oneOf:
         description: section 5.24
         items:
@@ -354,7 +369,7 @@ definitions:
         type: string
       additionalItems:
         description: section 5.9
-        type: integer
+        type: string
       additionalProperties:
         description: section 5.18
         type: string
@@ -400,7 +415,7 @@ definitions:
         type: string
       items:
         description: section 5.9
-        type: integer
+        type: string
       maxItems:
         description: section 5.10
         type: integer
@@ -415,7 +430,7 @@ definitions:
         type: integer
       media:
         description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: integer
+        type: string
       minItems:
         description: section 5.11
         type: integer
@@ -433,7 +448,7 @@ definitions:
         type: integer
       not:
         description: section 5.25
-        type: integer
+        type: string
       oneOf:
         description: section 5.24
         items:
@@ -473,7 +488,7 @@ definitions:
         type: string
       additionalItems:
         description: section 5.9
-        type: integer
+        type: string
       additionalProperties:
         description: section 5.18
         type: string
@@ -518,7 +533,7 @@ definitions:
         type: string
       items:
         description: section 5.9
-        type: integer
+        type: string
       maxItems:
         description: section 5.10
         type: integer
@@ -533,7 +548,7 @@ definitions:
         type: integer
       media:
         description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: integer
+        type: string
       minItems:
         description: section 5.11
         type: integer
@@ -551,7 +566,7 @@ definitions:
         type: integer
       not:
         description: section 5.25
-        type: integer
+        type: string
       oneOf:
         description: section 5.24
         items:
@@ -913,6 +928,37 @@ paths:
           schema:
             $ref: '#/definitions/structure.GrpcError'
       summary: Метод удаления объектов модулей по идентификаторам
+      tags:
+      - Модули
+  /module/get_by_name:
+    post:
+      consumes:
+      - application/json
+      description: Модуль
+      parameters:
+      - description: название модуля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.GetByModuleNameRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Module'
+        "404":
+          description: модуль с указанным названием не найден
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получения модуля по имени
       tags:
       - Модули
   /module/get_modules_info:
