@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+
 	"github.com/integration-system/isp-etp-go"
 	"github.com/integration-system/isp-lib/backend"
 	"github.com/integration-system/isp-lib/bootstrap"
@@ -24,9 +28,6 @@ import (
 	"isp-config-service/store"
 	"isp-config-service/store/state"
 	"isp-config-service/subs"
-	"net"
-	"net/http"
-	"os"
 )
 
 const (
@@ -36,7 +37,6 @@ const (
 
 var (
 	version = "0.1.0"
-	date    = "undefined"
 
 	shutdownChan = make(chan struct{})
 	muxer        mux.Mux
@@ -81,6 +81,12 @@ func main() {
 		Address:    address,
 	}
 
+	connectionReadLimit := defaultWsConnectionReadLimit
+	if cfg.WS.WsConnectionReadLimitKB > 0 {
+		connectionReadLimit = cfg.WS.WsConnectionReadLimitKB << 10
+	}
+	cluster.WsConnectionReadLimit = connectionReadLimit
+
 	model.DbClient.ReceiveConfiguration(cfg.Database)
 
 	httpListener, raftListener, err := initMultiplexer(cfg.WS.Rest)
@@ -89,7 +95,7 @@ func main() {
 	}
 
 	_, raftStore := initRaft(raftListener, cfg.Cluster, declaration)
-	initWebsocket(ctx, cfg.WS.WsConnectionReadLimitKB, httpListener, raftStore)
+	initWebsocket(ctx, connectionReadLimit, httpListener, raftStore)
 	initGrpc(cfg.WS.Grpc, raftStore)
 
 	defer goodbye.Exit(ctx, -1)
@@ -121,11 +127,7 @@ func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.L
 	return httpListener, raftListener, nil
 }
 
-func initWebsocket(ctx context.Context, wsConnectionReadLimitKB int64, listener net.Listener, raftStore *store.Store) {
-	connectionReadLimit := defaultWsConnectionReadLimit
-	if wsConnectionReadLimitKB > 0 {
-		connectionReadLimit = wsConnectionReadLimitKB << 10
-	}
+func initWebsocket(ctx context.Context, connectionReadLimit int64, listener net.Listener, raftStore *store.Store) {
 	etpConfig := etp.ServerConfig{
 		InsecureSkipVerify:  true,
 		ConnectionReadLimit: connectionReadLimit,

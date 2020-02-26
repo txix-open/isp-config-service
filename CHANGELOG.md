@@ -1,3 +1,6 @@
+### v2.1.2
+* leader ws client ConnectionReadLimit is now configured by WS.WsConnectionReadLimitKB config param and defaults to 4 MB
+
 ### v2.1.1
 * update to new endpoint descriptor struct with extra fields introduced in isp-lib v2.1.0
 

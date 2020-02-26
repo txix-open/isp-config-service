@@ -3,6 +3,11 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+	"net/url"
+	"time"
+
 	"github.com/cenkalti/backoff"
 	etp "github.com/integration-system/isp-etp-go/client"
 	"github.com/integration-system/isp-lib/config"
@@ -11,10 +16,11 @@ import (
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
 	"isp-config-service/conf"
-	"net"
-	"net/http"
-	"net/url"
-	"time"
+)
+
+var (
+	// Set from config in main
+	WsConnectionReadLimit int64
 )
 
 type SocketLeaderClient struct {
@@ -63,7 +69,8 @@ func (c *SocketLeaderClient) Close() {
 
 func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *SocketLeaderClient {
 	etpConfig := etp.Config{
-		HttpClient: http.DefaultClient,
+		HttpClient:          http.DefaultClient,
+		ConnectionReadLimit: WsConnectionReadLimit,
 	}
 	client := etp.NewClient(etpConfig)
 	leaderClient := &SocketLeaderClient{
