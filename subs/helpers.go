@@ -3,6 +3,7 @@ package subs
 import (
 	"context"
 	"errors"
+
 	etp "github.com/integration-system/isp-etp-go"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
@@ -21,7 +22,10 @@ func EmitConn(conn etp.Conn, event string, body []byte) {
 func SyncApplyCommand(command []byte, commandName string) (interface{}, error) {
 	applyLogResponse, err := holder.ClusterClient.SyncApply(command)
 	if err != nil {
-		log.Warnf(codes.SyncApplyError, "apply %s: %v", commandName, err)
+		log.WithMetadata(map[string]interface{}{
+			"command":     string(command),
+			"commandName": commandName,
+		}).Warnf(codes.SyncApplyError, "apply command: %v", err)
 		return nil, err
 	}
 	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {

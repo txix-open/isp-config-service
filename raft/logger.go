@@ -2,13 +2,14 @@ package raft
 
 import (
 	"fmt"
+	"io"
+	"log"
+
 	"github.com/hashicorp/go-hclog"
 	isplog "github.com/integration-system/isp-log"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
-	"io"
 	"isp-config-service/codes"
-	"log"
 )
 
 type LoggerAdapter struct {
@@ -17,7 +18,7 @@ type LoggerAdapter struct {
 
 func (l *LoggerAdapter) Log(level logrus.Level, msg string, args ...interface{}) {
 	if l.name != "" {
-		msg = fmt.Sprintf("%s:%s", l.name, msg)
+		msg = fmt.Sprintf("%s: %s", l.name, msg)
 	}
 	if len(args) != 0 {
 		metadata := make(map[string]interface{}, len(args)/2)

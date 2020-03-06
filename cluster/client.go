@@ -2,6 +2,9 @@ package cluster
 
 import (
 	"errors"
+	"sync"
+	"time"
+
 	"github.com/integration-system/isp-lib/structure"
 	"github.com/integration-system/isp-lib/utils"
 	log "github.com/integration-system/isp-log"
@@ -10,8 +13,6 @@ import (
 	"isp-config-service/entity"
 	"isp-config-service/raft"
 	"isp-config-service/store/state"
-	"sync"
-	"time"
 )
 
 var (
@@ -105,6 +106,12 @@ func (client *Client) SyncApplyOnLeader(command []byte) (*ApplyLogResponse, erro
 func (client *Client) listenLeader() {
 	for n := range client.r.LeaderCh() {
 		client.leaderMu.Lock()
+		log.WithMetadata(map[string]interface{}{
+			"leader_elected": n.LeaderElected,
+			"current_leader": n.CurrentLeaderAddress,
+			"is_leader":      n.IsLeader,
+		}).Info(codes.LeaderStateChanged, "leader state changed")
+
 		if client.leaderClient != nil {
 			log.Debugf(0, "close previous leader ws connection %s", client.leaderState.leaderAddr)
 			client.leaderClient.Close()
@@ -120,29 +127,10 @@ func (client *Client) listenLeader() {
 			}
 			client.leaderClient = leaderClient
 
-			go func(declaration structure.BackendDeclaration) {
-				response, err := leaderClient.SendDeclaration(declaration, defaultApplyTimeout)
-				if err != nil {
-					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader. err: %v", err)
-				} else if response != utils.WsOkResponse {
-					log.Warnf(codes.SendDeclarationToLeaderError, "send declaration to leader. response: %s", response)
-				}
-			}(client.declaration)
+			log.Info(codes.SendDeclarationToLeader, "sending declaration to leader through websocket")
+			go client.declareMyselfToLeader(leaderClient)
 		} else if n.LeaderElected && n.IsLeader {
-			go func(declaration structure.BackendDeclaration) {
-				now := state.GenerateDate()
-				module := entity.Module{
-					Id:              state.GenerateId(),
-					Name:            declaration.ModuleName,
-					CreatedAt:       now,
-					LastConnectedAt: now,
-				}
-				command := PrepareModuleConnectedCommand(module)
-				syncApplyCommand(client, command, "ModuleConnectedCommand")
-
-				declarationCommand := PrepareUpdateBackendDeclarationCommand(declaration)
-				syncApplyCommand(client, declarationCommand, "UpdateBackendDeclarationCommand")
-			}(client.declaration)
+			go client.declareMyselfToCluster()
 		}
 		client.leaderState = leaderState{
 			leaderElected: n.LeaderElected,
@@ -152,6 +140,31 @@ func (client *Client) listenLeader() {
 
 		client.leaderMu.Unlock()
 	}
+}
+func (client *Client) declareMyselfToLeader(leaderClient *SocketLeaderClient) {
+	response, err := leaderClient.SendDeclaration(client.declaration, defaultApplyTimeout)
+	if err != nil {
+		log.Warnf(codes.SendDeclarationToLeader, "send declaration to leader. err: %v", err)
+	} else if response != utils.WsOkResponse {
+		log.Warnf(codes.SendDeclarationToLeader, "send declaration to leader. response: %s", response)
+	}
+
+}
+
+// used when a leader need to declare himself to a cluster
+func (client *Client) declareMyselfToCluster() {
+	now := state.GenerateDate()
+	module := entity.Module{
+		Id:              state.GenerateId(),
+		Name:            client.declaration.ModuleName,
+		CreatedAt:       now,
+		LastConnectedAt: now,
+	}
+	command := PrepareModuleConnectedCommand(module)
+	syncApplyCommand(client, command, "ModuleConnectedCommand")
+
+	declarationCommand := PrepareUpdateBackendDeclarationCommand(client.declaration)
+	syncApplyCommand(client, declarationCommand, "UpdateBackendDeclarationCommand")
 }
 
 type leaderState struct {
@@ -175,7 +188,10 @@ func NewRaftClusterClient(r *raft.Raft, declaration structure.BackendDeclaration
 func syncApplyCommand(clusterClient *Client, command []byte, commandName string) {
 	applyLogResponse, err := clusterClient.SyncApply(command)
 	if err != nil {
-		log.Warnf(codes.SyncApplyError, "announce myself. apply %s: %v", commandName, err)
+		log.WithMetadata(map[string]interface{}{
+			"command":     string(command),
+			"commandName": commandName,
+		}).Warnf(codes.SyncApplyError, "announce myself. apply command: %v", err)
 	}
 	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
 		log.WithMetadata(map[string]interface{}{

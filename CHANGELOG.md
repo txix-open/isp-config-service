@@ -1,3 +1,6 @@
+### v2.1.3
+* improved logging
+
 ### v2.1.2
 * leader ws client ConnectionReadLimit is now configured by WS.WsConnectionReadLimitKB config param and defaults to 4 MB
 

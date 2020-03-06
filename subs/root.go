@@ -37,7 +37,7 @@ func (h *SocketEventHandler) SubscribeAll() {
 func (h *SocketEventHandler) handleConnect(conn etp.Conn) {
 	isClusterNode := IsConfigClusterNode(conn)
 	moduleName, err := Parameters(conn)
-	log.Debugf(0, "handleConnect: %s", moduleName) // REMOVE
+	log.Debugf(0, "handleConnect from %s", moduleName) // REMOVE
 	if err != nil {
 		EmitConn(conn, utils.ErrorConnection, FormatErrorConnection(err))
 		_ = conn.Close()
@@ -81,7 +81,7 @@ func (h *SocketEventHandler) handleConnect(conn etp.Conn) {
 
 func (h *SocketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error) {
 	moduleName, _ := Parameters(conn)
-	log.Debugf(0, "handleDisconnect: %s", moduleName) // REMOVE
+	log.Debugf(0, "handleDisconnect from %s", moduleName) // REMOVE
 	if moduleName != "" {
 		holder.EtpServer.Rooms().Leave(conn, moduleName+service.ConfigWatchersRoomSuffix)
 		now := state.GenerateDate()

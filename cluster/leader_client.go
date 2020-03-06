@@ -84,7 +84,7 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 	leaderClient.client.OnDisconnect(func(err error) {
 		log.WithMetadata(map[string]interface{}{
 			"leaderAddr": address,
-		}).Warn(codes.LeaderClientDisconnected, "leader client disconnected")
+		}).Warn(codes.LeaderClientDisconnected, "disconnected ws from leader")
 		leaderDisconnectionCallback()
 	})
 
@@ -92,7 +92,9 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 		log.Warnf(codes.LeaderClientConnectionError, "leader client on error: %v", err)
 	})
 	leaderClient.client.OnConnect(func() {
-		log.Debug(0, "leader client connected")
+		log.WithMetadata(map[string]interface{}{
+			"leaderAddr": address,
+		}).Info(codes.LeaderClientConnected, "connected to new leader")
 	})
 	return leaderClient
 }

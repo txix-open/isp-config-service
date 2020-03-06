@@ -2,7 +2,8 @@ basePath: /api/config
 definitions:
   domain.CommonConfigLinks:
     additionalProperties:
-      items: {}
+      items:
+        type: string
       type: array
     type: object
   domain.CompileConfigsRequest:
@@ -12,11 +13,11 @@ definitions:
           type: string
         type: array
       data:
+        additionalProperties: true
         type: object
     type: object
   domain.CompiledConfigResponse:
-    additionalProperties:
-      type: object
+    additionalProperties: true
     type: object
   domain.ConfigIdRequest:
     properties:
@@ -204,8 +205,7 @@ definitions:
     - name
     type: object
   entity.ConfigData:
-    additionalProperties:
-      type: object
+    additionalProperties: true
     type: object
   entity.ConfigSchema:
     properties:
@@ -239,7 +239,8 @@ definitions:
     - name
     type: object
   jsonschema.Definitions:
-    additionalProperties: {}
+    additionalProperties:
+      $ref: '#/definitions/jsonschema.Type'
     type: object
   jsonschema.Schema:
     properties:
@@ -251,19 +252,19 @@ definitions:
         type: string
       additionalItems:
         description: section 5.9
-        type: string
+        type: integer
       additionalProperties:
         description: section 5.18
         type: string
       allOf:
         description: section 5.22
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       anyOf:
         description: section 5.23
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       binaryEncoding:
         description: section 4.3
@@ -275,6 +276,8 @@ definitions:
         $ref: '#/definitions/jsonschema.Definitions'
         type: object
       dependencies:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
         description: section 5.19
         type: object
       description:
@@ -296,7 +299,7 @@ definitions:
         type: string
       items:
         description: section 5.9
-        type: string
+        type: integer
       maxItems:
         description: section 5.10
         type: integer
@@ -311,7 +314,7 @@ definitions:
         type: integer
       media:
         description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: string
+        type: integer
       minItems:
         description: section 5.11
         type: integer
@@ -329,19 +332,23 @@ definitions:
         type: integer
       not:
         description: section 5.25
-        type: string
+        type: integer
       oneOf:
         description: section 5.24
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       pattern:
         description: section 5.8
         type: string
       patternProperties:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
         description: section 5.17
         type: object
       properties:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
         description: section 5.16
         type: object
       required:
@@ -369,19 +376,19 @@ definitions:
         type: string
       additionalItems:
         description: section 5.9
-        type: string
+        type: integer
       additionalProperties:
         description: section 5.18
         type: string
       allOf:
         description: section 5.22
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       anyOf:
         description: section 5.23
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       binaryEncoding:
         description: section 4.3
@@ -394,6 +401,8 @@ definitions:
         description: section 5.26
         type: object
       dependencies:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
         description: section 5.19
         type: object
       description:
@@ -415,7 +424,7 @@ definitions:
         type: string
       items:
         description: section 5.9
-        type: string
+        type: integer
       maxItems:
         description: section 5.10
         type: integer
@@ -430,7 +439,7 @@ definitions:
         type: integer
       media:
         description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: string
+        type: integer
       minItems:
         description: section 5.11
         type: integer
@@ -448,19 +457,23 @@ definitions:
         type: integer
       not:
         description: section 5.25
-        type: string
+        type: integer
       oneOf:
         description: section 5.24
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       pattern:
         description: section 5.8
         type: string
       patternProperties:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
         description: section 5.17
         type: object
       properties:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
         description: section 5.16
         type: object
       required:
@@ -479,123 +492,7 @@ definitions:
         type: boolean
     type: object
   schema.Schema:
-    properties:
-      $ref:
-        description: section 7
-        type: string
-      $schema:
-        description: RFC draft-wright-json-schema-00
-        type: string
-      additionalItems:
-        description: section 5.9
-        type: string
-      additionalProperties:
-        description: section 5.18
-        type: string
-      allOf:
-        description: section 5.22
-        items:
-          $ref: '#/definitions/jsonschema.Type'
-        type: array
-      anyOf:
-        description: section 5.23
-        items:
-          $ref: '#/definitions/jsonschema.Type'
-        type: array
-      binaryEncoding:
-        description: section 4.3
-        type: string
-      default:
-        description: section 6.2
-        type: object
-      definitions:
-        $ref: '#/definitions/jsonschema.Definitions'
-        type: object
-      dependencies:
-        description: section 5.19
-        type: object
-      description:
-        description: section 6.1
-        type: string
-      enum:
-        description: section 5.20
-        items:
-          type: object
-        type: array
-      exclusiveMaximum:
-        description: section 5.3
-        type: boolean
-      exclusiveMinimum:
-        description: section 5.5
-        type: boolean
-      format:
-        description: section 7
-        type: string
-      items:
-        description: section 5.9
-        type: string
-      maxItems:
-        description: section 5.10
-        type: integer
-      maxLength:
-        description: section 5.6
-        type: integer
-      maxProperties:
-        description: section 5.13
-        type: integer
-      maximum:
-        description: section 5.2
-        type: integer
-      media:
-        description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: string
-      minItems:
-        description: section 5.11
-        type: integer
-      minLength:
-        description: section 5.7
-        type: integer
-      minProperties:
-        description: section 5.14
-        type: integer
-      minimum:
-        description: section 5.4
-        type: integer
-      multipleOf:
-        description: RFC draft-wright-json-schema-validation-00, section 5
-        type: integer
-      not:
-        description: section 5.25
-        type: string
-      oneOf:
-        description: section 5.24
-        items:
-          $ref: '#/definitions/jsonschema.Type'
-        type: array
-      pattern:
-        description: section 5.8
-        type: string
-      patternProperties:
-        description: section 5.17
-        type: object
-      properties:
-        description: section 5.16
-        type: object
-      required:
-        description: section 5.15
-        items:
-          type: string
-        type: array
-      title:
-        description: RFC draft-wright-json-schema-validation-00, section 6, 7
-        type: string
-      type:
-        description: section 5.21
-        type: string
-      uniqueItems:
-        description: section 5.12
-        type: boolean
-    type: object
+    $ref: '#/definitions/jsonschema.Schema'
   structure.AddressConfiguration:
     properties:
       ip:
@@ -622,6 +519,7 @@ definitions:
   structure.EndpointDescriptor:
     properties:
       extra:
+        additionalProperties: true
         type: object
       inner:
         type: boolean
@@ -664,7 +562,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.CompileConfigsRequest'
-          type: object
       produces:
       - application/json
       responses:
@@ -688,7 +585,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/entity.CommonConfig'
-          type: object
       produces:
       - application/json
       responses:
@@ -720,7 +616,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.ConfigIdRequest'
-          type: object
       produces:
       - application/json
       responses:
@@ -766,7 +661,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.ConfigIdRequest'
-          type: object
       produces:
       - application/json
       responses:
@@ -790,7 +684,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.CreateUpdateConfigRequest'
-          type: object
       produces:
       - application/json
       responses:
@@ -853,7 +746,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.GetByModuleNameRequest'
-          type: object
       produces:
       - application/json
       responses:
@@ -885,7 +777,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.ConfigIdRequest'
-          type: object
       produces:
       - application/json
       responses:
@@ -944,7 +835,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.GetByModuleNameRequest'
-          type: object
       produces:
       - application/json
       responses:
@@ -1014,7 +904,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.GetByModuleIdRequest'
-          type: object
       produces:
       - application/json
       responses:

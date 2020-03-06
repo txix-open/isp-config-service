@@ -25,9 +25,12 @@ const (
 	SyncApplyError         = 1015
 
 	// Raft Cluster
-	SendDeclarationToLeaderError = 1016
-	LeaderClientConnectionError  = 1017
-	LeaderClientDisconnected     = 1018
+	SendDeclarationToLeader     = 1016
+	LeaderClientConnectionError = 1017
+	LeaderClientDisconnected    = 1018
+	LeaderClientConnected       = 1023
+	LeaderStateChanged          = 1024
+	LeaderManualDeleteLeader    = 1025
 
 	// Services
 	DiscoveryServiceSendModulesError  = 1019
