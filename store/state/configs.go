@@ -1,8 +1,9 @@
 package state
 
 import (
-	"isp-config-service/entity"
 	"time"
+
+	"isp-config-service/entity"
 )
 
 const (
@@ -29,8 +30,9 @@ type ConfigStore struct {
 }
 
 func (cs ConfigStore) GetActiveByModuleId(moduleId string) *entity.Config {
-	for _, conf := range cs.Configs {
-		if conf.ModuleId == moduleId && conf.Active {
+	for i := range cs.Configs {
+		if cs.Configs[i].ModuleId == moduleId && cs.Configs[i].Active {
+			conf := cs.Configs[i]
 			return &conf
 		}
 	}
@@ -40,9 +42,9 @@ func (cs ConfigStore) GetActiveByModuleId(moduleId string) *entity.Config {
 func (cs ConfigStore) GetByIds(ids []string) []entity.Config {
 	idsMap := StringsToMap(ids)
 	result := make([]entity.Config, 0, len(ids))
-	for _, conf := range cs.Configs {
-		if _, ok := idsMap[conf.Id]; ok {
-			result = append(result, conf)
+	for i := range cs.Configs {
+		if _, ok := idsMap[cs.Configs[i].Id]; ok {
+			result = append(result, cs.Configs[i])
 		}
 	}
 	return result
@@ -51,9 +53,9 @@ func (cs ConfigStore) GetByIds(ids []string) []entity.Config {
 func (cs ConfigStore) GetByModuleIds(ids []string) []entity.Config {
 	idsMap := StringsToMap(ids)
 	result := make([]entity.Config, 0, len(ids))
-	for _, conf := range cs.Configs {
-		if _, ok := idsMap[conf.ModuleId]; ok {
-			result = append(result, conf)
+	for i := range cs.Configs {
+		if _, ok := idsMap[cs.Configs[i].ModuleId]; ok {
+			result = append(result, cs.Configs[i])
 		}
 	}
 	return result
@@ -61,6 +63,7 @@ func (cs ConfigStore) GetByModuleIds(ids []string) []entity.Config {
 
 func (cs *ConfigStore) Create(config entity.Config) entity.Config {
 	config.Version = cs.calcNewVersion(config.ModuleId)
+	//nolint gomnd
 	if config.Version == 1 {
 		config.Active = true
 	}
@@ -137,10 +140,10 @@ func (cs *ConfigStore) deactivate(moduleId string, date time.Time) []entity.Conf
 func (cs *ConfigStore) FilterByCommonConfigs(commonIds []string) []entity.Config {
 	idsMap := StringsToMap(commonIds)
 	result := make([]entity.Config, 0)
-	for _, cfg := range cs.Configs {
-		for _, commonId := range cfg.CommonConfigs {
+	for i := range cs.Configs {
+		for _, commonId := range cs.Configs[i].CommonConfigs {
 			if _, ok := idsMap[commonId]; ok {
-				result = append(result, cfg)
+				result = append(result, cs.Configs[i])
 				break
 			}
 		}

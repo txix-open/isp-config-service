@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/cenkalti/backoff"
 	etp "github.com/integration-system/isp-etp-go"
 	"github.com/integration-system/isp-lib/structure"
@@ -11,7 +12,6 @@ import (
 	"isp-config-service/codes"
 	"isp-config-service/holder"
 	"isp-config-service/store/state"
-	"time"
 )
 
 const (
@@ -63,7 +63,7 @@ func (rs *routesService) sendRoutes(conn etp.Conn, event string, routes structur
 	if bytes, err := json.Marshal(routes); err != nil {
 		return err
 	} else {
-		bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 3)
+		bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(messagesBackoffInterval), messagesBackoffMaxRetries)
 		err := backoff.Retry(func() error {
 			return conn.Emit(context.Background(), event, bytes)
 		}, bf)

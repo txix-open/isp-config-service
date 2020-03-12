@@ -3,15 +3,17 @@ package cluster
 import (
 	"bytes"
 	"encoding/binary"
+	"time"
+
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
 	"isp-config-service/entity"
-	"time"
 )
 
 const (
 	ApplyCommandEvent = "CONFIG_CLUSTER:APPLY_COMMAND"
+	CommandSizeBytes  = 8
 
 	ClusterParam = "cluster"
 )

@@ -3,6 +3,7 @@ package entity
 import "time"
 
 type Module struct {
+	//nolint
 	tableName          string    `sql:"?db_schema.modules" json:"-"`
 	Id                 string    `json:"id"`
 	Name               string    `json:"name" valid:"required~Required"`

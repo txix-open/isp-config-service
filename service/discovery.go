@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"sync"
+	"time"
+
 	"github.com/cenkalti/backoff"
 	etp "github.com/integration-system/isp-etp-go"
 	"github.com/integration-system/isp-lib/structure"
@@ -11,8 +14,11 @@ import (
 	"isp-config-service/codes"
 	"isp-config-service/holder"
 	"isp-config-service/store/state"
-	"sync"
-	"time"
+)
+
+const (
+	messagesBackoffInterval   = 100 * time.Millisecond
+	messagesBackoffMaxRetries = 3
 )
 
 var (
@@ -92,7 +98,7 @@ func (ds *discoveryService) sendAddrList(conn etp.Conn, event string, addressLis
 	if err != nil {
 		return err
 	}
-	bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(100*time.Millisecond), 3)
+	bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(messagesBackoffInterval), messagesBackoffMaxRetries)
 	err = backoff.Retry(func() error {
 		return conn.Emit(context.Background(), event, bytes)
 	}, bf)

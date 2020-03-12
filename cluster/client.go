@@ -148,7 +148,6 @@ func (client *Client) declareMyselfToLeader(leaderClient *SocketLeaderClient) {
 	} else if response != utils.WsOkResponse {
 		log.Warnf(codes.SendDeclarationToLeader, "send declaration to leader. response: %s", response)
 	}
-
 }
 
 // used when a leader need to declare himself to a cluster

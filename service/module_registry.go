@@ -1,6 +1,8 @@
 package service
 
 import (
+	"sort"
+
 	"github.com/integration-system/isp-lib/structure"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
@@ -10,7 +12,6 @@ import (
 	"isp-config-service/holder"
 	"isp-config-service/model"
 	"isp-config-service/store/state"
-	"sort"
 )
 
 var (
@@ -67,8 +68,8 @@ func (moduleRegistryService) HandleDeleteModulesCommand(deleteModules cluster.De
 
 	configsToDelete := state.WritableConfigs().GetByModuleIds(ids)
 	confIds := make([]string, 0, len(configsToDelete))
-	for _, conf := range configsToDelete {
-		confIds = append(confIds, conf.Id)
+	for i := range configsToDelete {
+		confIds = append(confIds, configsToDelete[i].Id)
 	}
 	state.WritableConfigs().DeleteByIds(confIds)
 
@@ -124,14 +125,14 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 	}
 
 	configs := state.Configs().GetByModuleIds(idList)
-	for _, cfg := range configs {
-		info := resMap[cfg.ModuleId]
+	for i := range configs {
+		info := resMap[configs[i].ModuleId]
 		info.Configs = append(info.Configs, domain.ConfigModuleInfo{
-			Config: cfg,
+			Config: configs[i],
 			Valid:  false,
 		})
 
-		resMap[cfg.ModuleId] = info
+		resMap[configs[i].ModuleId] = info
 	}
 	schemas := state.Schemas().GetByModuleIds(idList)
 	for _, s := range schemas {
@@ -139,8 +140,8 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 		schema := s.Schema
 		info.ConfigSchema = &schema
 
-		for i, config := range info.Configs {
-			dataForValidate := ConfigService.CompileConfig(config.Data, state, config.CommonConfigs...)
+		for i := range info.Configs {
+			dataForValidate := ConfigService.CompileConfig(info.Configs[i].Data, state, info.Configs[i].CommonConfigs...)
 			info.Configs[i].Valid, _ = ConfigService.validateSchema(s, dataForValidate)
 		}
 

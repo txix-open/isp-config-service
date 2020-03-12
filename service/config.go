@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/integration-system/bellows"
 	"github.com/integration-system/isp-lib/utils"
 	log "github.com/integration-system/isp-log"
@@ -51,7 +52,8 @@ func (cs configService) GetCompiledConfig(moduleName string, state state.Readonl
 	return cs.CompileConfig(config.Data, state, config.CommonConfigs...), nil
 }
 
-func (configService) CompileConfig(data map[string]interface{}, state state.ReadonlyState, commonConfigsIds ...string) map[string]interface{} {
+func (configService) CompileConfig(
+	data map[string]interface{}, state state.ReadonlyState, commonConfigsIds ...string) map[string]interface{} {
 	commonConfigs := state.CommonConfigs().GetByIds(commonConfigsIds)
 	configsToMerge := make([]map[string]interface{}, 0, len(commonConfigs))
 	for _, common := range commonConfigs {
@@ -62,7 +64,8 @@ func (configService) CompileConfig(data map[string]interface{}, state state.Read
 	return mergeNestedMaps(configsToMerge...)
 }
 
-func (configService) HandleActivateConfigCommand(activateConfig cluster.ActivateConfig, state state.WritableState) cluster.ResponseWithError {
+func (configService) HandleActivateConfigCommand(
+	activateConfig cluster.ActivateConfig, state state.WritableState) cluster.ResponseWithError {
 	configs := state.Configs().GetByIds([]string{activateConfig.ConfigId})
 	if len(configs) == 0 {
 		return cluster.NewResponseErrorf(codes2.NotFound, "config with id %s not found", activateConfig.ConfigId)
@@ -70,9 +73,9 @@ func (configService) HandleActivateConfigCommand(activateConfig cluster.Activate
 	config := configs[0]
 	affected := state.WritableConfigs().Activate(config, activateConfig.Date)
 	if holder.ClusterClient.IsLeader() {
-		for _, c := range affected {
+		for i := range affected {
 			// TODO handle db errors
-			_, err := model.ConfigRep.Upsert(c)
+			_, err := model.ConfigRep.Upsert(affected[i])
 			if err != nil {
 				log.WithMetadata(map[string]interface{}{
 					"config": config,
@@ -157,8 +160,8 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 }
 
 func (cs configService) BroadcastNewConfig(state state.ReadonlyState, configs ...entity.Config) {
-	for _, cfg := range configs {
-		moduleID := cfg.ModuleId
+	for i := range configs {
+		moduleID := configs[i].ModuleId
 		module := state.Modules().GetById(moduleID)
 		moduleName := module.Name
 		room := moduleName + ConfigWatchersRoomSuffix
@@ -187,20 +190,22 @@ func (cs configService) broadcast(room, event string, data []byte) {
 func (configService) validateSchema(schema entity.ConfigSchema, data map[string]interface{}) (bool, error) {
 	schemaLoader := gojsonschema.NewGoLoader(schema.Schema)
 	documentLoader := gojsonschema.NewGoLoader(data)
-	if result, err := gojsonschema.Validate(schemaLoader, documentLoader); err != nil {
+	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
+	if err != nil {
 		return false, err
 	} else if result.Valid() {
 		return true, nil
-	} else {
-		desc := make(map[string]string)
-		for _, value := range result.Errors() {
-			desc[value.Field()] = value.Description()
-		}
-		return false, validationSchemaError{Description: desc}
 	}
+
+	desc := make(map[string]string)
+	for _, value := range result.Errors() {
+		desc[value.Field()] = value.Description()
+	}
+	return false, validationSchemaError{Description: desc}
 }
 
 func mergeNestedMaps(maps ...map[string]interface{}) map[string]interface{} {
+	//nolint gomnd
 	if len(maps) == 1 {
 		return maps[0]
 	}

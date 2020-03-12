@@ -83,6 +83,7 @@ func main() {
 
 	connectionReadLimit := defaultWsConnectionReadLimit
 	if cfg.WS.WsConnectionReadLimitKB > 0 {
+		//nolint gomnd
 		connectionReadLimit = cfg.WS.WsConnectionReadLimitKB << 10
 	}
 	cluster.WsConnectionReadLimit = connectionReadLimit
@@ -147,7 +148,8 @@ func initWebsocket(ctx context.Context, connectionReadLimit int64, listener net.
 	holder.HTTPServer = httpServer
 }
 
-func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration, declaration structure.BackendDeclaration) (*cluster.Client, *store.Store) {
+func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration,
+	declaration structure.BackendDeclaration) (*cluster.Client, *store.Store) {
 	raftState, err := store.NewStateFromRepository()
 	if err != nil {
 		log.Fatal(codes.RestoreFromRepositoryError, err)

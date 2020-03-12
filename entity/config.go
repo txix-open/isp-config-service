@@ -1,13 +1,15 @@
 package entity
 
 import (
-	"github.com/integration-system/isp-lib/config/schema"
 	"time"
+
+	"github.com/integration-system/isp-lib/config/schema"
 )
 
 type ConfigData map[string]interface{}
 
 type Config struct {
+	//nolint
 	tableName     string     `sql:"?db_schema.configs" json:"-"`
 	Id            string     `json:"id"`
 	Name          string     `json:"name" valid:"required~Required"`
@@ -22,6 +24,7 @@ type Config struct {
 }
 
 type CommonConfig struct {
+	//nolint
 	tableName   string     `sql:"?db_schema.common_configs" json:"-"`
 	Id          string     `json:"id"`
 	Name        string     `json:"name" valid:"required~Required"`
@@ -32,6 +35,7 @@ type CommonConfig struct {
 }
 
 type ConfigSchema struct {
+	//nolint
 	tableName string `sql:"?db_schema.config_schemas" json:"-"`
 	Id        string `json:"id"`
 	Version   string

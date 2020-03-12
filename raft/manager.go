@@ -1,19 +1,21 @@
 package raft
 
 import (
-	"github.com/hashicorp/raft"
-	raftboltdb "github.com/hashicorp/raft-boltdb"
-	"github.com/pkg/errors"
-	"isp-config-service/conf"
 	"net"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/hashicorp/raft"
+	raftboltdb "github.com/hashicorp/raft-boltdb"
+	"github.com/pkg/errors"
+	"isp-config-service/conf"
 )
 
 const (
-	defaultSyncTimeout = 3 * time.Second
-	dbFile             = "raft_db"
+	defaultSyncTimeout         = 3 * time.Second
+	leaderNotificationChBuffer = 10
+	dbFile                     = "raft_db"
 )
 
 type ChangeLeaderNotification struct {
@@ -120,7 +122,7 @@ func NewRaft(tcpListener net.Listener, configuration conf.ClusterConfiguration, 
 		cfg:            configuration,
 		leaderObs:      leaderObs,
 		leaderObsCh:    leaderObsCh,
-		changeLeaderCh: make(chan ChangeLeaderNotification, 10),
+		changeLeaderCh: make(chan ChangeLeaderNotification, leaderNotificationChBuffer),
 		closer:         make(chan struct{}),
 	}
 	go raft.listenLeader()

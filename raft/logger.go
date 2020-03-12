@@ -21,6 +21,7 @@ func (l *LoggerAdapter) Log(level logrus.Level, msg string, args ...interface{})
 		msg = fmt.Sprintf("%s: %s", l.name, msg)
 	}
 	if len(args) != 0 {
+		//nolint gomnd
 		metadata := make(map[string]interface{}, len(args)/2)
 		for i := 0; i < len(args)-1; i += 2 {
 			k := cast.ToString(args[i])

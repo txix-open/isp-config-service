@@ -79,7 +79,8 @@ func NewState() *State {
 	}
 }
 
-func NewStateFromSnapshot(configs []entity.Config, schemas []entity.ConfigSchema, modules []entity.Module, commConfigs []entity.CommonConfig) *State {
+func NewStateFromSnapshot(configs []entity.Config, schemas []entity.ConfigSchema,
+	modules []entity.Module, commConfigs []entity.CommonConfig) *State {
 	return &State{
 		MeshStore:          NewMesh(),
 		ConfigsStore:       &ConfigStore{Configs: configs},

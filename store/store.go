@@ -3,16 +3,17 @@ package store
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
+	"sync"
+
 	"github.com/hashicorp/raft"
 	log "github.com/integration-system/isp-log"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mohae/deepcopy"
 	"github.com/pkg/errors"
-	"io"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
 	"isp-config-service/store/state"
-	"sync"
 )
 
 var (
@@ -29,7 +30,7 @@ func (s *Store) Apply(l *raft.Log) interface{} {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if len(l.Data) < 8 {
+	if len(l.Data) < cluster.CommandSizeBytes {
 		log.Errorf(codes.ApplyLogCommandError, "invalid log data command: %s", l.Data)
 	}
 	command := binary.BigEndian.Uint64(l.Data[:8])

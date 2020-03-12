@@ -77,11 +77,11 @@ func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*d
 	err := PerformSyncApplyWithError(command, "UpsertConfigCommand", &response)
 	if err != nil {
 		return nil, err
-	} else if response.Config != nil {
-		return response.Config, nil
-	} else {
+	} else if response.ErrorDetails != nil {
 		return nil, utils.CreateValidationErrorDetails(codes.InvalidArgument, utils.ValidationError, response.ErrorDetails)
 	}
+
+	return response.Config, nil
 }
 
 // MarkConfigAsActive godoc

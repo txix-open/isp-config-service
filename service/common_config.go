@@ -17,7 +17,8 @@ var (
 
 type commonConfigService struct{}
 
-func (s commonConfigService) HandleDeleteConfigsCommand(deleteCommonConfig cluster.DeleteCommonConfig, state state.WritableState) cluster.ResponseWithError {
+func (s commonConfigService) HandleDeleteConfigsCommand(
+	deleteCommonConfig cluster.DeleteCommonConfig, state state.WritableState) cluster.ResponseWithError {
 	links := s.GetCommonConfigLinks(deleteCommonConfig.Id, state)
 	if len(links) > 0 {
 		return cluster.NewResponse(domain.DeleteCommonConfigResponse{Deleted: false, Links: links})
@@ -36,12 +37,14 @@ func (s commonConfigService) HandleDeleteConfigsCommand(deleteCommonConfig clust
 	return cluster.NewResponse(domain.DeleteCommonConfigResponse{Deleted: deleted > 0})
 }
 
-func (s commonConfigService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCommonConfig, state state.WritableState) cluster.ResponseWithError {
+func (s commonConfigService) HandleUpsertConfigCommand(
+	upsertConfig cluster.UpsertCommonConfig, state state.WritableState) cluster.ResponseWithError {
 	config := upsertConfig.Config
 	configsByName := state.CommonConfigs().GetByName(config.Name)
 	if upsertConfig.Create {
 		if len(configsByName) > 0 {
-			return cluster.NewResponseErrorf(codes2.AlreadyExists, "common config with name %s already exists", upsertConfig.Config.Name)
+			return cluster.NewResponseErrorf(codes2.AlreadyExists,
+				"common config with name %s already exists", upsertConfig.Config.Name)
 		}
 		config = state.WritableCommonConfigs().Create(config)
 	} else {
@@ -51,7 +54,8 @@ func (s commonConfigService) HandleUpsertConfigCommand(upsertConfig cluster.Upse
 			return cluster.NewResponseErrorf(codes2.NotFound, "common config with id %s not found", config.Id)
 		}
 		if len(configsByName) > 0 && configs[0].Id != configsByName[0].Id {
-			return cluster.NewResponseErrorf(codes2.AlreadyExists, "common config with name %s already exists", upsertConfig.Config.Name)
+			return cluster.NewResponseErrorf(codes2.AlreadyExists,
+				"common config with name %s already exists", upsertConfig.Config.Name)
 		}
 		config.CreatedAt = configs[0].CreatedAt
 		state.WritableCommonConfigs().UpdateById(config)
@@ -76,15 +80,12 @@ func (s commonConfigService) HandleUpsertConfigCommand(upsertConfig cluster.Upse
 func (s commonConfigService) GetCommonConfigLinks(commonConfigID string, state state.ReadonlyState) domain.CommonConfigLinks {
 	configs := state.Configs().FilterByCommonConfigs([]string{commonConfigID})
 	result := make(domain.CommonConfigLinks)
-	for _, c := range configs {
-		module := state.Modules().GetById(c.ModuleId)
+	for i := range configs {
+		module := state.Modules().GetById(configs[i].ModuleId)
 		if module != nil {
-			if configs, ok := result[module.Name]; ok {
-				result[module.Name] = append(configs, c.Name)
-			} else {
-				result[module.Name] = []string{c.Name}
-			}
+			result[module.Name] = append(result[module.Name], configs[i].Name)
 		}
 	}
+
 	return result
 }
