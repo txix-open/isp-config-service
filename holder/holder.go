@@ -1,9 +1,10 @@
 package holder
 
 import (
-	etp "github.com/integration-system/isp-etp-go"
-	"isp-config-service/cluster"
 	"net/http"
+
+	etp "github.com/integration-system/isp-etp-go/v2"
+	"isp-config-service/cluster"
 )
 
 var (

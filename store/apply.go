@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/integration-system/isp-lib/structure"
+	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/pkg/errors"
 	"isp-config-service/cluster"
 	"isp-config-service/domain"

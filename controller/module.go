@@ -9,7 +9,7 @@ import (
 	"isp-config-service/store"
 	"isp-config-service/store/state"
 
-	"github.com/integration-system/isp-lib/utils"
+	"github.com/integration-system/isp-lib/v2/utils"
 	"google.golang.org/grpc/codes"
 )
 

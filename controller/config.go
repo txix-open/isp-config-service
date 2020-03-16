@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/integration-system/isp-lib/utils"
+	"github.com/integration-system/isp-lib/v2/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"isp-config-service/cluster"

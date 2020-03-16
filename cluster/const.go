@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/integration-system/isp-lib/structure"
+	"github.com/integration-system/isp-lib/v2/structure"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
 	"isp-config-service/entity"

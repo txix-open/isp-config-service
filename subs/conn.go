@@ -1,9 +1,9 @@
 package subs
 
 import (
-	etp "github.com/integration-system/isp-etp-go"
-	"github.com/integration-system/isp-lib/structure"
-	"github.com/integration-system/isp-lib/utils"
+	etp "github.com/integration-system/isp-etp-go/v2"
+	"github.com/integration-system/isp-lib/v2/structure"
+	"github.com/integration-system/isp-lib/v2/utils"
 	"isp-config-service/cluster"
 )
 

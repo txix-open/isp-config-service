@@ -63,7 +63,6 @@ func (cs ConfigStore) GetByModuleIds(ids []string) []entity.Config {
 
 func (cs *ConfigStore) Create(config entity.Config) entity.Config {
 	config.Version = cs.calcNewVersion(config.ModuleId)
-	//nolint gomnd
 	if config.Version == 1 {
 		config.Active = true
 	}

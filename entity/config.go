@@ -3,7 +3,7 @@ package entity
 import (
 	"time"
 
-	"github.com/integration-system/isp-lib/config/schema"
+	"github.com/integration-system/isp-lib/v2/config/schema"
 )
 
 type ConfigData map[string]interface{}

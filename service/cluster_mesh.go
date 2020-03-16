@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/integration-system/isp-lib/structure"
+	"github.com/integration-system/isp-lib/v2/structure"
 	"isp-config-service/store/state"
 )
 

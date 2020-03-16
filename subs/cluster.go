@@ -1,7 +1,7 @@
 package subs
 
 import (
-	etp "github.com/integration-system/isp-etp-go"
+	etp "github.com/integration-system/isp-etp-go/v2"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"

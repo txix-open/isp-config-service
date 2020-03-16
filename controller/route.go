@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/integration-system/isp-lib/structure"
+	"github.com/integration-system/isp-lib/v2/structure"
 	"isp-config-service/store"
 	"isp-config-service/store/state"
 )

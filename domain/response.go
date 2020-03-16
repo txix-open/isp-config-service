@@ -1,10 +1,11 @@
 package domain
 
 import (
-	"github.com/integration-system/isp-lib/config/schema"
-	"github.com/integration-system/isp-lib/structure"
-	"isp-config-service/entity"
 	"time"
+
+	"github.com/integration-system/isp-lib/v2/config/schema"
+	"github.com/integration-system/isp-lib/v2/structure"
+	"isp-config-service/entity"
 )
 
 type DeleteResponse struct {

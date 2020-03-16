@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/integration-system/isp-lib/utils"
+	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
 	jsoniter "github.com/json-iterator/go"
 	"google.golang.org/grpc/codes"

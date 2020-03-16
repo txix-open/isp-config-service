@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/integration-system/bellows"
-	"github.com/integration-system/isp-lib/utils"
+	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
 	"github.com/pkg/errors"
 	"github.com/xeipuuv/gojsonschema"
@@ -205,7 +205,6 @@ func (configService) validateSchema(schema entity.ConfigSchema, data map[string]
 }
 
 func mergeNestedMaps(maps ...map[string]interface{}) map[string]interface{} {
-	//nolint gomnd
 	if len(maps) == 1 {
 		return maps[0]
 	}

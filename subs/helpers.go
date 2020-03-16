@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	etp "github.com/integration-system/isp-etp-go"
+	etp "github.com/integration-system/isp-etp-go/v2"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
 	"isp-config-service/holder"

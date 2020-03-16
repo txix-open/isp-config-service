@@ -2,12 +2,13 @@ package subs
 
 import (
 	"fmt"
+
 	"github.com/asaskevich/govalidator"
-	etp "github.com/integration-system/isp-etp-go"
-	"github.com/integration-system/isp-lib/bootstrap"
-	schema2 "github.com/integration-system/isp-lib/config/schema"
-	"github.com/integration-system/isp-lib/structure"
-	"github.com/integration-system/isp-lib/utils"
+	etp "github.com/integration-system/isp-etp-go/v2"
+	"github.com/integration-system/isp-lib/v2/bootstrap"
+	schema2 "github.com/integration-system/isp-lib/v2/config/schema"
+	"github.com/integration-system/isp-lib/v2/structure"
+	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
 	"isp-config-service/entity"

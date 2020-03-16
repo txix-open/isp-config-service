@@ -8,7 +8,9 @@ import (
 
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
+	"github.com/integration-system/isp-log/adapter"
 	"github.com/pkg/errors"
+	"isp-config-service/codes"
 	"isp-config-service/conf"
 )
 
@@ -94,7 +96,7 @@ func NewRaft(tcpListener net.Listener, configuration conf.ClusterConfiguration, 
 		return nil, err
 	}
 
-	netLogger := &LoggerAdapter{name: "RAFT-NET"}
+	netLogger := adapter.NewHcLogger("RAFT-NET", codes.RaftLoggerCode)
 	streamLayer := &StreamLayer{Listener: tcpListener}
 	timeout := time.Duration(configuration.ConnectTimeoutSeconds) * time.Second
 	config := &raft.NetworkTransportConfig{
@@ -107,7 +109,7 @@ func NewRaft(tcpListener net.Listener, configuration conf.ClusterConfiguration, 
 	trans := raft.NewNetworkTransportWithConfig(config)
 
 	cfg := raft.DefaultConfig()
-	cfg.Logger = &LoggerAdapter{name: "RAFT"}
+	cfg.Logger = adapter.NewHcLogger("RAFT", codes.RaftLoggerCode)
 	cfg.NoSnapshotRestoreOnStart = true
 	cfg.LocalID = raft.ServerID(configuration.OuterAddress)
 	r, err := raft.NewRaft(cfg, state, logStore, store, snapshotStore, trans)

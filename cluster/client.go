@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/integration-system/isp-lib/structure"
-	"github.com/integration-system/isp-lib/utils"
+	"github.com/integration-system/isp-lib/v2/structure"
+	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
 	jsoniter "github.com/json-iterator/go"
 	"isp-config-service/codes"

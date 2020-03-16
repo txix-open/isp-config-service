@@ -3,7 +3,7 @@ package service
 import (
 	"sort"
 
-	"github.com/integration-system/isp-lib/structure"
+	"github.com/integration-system/isp-lib/v2/structure"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
