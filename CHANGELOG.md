@@ -1,3 +1,7 @@
+### v2.2.0
+* migrate to go modules
+* add linter, refactor
+
 ### v2.1.3
 * improved logging
 
