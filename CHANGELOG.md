@@ -1,3 +1,7 @@
+### v2.2.1
+* update deps
+* fix bug in json schema marshaling/unmarshaling
+
 ### v2.2.0
 * migrate to go modules
 * add linter, refactor
@@ -12,7 +16,7 @@
 * update to new endpoint descriptor struct with extra fields introduced in isp-lib v2.1.0
 
 ### v2.1.0
-* fix panic type casting in shapshot
+* fix panic type casting in snapshot
 * create empty default config now
 * add method `/module/get_by_name` to fetch module object by name
 
