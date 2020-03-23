@@ -121,3 +121,13 @@ func (s *Store) applyUpsertCommonConfigCommand(data []byte) (interface{}, error)
 	response := service.CommonConfigService.HandleUpsertConfigCommand(config, s.state)
 	return response, nil
 }
+
+func (s *Store) applyBroadcastEventCommand(data []byte) (interface{}, error) {
+	event := cluster.BroadcastEvent{}
+	err := json.Unmarshal(data, &event)
+	if err != nil {
+		return nil, errors.WithMessage(err, "unmarshal cluster.BroadcastEvent")
+	}
+	service.DiscoveryService.BroadcastEvent(event)
+	return nil, nil
+}

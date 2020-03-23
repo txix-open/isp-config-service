@@ -1,5 +1,13 @@
 basePath: /api/config
 definitions:
+  cluster.BroadcastEvent:
+    properties:
+      event:
+        type: string
+      payload:
+        $ref: '#/definitions/json.RawMessage'
+        type: object
+    type: object
   domain.CommonConfigLinks:
     additionalProperties:
       items:
@@ -807,6 +815,29 @@ paths:
       summary: Метод активации конфигурации для модуля
       tags:
       - Конфигурация
+  /module/broadcast_event:
+    post:
+      consumes:
+      - application/json
+      description: Модуль
+      parameters:
+      - description: событие
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/cluster.BroadcastEvent'
+      produces:
+      - application/json
+      responses:
+        "200": {}
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод отправки события всем подключенным модулям
+      tags:
+      - Модули
   /module/delete_module:
     post:
       consumes:

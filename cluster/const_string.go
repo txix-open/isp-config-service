@@ -19,11 +19,12 @@ func _() {
 	_ = x[UpsertConfigCommand-9]
 	_ = x[DeleteCommonConfigsCommand-10]
 	_ = x[UpsertCommonConfigCommand-11]
+	_ = x[BroadcastEventCommand-12]
 }
 
-const _Command_name = "UpdateBackendDeclarationCommandDeleteBackendDeclarationCommandUpdateConfigSchemaCommandModuleConnectedCommandModuleDisconnectedCommandDeleteModulesCommandActivateConfigCommandDeleteConfigsCommandUpsertConfigCommandDeleteCommonConfigsCommandUpsertCommonConfigCommand"
+const _Command_name = "UpdateBackendDeclarationCommandDeleteBackendDeclarationCommandUpdateConfigSchemaCommandModuleConnectedCommandModuleDisconnectedCommandDeleteModulesCommandActivateConfigCommandDeleteConfigsCommandUpsertConfigCommandDeleteCommonConfigsCommandUpsertCommonConfigCommandBroadcastEventCommand"
 
-var _Command_index = [...]uint16{0, 31, 62, 87, 109, 134, 154, 175, 195, 214, 240, 265}
+var _Command_index = [...]uint16{0, 31, 62, 87, 109, 134, 154, 175, 195, 214, 240, 265, 286}
 
 func (i Command) String() string {
 	i -= 1

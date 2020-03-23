@@ -31,9 +31,11 @@ func PerformSyncApply(command []byte, commandName string, responsePtr interface{
 		}).Warnf(codes2.SyncApplyError, "apply command")
 		return unknownError()
 	}
-	err = json.Unmarshal(applyLogResponse.Result, responsePtr)
-	if err != nil {
-		return unknownError()
+	if responsePtr != nil {
+		err = json.Unmarshal(applyLogResponse.Result, responsePtr)
+		if err != nil {
+			return unknownError()
+		}
 	}
 	return nil
 }

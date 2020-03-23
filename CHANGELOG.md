@@ -1,3 +1,6 @@
+### upcoming
+* add method `/module/broadcast_event` to broadcast arbitrary event to all connected modules
+
 ### v2.2.1
 * update deps
 * fix bug in json schema marshaling/unmarshaling

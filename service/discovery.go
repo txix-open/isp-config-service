@@ -11,6 +11,7 @@ import (
 	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
+	"isp-config-service/cluster"
 	"isp-config-service/codes"
 	"isp-config-service/holder"
 	"isp-config-service/store/state"
@@ -79,6 +80,16 @@ func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, mesh sta
 			log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected %v", err)
 		}
 	}(event, event, addressList)
+}
+
+func (ds *discoveryService) BroadcastEvent(event cluster.BroadcastEvent) {
+	eventName := event.Event
+	payload := make([]byte, len(event.Payload))
+	copy(payload, event.Payload)
+
+	go func() {
+		_ = holder.EtpServer.BroadcastToAll(eventName, payload)
+	}()
 }
 
 func (ds *discoveryService) broadcastAddrList(room string, event string, addressList []structure.AddressConfiguration) error {

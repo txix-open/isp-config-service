@@ -3,6 +3,7 @@ package helper
 
 import (
 	"github.com/integration-system/isp-lib/v2/structure"
+	"isp-config-service/cluster"
 	"isp-config-service/controller"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
@@ -13,6 +14,8 @@ type Handlers struct {
 	DeleteModules   func(identities []string) (*domain.DeleteResponse, error)       `method:"delete_module" group:"module" inner:"true"`
 	GetModulesInfo  func() ([]domain.ModuleInfo, error)                             `method:"get_modules_info" group:"module" inner:"true"`
 	GetModuleByName func(req domain.GetByModuleNameRequest) (*entity.Module, error) `method:"get_by_name" group:"module" inner:"true"`
+	BroadcastEvent  func(req cluster.BroadcastEvent) error                          `method:"broadcast_event" group:"module" inner:"true"`
+
 	// ===== CONFIG =====
 	GetActiveConfigByModuleName func(request domain.GetByModuleNameRequest) (*entity.Config, error)             `method:"get_active_config_by_module_name" group:"config" inner:"true"`
 	CreateUpdateConfig          func(config domain.CreateUpdateConfigRequest) (*domain.ConfigModuleInfo, error) `method:"create_update_config" group:"config" inner:"true"`
@@ -38,6 +41,7 @@ func GetHandlers() *Handlers {
 		DeleteModules:   controller.Module.DeleteModules,
 		GetModulesInfo:  controller.Module.GetModulesAggregatedInfo,
 		GetModuleByName: controller.Module.GetModuleByName,
+		BroadcastEvent:  controller.Module.BroadcastEvent,
 
 		GetActiveConfigByModuleName: controller.Config.GetActiveConfigByModuleName,
 		CreateUpdateConfig:          controller.Config.CreateUpdateConfig,

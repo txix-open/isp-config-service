@@ -33,7 +33,7 @@ func (s *Store) Apply(l *raft.Log) interface{} {
 	if len(l.Data) < cluster.CommandSizeBytes {
 		log.Errorf(codes.ApplyLogCommandError, "invalid log data command: %s", l.Data)
 	}
-	command := cluster.Command(binary.BigEndian.Uint64(l.Data[:8]))
+	command := cluster.Command(binary.BigEndian.Uint64(l.Data[:cluster.CommandSizeBytes]))
 	log.Debugf(0, "Apply %s. Data: %s", command, l.Data)
 
 	var (
@@ -131,6 +131,7 @@ func NewStateStore(st *state.State) *Store {
 		cluster.UpsertConfigCommand:             store.applyUpsertConfigCommand,
 		cluster.DeleteCommonConfigsCommand:      store.applyDeleteCommonConfigsCommand,
 		cluster.UpsertCommonConfigCommand:       store.applyUpsertCommonConfigCommand,
+		cluster.BroadcastEventCommand:           store.applyBroadcastEventCommand,
 	}
 	return store
 }

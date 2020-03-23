@@ -85,6 +85,25 @@ func (c *module) GetModuleByName(req domain.GetByModuleNameRequest) (*entity.Mod
 	return module, nil
 }
 
+// @Summary Метод отправки события всем подключенным модулям
+// @Description Модуль
+// @Tags Модули
+// @Accept json
+// @Produce json
+// @Param body body cluster.BroadcastEvent true "событие"
+// @Success 200 ""
+// @Failure 500 {object} structure.GrpcError
+// @Router /module/broadcast_event [POST]
+func (c *module) BroadcastEvent(req cluster.BroadcastEvent) error {
+	command := cluster.PrepareBroadcastEventCommand(req)
+	err := PerformSyncApply(command, "BroadcastEventCommand", nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func NewModule(rstore *store.Store) *module {
 	return &module{
 		rstore: rstore,

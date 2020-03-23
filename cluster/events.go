@@ -3,9 +3,10 @@ package cluster
 import (
 	json2 "encoding/json"
 	"fmt"
+	"time"
+
 	"google.golang.org/grpc/codes"
 	"isp-config-service/entity"
-	"time"
 )
 
 type ApplyLogResponse struct {
@@ -43,6 +44,11 @@ type DeleteCommonConfig struct {
 type UpsertCommonConfig struct {
 	Config entity.CommonConfig
 	Create bool
+}
+
+type BroadcastEvent struct {
+	Event   string
+	Payload json2.RawMessage
 }
 
 type ResponseWithError struct {

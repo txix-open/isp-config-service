@@ -15,12 +15,12 @@ const (
 	ApplyCommandEvent = "CONFIG_CLUSTER:APPLY_COMMAND"
 	CommandSizeBytes  = 8
 
-	ClusterParam = "cluster"
+	GETParam = "cluster"
 )
 
 type Command uint64
 
-// need: go get golang.org/x/tools/cmd/stringer
+// needed: go get golang.org/x/tools/cmd/stringer
 //go:generate stringer -type=Command -output const_string.go
 const (
 	_ Command = iota
@@ -39,6 +39,8 @@ const (
 
 	DeleteCommonConfigsCommand
 	UpsertCommonConfigCommand
+
+	BroadcastEventCommand
 )
 
 func PrepareUpdateBackendDeclarationCommand(backend structure.BackendDeclaration) []byte {
@@ -83,6 +85,10 @@ func PrepareDeleteCommonConfigsCommand(id string) []byte {
 
 func PrepareUpsertCommonConfigCommand(config UpsertCommonConfig) []byte {
 	return prepareCommand(UpsertCommonConfigCommand, config)
+}
+
+func PrepareBroadcastEventCommand(event BroadcastEvent) []byte {
+	return prepareCommand(BroadcastEventCommand, event)
 }
 
 func prepareCommand(command Command, payload interface{}) []byte {
