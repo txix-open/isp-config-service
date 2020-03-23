@@ -10,7 +10,7 @@ type ConfigData map[string]interface{}
 
 type Config struct {
 	//nolint
-	tableName     string     `sql:"?db_schema.configs" json:"-"`
+	tableName     string     `pg:"?db_schema.configs" json:"-"`
 	Id            string     `json:"id"`
 	Name          string     `json:"name" valid:"required~Required"`
 	CommonConfigs []string   `json:"commonConfigs" pg:",array"`
@@ -25,7 +25,7 @@ type Config struct {
 
 type CommonConfig struct {
 	//nolint
-	tableName   string     `sql:"?db_schema.common_configs" json:"-"`
+	tableName   string     `pg:"?db_schema.common_configs" json:"-"`
 	Id          string     `json:"id"`
 	Name        string     `json:"name" valid:"required~Required"`
 	Description string     `json:"description"`
@@ -36,7 +36,7 @@ type CommonConfig struct {
 
 type ConfigSchema struct {
 	//nolint
-	tableName string `sql:"?db_schema.config_schemas" json:"-"`
+	tableName string `pg:"?db_schema.config_schemas" json:"-"`
 	Id        string `json:"id"`
 	Version   string
 	ModuleId  string
