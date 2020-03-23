@@ -238,6 +238,8 @@ definitions:
     required:
     - name
     type: object
+  json.RawMessage:
+    $ref: '#/definitions/json.RawMessage'
   jsonschema.Definitions:
     additionalProperties:
       $ref: '#/definitions/jsonschema.Type'
@@ -251,20 +253,22 @@ definitions:
         description: RFC draft-wright-json-schema-00
         type: string
       additionalItems:
+        $ref: '#/definitions/jsonschema.Type'
         description: section 5.9
-        type: integer
+        type: object
       additionalProperties:
+        $ref: '#/definitions/json.RawMessage'
         description: section 5.18
-        type: string
+        type: object
       allOf:
         description: section 5.22
         items:
-          type: integer
+          $ref: '#/definitions/jsonschema.Type'
         type: array
       anyOf:
         description: section 5.23
         items:
-          type: integer
+          $ref: '#/definitions/jsonschema.Type'
         type: array
       binaryEncoding:
         description: section 4.3
@@ -298,8 +302,9 @@ definitions:
         description: section 7
         type: string
       items:
+        $ref: '#/definitions/jsonschema.Type'
         description: section 5.9
-        type: integer
+        type: object
       maxItems:
         description: section 5.10
         type: integer
@@ -313,8 +318,9 @@ definitions:
         description: section 5.2
         type: integer
       media:
+        $ref: '#/definitions/jsonschema.Type'
         description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: integer
+        type: object
       minItems:
         description: section 5.11
         type: integer
@@ -331,12 +337,13 @@ definitions:
         description: RFC draft-wright-json-schema-validation-00, section 5
         type: integer
       not:
+        $ref: '#/definitions/jsonschema.Type'
         description: section 5.25
-        type: integer
+        type: object
       oneOf:
         description: section 5.24
         items:
-          type: integer
+          $ref: '#/definitions/jsonschema.Type'
         type: array
       pattern:
         description: section 5.8
@@ -375,20 +382,22 @@ definitions:
         description: RFC draft-wright-json-schema-00
         type: string
       additionalItems:
+        $ref: '#/definitions/jsonschema.Type'
         description: section 5.9
-        type: integer
+        type: object
       additionalProperties:
+        $ref: '#/definitions/json.RawMessage'
         description: section 5.18
-        type: string
+        type: object
       allOf:
         description: section 5.22
         items:
-          type: integer
+          $ref: '#/definitions/jsonschema.Type'
         type: array
       anyOf:
         description: section 5.23
         items:
-          type: integer
+          $ref: '#/definitions/jsonschema.Type'
         type: array
       binaryEncoding:
         description: section 4.3
@@ -423,8 +432,9 @@ definitions:
         description: section 7
         type: string
       items:
+        $ref: '#/definitions/jsonschema.Type'
         description: section 5.9
-        type: integer
+        type: object
       maxItems:
         description: section 5.10
         type: integer
@@ -438,8 +448,9 @@ definitions:
         description: section 5.2
         type: integer
       media:
+        $ref: '#/definitions/jsonschema.Type'
         description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: integer
+        type: object
       minItems:
         description: section 5.11
         type: integer
@@ -456,12 +467,13 @@ definitions:
         description: RFC draft-wright-json-schema-validation-00, section 5
         type: integer
       not:
+        $ref: '#/definitions/jsonschema.Type'
         description: section 5.25
-        type: integer
+        type: object
       oneOf:
         description: section 5.24
         items:
-          type: integer
+          $ref: '#/definitions/jsonschema.Type'
         type: array
       pattern:
         description: section 5.8
