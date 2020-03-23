@@ -21,6 +21,8 @@ import (
 	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"isp-config-service/conf"
 	"isp-config-service/domain"
 )
@@ -184,10 +186,10 @@ func getConfigServiceAddress(num int, port string) structure.AddressConfiguratio
 }
 
 func testClusterReady(a *assert.Assertions, except int) bool {
-	var clients []*backend.InternalGrpcClient
+	var clients []*backend.RxGrpcClient
 	defer func() {
 		for _, client := range clients {
-			client.CloseQuietly()
+			_ = client.Close()
 		}
 	}()
 
@@ -196,7 +198,7 @@ func testClusterReady(a *assert.Assertions, except int) bool {
 			continue
 		}
 		configAddr := configsGrpcAddrs[j]
-		client := testGrpcReady(configAddr, a)
+		client := newGrpcClient(configAddr, a)
 		if client == nil {
 			a.Fail(fmt.Sprintf("unable to connect to %d config", j))
 			return false
@@ -225,19 +227,24 @@ func testClusterReady(a *assert.Assertions, except int) bool {
 	return true
 }
 
-func testGrpcReady(configAddr structure.AddressConfiguration, a *assert.Assertions) *backend.InternalGrpcClient {
+func newGrpcClient(configAddr structure.AddressConfiguration, a *assert.Assertions) *backend.RxGrpcClient {
 	start := time.Now()
-	var client *backend.InternalGrpcClient
-	var err error
-	_, _ = await(func() (interface{}, error) {
-		client, err = backend.NewGrpcClient(
-			configAddr.GetAddress(),
-			grpc.WithBlock(),
-			grpc.WithInsecure(),
-		)
+	client := backend.NewRxGrpcClient(backend.WithDialOptions(
+		grpc.WithInsecure(),
+	))
+	client.ReceiveAddressList([]structure.AddressConfiguration{configAddr})
+
+	_, err := await(func() (interface{}, error) {
+		err := client.Invoke(getRoutesCommand, -1, nil, nil)
+		code := status.Code(err)
+		if code != codes.Unknown {
+			return nil, nil
+		}
+
 		//log.Println("connect to grpc err:", err)
 		return nil, err
 	}, maxAwaitingTime, attemptTimeout)
+
 	if !a.NoError(err) {
 		return nil
 	}
@@ -245,7 +252,7 @@ func testGrpcReady(configAddr structure.AddressConfiguration, a *assert.Assertio
 	return client
 }
 
-func testRaftReady(client *backend.InternalGrpcClient, a *assert.Assertions) bool {
+func testRaftReady(client *backend.RxGrpcClient, a *assert.Assertions) bool {
 	var err error
 	req := new(domain.ConfigIdRequest)
 	req.Id = "33"
@@ -266,7 +273,7 @@ func testRaftReady(client *backend.InternalGrpcClient, a *assert.Assertions) boo
 	return a.NoError(err)
 }
 
-func getRoutes(client *backend.InternalGrpcClient, a *assert.Assertions) []structure.BackendDeclaration {
+func getRoutes(client *backend.RxGrpcClient, a *assert.Assertions) []structure.BackendDeclaration {
 	var response []structure.BackendDeclaration
 	var err error
 	f := func() (interface{}, error) {
