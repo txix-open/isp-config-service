@@ -23,7 +23,7 @@ var (
 type Store struct {
 	state    *state.State
 	lock     sync.RWMutex
-	handlers map[uint64]func([]byte) (interface{}, error)
+	handlers map[cluster.Command]func([]byte) (interface{}, error)
 }
 
 func (s *Store) Apply(l *raft.Log) interface{} {
@@ -33,8 +33,8 @@ func (s *Store) Apply(l *raft.Log) interface{} {
 	if len(l.Data) < cluster.CommandSizeBytes {
 		log.Errorf(codes.ApplyLogCommandError, "invalid log data command: %s", l.Data)
 	}
-	command := binary.BigEndian.Uint64(l.Data[:8])
-	log.Debugf(0, "Apply %d command. Data: %s", command, l.Data)
+	command := cluster.Command(binary.BigEndian.Uint64(l.Data[:8]))
+	log.Debugf(0, "Apply %s. Data: %s", command, l.Data)
 
 	var (
 		result interface{}
@@ -119,7 +119,7 @@ func NewStateStore(st *state.State) *Store {
 	store := &Store{
 		state: st,
 	}
-	store.handlers = map[uint64]func([]byte) (interface{}, error){
+	store.handlers = map[cluster.Command]func([]byte) (interface{}, error){
 		cluster.UpdateBackendDeclarationCommand: store.applyUpdateBackendDeclarationCommand,
 		cluster.DeleteBackendDeclarationCommand: store.applyDeleteBackendDeclarationCommand,
 		cluster.ModuleConnectedCommand:          store.applyModuleConnectedCommand,

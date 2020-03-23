@@ -17,8 +17,13 @@ const (
 
 	ClusterParam = "cluster"
 )
+
+type Command uint64
+
+// need: go get golang.org/x/tools/cmd/stringer
+//go:generate stringer -type=Command -output const_string.go
 const (
-	_ = iota
+	_ Command = iota
 	UpdateBackendDeclarationCommand
 	DeleteBackendDeclarationCommand
 
@@ -80,9 +85,9 @@ func PrepareUpsertCommonConfigCommand(config UpsertCommonConfig) []byte {
 	return prepareCommand(UpsertCommonConfigCommand, config)
 }
 
-func prepareCommand(command uint64, payload interface{}) []byte {
+func prepareCommand(command Command, payload interface{}) []byte {
 	cmd := make([]byte, 8)
-	binary.BigEndian.PutUint64(cmd, command)
+	binary.BigEndian.PutUint64(cmd, uint64(command))
 	buf := bytes.NewBuffer(cmd)
 	err := json.NewEncoder(buf).Encode(payload)
 	if err != nil {
