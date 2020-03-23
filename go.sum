@@ -162,6 +162,8 @@ github.com/integration-system/isp-etp-go v2.0.2+incompatible h1:+aQiqH/aMy9pUsif
 github.com/integration-system/isp-etp-go v2.0.2+incompatible/go.mod h1:NdgczkoFCer9SZOx674EVXCcKRIhFe8LYnwNwoIMDhI=
 github.com/integration-system/isp-etp-go/v2 v2.1.0 h1:qRw4J04vwYxSm52OUIt6lKWpxEQE2aZjUT7kZDG/A4Q=
 github.com/integration-system/isp-etp-go/v2 v2.1.0/go.mod h1:Ndq5DMM3sDJjZn4cyKKvZrVED0FMeoXMRWHZTq+2Z1o=
+github.com/integration-system/isp-etp-go/v2 v2.1.1 h1:6LU9eE1cGVpp8HNRYu83K4hY49YlNPFd/uj3+Iog4ro=
+github.com/integration-system/isp-etp-go/v2 v2.1.1/go.mod h1:Ndq5DMM3sDJjZn4cyKKvZrVED0FMeoXMRWHZTq+2Z1o=
 github.com/integration-system/isp-lib-test v1.5.0 h1:5Q2qYpesVA0zj0d0ZbWPZgBM0cS+cHf2vH6MxXvNA10=
 github.com/integration-system/isp-lib-test v1.5.0/go.mod h1:GAk7oPXp9KEuNeav2oaun5E/rlh5iomM/F/b2CqEycc=
 github.com/integration-system/isp-lib/v2 v2.2.0 h1:qabF1/Q66Z0ldOIlsztD/P4WEuskYICFJHjMoJhUi08=
