@@ -6,6 +6,7 @@ import (
 
 	etp "github.com/integration-system/isp-etp-go/v2"
 	log "github.com/integration-system/isp-log"
+	"isp-config-service/cluster"
 	"isp-config-service/codes"
 	"isp-config-service/holder"
 )
@@ -19,9 +20,10 @@ func EmitConn(conn etp.Conn, event string, body []byte) {
 	}
 }
 
-func SyncApplyCommand(command []byte, commandName string) (interface{}, error) {
+func SyncApplyCommand(command []byte) (interface{}, error) {
 	applyLogResponse, err := holder.ClusterClient.SyncApply(command)
 	if err != nil {
+		commandName := cluster.ParseCommand(command).String()
 		log.WithMetadata(map[string]interface{}{
 			"command":     string(command),
 			"commandName": commandName,
@@ -29,6 +31,7 @@ func SyncApplyCommand(command []byte, commandName string) (interface{}, error) {
 		return nil, err
 	}
 	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
+		commandName := cluster.ParseCommand(command).String()
 		log.WithMetadata(map[string]interface{}{
 			"result":      string(applyLogResponse.Result),
 			"applyError":  applyLogResponse.ApplyError,

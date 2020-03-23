@@ -74,7 +74,7 @@ func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*d
 		upsertConfig.Create = true
 	}
 	command := cluster.PrepareUpsertConfigCommand(upsertConfig)
-	err := PerformSyncApplyWithError(command, "UpsertConfigCommand", &response)
+	err := PerformSyncApplyWithError(command, &response)
 	if err != nil {
 		return nil, err
 	} else if response.ErrorDetails != nil {
@@ -98,7 +98,7 @@ func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*d
 func (c *config) MarkConfigAsActive(identity domain.ConfigIdRequest) (*entity.Config, error) {
 	var response entity.Config
 	command := cluster.PrepareActivateConfigCommand(identity.Id, state.GenerateDate())
-	err := PerformSyncApplyWithError(command, "ActivateConfigCommand", &response)
+	err := PerformSyncApplyWithError(command, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (c *config) DeleteConfigs(identities []string) (*domain.DeleteResponse, err
 	}
 	var response domain.DeleteResponse
 	command := cluster.PrepareDeleteConfigsCommand(identities)
-	err := PerformSyncApply(command, "DeleteConfigsCommand", &response)
+	err := PerformSyncApply(command, &response)
 	if err != nil {
 		return nil, err
 	}

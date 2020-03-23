@@ -52,7 +52,7 @@ func (h *SocketEventHandler) handleConnect(conn etp.Conn) {
 		LastConnectedAt: now,
 	}
 	command := cluster.PrepareModuleConnectedCommand(module)
-	_, err = SyncApplyCommand(command, "ModuleConnectedCommand")
+	_, err = SyncApplyCommand(command)
 	if err != nil && !isClusterNode {
 		EmitConn(conn, utils.ErrorConnection, FormatErrorConnection(err))
 		_ = conn.Close()
@@ -79,7 +79,7 @@ func (h *SocketEventHandler) handleConnect(conn etp.Conn) {
 	EmitConn(conn, utils.ConfigSendConfigWhenConnected, data)
 }
 
-func (h *SocketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error) {
+func (h *SocketEventHandler) handleDisconnect(conn etp.Conn, _ error) {
 	moduleName, _ := Parameters(conn)
 	log.Debugf(0, "handleDisconnect from %s", moduleName) // REMOVE
 	if moduleName != "" {
@@ -93,7 +93,7 @@ func (h *SocketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error
 			LastDisconnectedAt: now,
 		}
 		command := cluster.PrepareModuleDisconnectedCommand(module)
-		_, _ = SyncApplyCommand(command, "ModuleDisconnectedCommand")
+		_, _ = SyncApplyCommand(command)
 	}
 
 	service.DiscoveryService.HandleDisconnect(conn.ID())
@@ -101,7 +101,7 @@ func (h *SocketEventHandler) handleDisconnect(conn etp.Conn, disconnectErr error
 	backend, ok := ExtractBackendDeclaration(conn)
 	if ok {
 		command := cluster.PrepareDeleteBackendDeclarationCommand(backend)
-		_, _ = SyncApplyCommand(command, "DeleteBackendDeclarationCommand")
+		_, _ = SyncApplyCommand(command)
 	}
 }
 

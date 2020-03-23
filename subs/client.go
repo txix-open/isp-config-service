@@ -31,7 +31,7 @@ func (h *SocketEventHandler) handleModuleReady(conn etp.Conn, data []byte) []byt
 	}
 	SetBackendDeclaration(conn, declaration)
 	command := cluster.PrepareUpdateBackendDeclarationCommand(declaration)
-	_, err = SyncApplyCommand(command, "UpdateBackendDeclarationCommand")
+	_, err = SyncApplyCommand(command)
 	if err != nil {
 		return []byte(err.Error())
 	}
@@ -90,7 +90,7 @@ func (h *SocketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 		UpdatedAt: now,
 	}
 	command := cluster.PrepareUpdateConfigSchemaCommand(schema)
-	_, _ = SyncApplyCommand(command, "UpdateConfigSchemaCommand")
+	_, _ = SyncApplyCommand(command)
 
 	var configs []entity.Config
 	h.store.VisitReadonlyState(func(readState state.ReadonlyState) {
@@ -115,7 +115,7 @@ func (h *SocketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 		}
 
 		command := cluster.PrepareUpsertConfigCommand(upsertConfig)
-		_, _ = SyncApplyCommand(command, "UpsertConfigCommand")
+		_, _ = SyncApplyCommand(command)
 	}
 	return []byte(utils.WsOkResponse)
 }

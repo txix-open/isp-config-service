@@ -17,13 +17,15 @@ func unknownError() error {
 	return status.Error(codes.Unknown, utils.ServiceError)
 }
 
-func PerformSyncApply(command []byte, commandName string, responsePtr interface{}) error {
+func PerformSyncApply(command []byte, responsePtr interface{}) error {
 	applyLogResponse, err := holder.ClusterClient.SyncApply(command)
 	if err != nil {
-		log.Warnf(codes2.SyncApplyError, "apply %s: %v", commandName, err)
+		cmd := cluster.ParseCommand(command)
+		log.Warnf(codes2.SyncApplyError, "apply %s: %v", cmd, err)
 		return unknownError()
 	}
 	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
+		commandName := cluster.ParseCommand(command).String()
 		log.WithMetadata(map[string]interface{}{
 			"result":      string(applyLogResponse.Result),
 			"applyError":  applyLogResponse.ApplyError,
@@ -40,13 +42,15 @@ func PerformSyncApply(command []byte, commandName string, responsePtr interface{
 	return nil
 }
 
-func PerformSyncApplyWithError(command []byte, commandName string, responsePtr interface{}) error {
+func PerformSyncApplyWithError(command []byte, responsePtr interface{}) error {
 	applyLogResponse, err := holder.ClusterClient.SyncApply(command)
 	if err != nil {
-		log.Warnf(codes2.SyncApplyError, "apply %s: %v", commandName, err)
+		cmd := cluster.ParseCommand(command)
+		log.Warnf(codes2.SyncApplyError, "apply %s: %v", cmd, err)
 		return unknownError()
 	}
 	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
+		commandName := cluster.ParseCommand(command).String()
 		log.WithMetadata(map[string]interface{}{
 			"result":      string(applyLogResponse.Result),
 			"applyError":  applyLogResponse.ApplyError,

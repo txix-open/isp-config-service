@@ -22,6 +22,7 @@ type Command uint64
 
 // needed: go get golang.org/x/tools/cmd/stringer
 //go:generate stringer -type=Command -output const_string.go
+
 const (
 	_ Command = iota
 	UpdateBackendDeclarationCommand
@@ -42,6 +43,10 @@ const (
 
 	BroadcastEventCommand
 )
+
+func ParseCommand(data []byte) Command {
+	return Command(binary.BigEndian.Uint64(data[:CommandSizeBytes]))
+}
 
 func PrepareUpdateBackendDeclarationCommand(backend structure.BackendDeclaration) []byte {
 	return prepareCommand(UpdateBackendDeclarationCommand, backend)

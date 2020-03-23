@@ -56,7 +56,7 @@ func (*module) DeleteModules(identities []string) (*domain.DeleteResponse, error
 
 	var deleteResponse domain.DeleteResponse
 	command := cluster.PrepareDeleteModulesCommand(identities)
-	err := PerformSyncApply(command, "DeleteCommonConfigsCommand", &deleteResponse)
+	err := PerformSyncApply(command, &deleteResponse)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (c *module) GetModuleByName(req domain.GetByModuleNameRequest) (*entity.Mod
 // @Router /module/broadcast_event [POST]
 func (c *module) BroadcastEvent(req cluster.BroadcastEvent) error {
 	command := cluster.PrepareBroadcastEventCommand(req)
-	err := PerformSyncApply(command, "BroadcastEventCommand", nil)
+	err := PerformSyncApply(command, nil)
 	if err != nil {
 		return err
 	}

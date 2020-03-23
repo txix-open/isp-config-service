@@ -160,10 +160,10 @@ func (client *Client) declareMyselfToCluster() {
 		LastConnectedAt: now,
 	}
 	command := PrepareModuleConnectedCommand(module)
-	syncApplyCommand(client, command, "ModuleConnectedCommand")
+	syncApplyCommand(client, command)
 
 	declarationCommand := PrepareUpdateBackendDeclarationCommand(client.declaration)
-	syncApplyCommand(client, declarationCommand, "UpdateBackendDeclarationCommand")
+	syncApplyCommand(client, declarationCommand)
 }
 
 type leaderState struct {
@@ -184,15 +184,17 @@ func NewRaftClusterClient(r *raft.Raft, declaration structure.BackendDeclaration
 	return client
 }
 
-func syncApplyCommand(clusterClient *Client, command []byte, commandName string) {
+func syncApplyCommand(clusterClient *Client, command []byte) {
 	applyLogResponse, err := clusterClient.SyncApply(command)
 	if err != nil {
+		commandName := ParseCommand(command).String()
 		log.WithMetadata(map[string]interface{}{
 			"command":     string(command),
 			"commandName": commandName,
 		}).Warnf(codes.SyncApplyError, "announce myself. apply command: %v", err)
 	}
 	if applyLogResponse != nil && applyLogResponse.ApplyError != "" {
+		commandName := ParseCommand(command).String()
 		log.WithMetadata(map[string]interface{}{
 			"result":      string(applyLogResponse.Result),
 			"applyError":  applyLogResponse.ApplyError,

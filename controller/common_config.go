@@ -60,7 +60,7 @@ func (c *commonConfig) CreateUpdateConfig(config entity.CommonConfig) (*entity.C
 		upsertConfig.Create = true
 	}
 	command := cluster.PrepareUpsertCommonConfigCommand(upsertConfig)
-	err := PerformSyncApplyWithError(command, "UpsertCommonConfigCommand", &response)
+	err := PerformSyncApplyWithError(command, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (c *commonConfig) CreateUpdateConfig(config entity.CommonConfig) (*entity.C
 func (c *commonConfig) DeleteConfigs(req domain.ConfigIdRequest) (*domain.DeleteCommonConfigResponse, error) {
 	var response domain.DeleteCommonConfigResponse
 	command := cluster.PrepareDeleteCommonConfigsCommand(req.Id)
-	err := PerformSyncApplyWithError(command, "DeleteCommonConfigsCommand", &response)
+	err := PerformSyncApplyWithError(command, &response)
 	if err != nil {
 		return nil, err
 	}
