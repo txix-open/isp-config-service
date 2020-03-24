@@ -17,12 +17,11 @@ type config struct {
 	rstore *store.Store
 }
 
-// GetActiveConfigByModuleName godoc
 // @Summary Метод получения объекта конфигурации по названию модуля
 // @Description Возвращает активную конфиграцию по названию модуля
 // @Tags Конфигурация
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param body body domain.GetByModuleNameRequest true "название модуля"
 // @Success 200 {object} entity.Config
 // @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
@@ -48,13 +47,12 @@ func (c *config) GetActiveConfigByModuleName(request domain.GetByModuleNameReque
 	return config, nil
 }
 
-// CreateUpdateConfig godoc
 // @Summary Метод обновления конфигурации
 // @Description Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
-// В случае обновления рассылает все подключенным модулям актуальную конфигурацию
+// @Description В случае обновления рассылает всем подключенным модулям актуальную конфигурацию
 // @Tags Конфигурация
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param body body domain.CreateUpdateConfigRequest true "объект для сохранения"
 // @Success 200 {object} domain.ConfigModuleInfo
 // @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
@@ -84,12 +82,11 @@ func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*d
 	return response.Config, nil
 }
 
-// MarkConfigAsActive godoc
 // @Summary Метод активации конфигурации для модуля
 // @Description Активирует указанную конфигурацию и деактивирует остальные, возвращает активированную конфигурацию
 // @Tags Конфигурация
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param body body domain.ConfigIdRequest true "id конфигурации для изменения"
 // @Success 200 {object} entity.Config "активированная конфигурация"
 // @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
@@ -105,12 +102,11 @@ func (c *config) MarkConfigAsActive(identity domain.ConfigIdRequest) (*entity.Co
 	return &response, nil
 }
 
-// DeleteConfigs godoc
 // @Summary Метод удаления объектов конфигурации по идентификаторам
 // @Description Возвращает количество удаленных модулей
 // @Tags Конфигурация
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param body body []string true "массив идентификаторов конфигураций"
 // @Success 200 {object} domain.DeleteResponse
 // @Failure 400 {object} structure.GrpcError "если не указан массив идентификаторов"

@@ -14,7 +14,6 @@ type routes struct {
 	rstore *store.Store
 }
 
-// GetRoutes godoc
 // @Summary Метод получения маршрутов
 // @Description Возвращает все доступные модули
 // @Tags Роуты

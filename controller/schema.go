@@ -15,12 +15,11 @@ type schema struct {
 	rstore *store.Store
 }
 
-// GetByModuleId godoc
 // @Summary Метод получения схемы конфигурации модуля
 // @Description Возвращает текущую json схему конфигурации модуля
 // @Tags Схема
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param body body domain.GetByModuleIdRequest true "идентификатор модуля"
 // @Success 200 {object} entity.ConfigSchema
 // @Failure 404 {object} structure.GrpcError "если схема для модуля не найдена"

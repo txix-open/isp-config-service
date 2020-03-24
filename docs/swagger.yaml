@@ -596,8 +596,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Если конфиг с таким id существует, то обновляет данные, если нет,
-        то добавляет данные в базу
+      description: |-
+        Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
+        В случае обновления рассылает всем подключенным модулям актуальную конфигурацию
       parameters:
       - description: объект для сохранения
         in: body
@@ -695,8 +696,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Если конфиг с таким id существует, то обновляет данные, если нет,
-        то добавляет данные в базу
+      description: |-
+        Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
+        В случае обновления рассылает всем подключенным модулям актуальную конфигурацию
       parameters:
       - description: объект для сохранения
         in: body
@@ -819,7 +821,6 @@ paths:
     post:
       consumes:
       - application/json
-      description: Модуль
       parameters:
       - description: событие
         in: body
@@ -830,7 +831,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200": {}
+        "200":
+          description: OK
         "500":
           description: Internal Server Error
           schema:
@@ -870,7 +872,6 @@ paths:
     post:
       consumes:
       - application/json
-      description: Модуль
       parameters:
       - description: название модуля
         in: body

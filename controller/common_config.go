@@ -15,12 +15,11 @@ type commonConfig struct {
 	rstore *store.Store
 }
 
-// GetConfigs godoc
 // @Summary Метод получения объектов конфигурации по идентификаторам
 // @Description Возвращает массив конфигураций по запрошенным идентификаторам (все, если массив пустой)
 // @Tags Общие конфигурации
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Success 200 {array} entity.CommonConfig
 // @Router /common_config/get_configs [POST]
 func (c *commonConfig) GetConfigs(identities []string) []entity.CommonConfig {
@@ -35,13 +34,12 @@ func (c *commonConfig) GetConfigs(identities []string) []entity.CommonConfig {
 	return response
 }
 
-// CreateUpdateConfig godoc
 // @Summary Метод обновления общей конфигурации
 // @Description Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
-// В случае обновления рассылает все подключенным модулям актуальную конфигурацию
+// @Description В случае обновления рассылает всем подключенным модулям актуальную конфигурацию
 // @Tags Общие конфигурации
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param body body entity.CommonConfig true "объект для сохранения"
 // @Success 200 {object} entity.CommonConfig
 // @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
@@ -67,12 +65,11 @@ func (c *commonConfig) CreateUpdateConfig(config entity.CommonConfig) (*entity.C
 	return &response, nil
 }
 
-// DeleteConfigs godoc
 // @Summary Метод удаления объектов общей конфигурации по идентификаторам
 // @Description Возвращает флаг удаления и набор связей с модулями и конфигурациями, в случае наличия связей deleted всегда false
 // @Tags Общие конфигурации
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param body body domain.ConfigIdRequest true "id общей конфигурации"
 // @Success 200 {object} domain.DeleteCommonConfigResponse
 // @Failure 500 {object} structure.GrpcError
@@ -87,12 +84,11 @@ func (c *commonConfig) DeleteConfigs(req domain.ConfigIdRequest) (*domain.Delete
 	return &response, nil
 }
 
-// CompileConfigs godoc
 // @Summary Метод компиляции итоговой конфигурации для модулей
 // @Description Возвращает скомпилированный объект конфигурации
 // @Tags Общие конфигурации
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param body body domain.CompileConfigsRequest true "перечисление идентификаторов общей конфигурации и исхдных конфиг"
 // @Success 200 {object} domain.CompiledConfigResponse
 // @Router /common_config/compile [POST]
@@ -104,12 +100,11 @@ func (c *commonConfig) CompileConfigs(req domain.CompileConfigsRequest) domain.C
 	return result
 }
 
-// GetLinks godoc
 // @Summary Метод получения связей общей конфигурациями с конфигурацией модулей
 // @Description Возвращает ассоциативный массив, ключами которого являются название модулей, а значения - название конфигурации модуля
 // @Tags Общие конфигурации
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param body body domain.ConfigIdRequest true "id общей конфигурации"
 // @Success 200 {object} domain.CommonConfigLinks
 // @Router /common_config/get_links [POST]

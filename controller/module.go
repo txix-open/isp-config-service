@@ -19,7 +19,6 @@ type module struct {
 	rstore *store.Store
 }
 
-// GetModulesAggregatedInfo godoc
 // @Summary Метод получения полной информации о состоянии модуля
 // @Description Возвращает полное состояние всех модулей в кластере (конфигурация, схема конфигурации, подключенные экземпляры)
 // @Tags Модули
@@ -36,7 +35,6 @@ func (c *module) GetModulesAggregatedInfo() ([]domain.ModuleInfo, error) {
 	return response, nil
 }
 
-// DeleteModules godoc
 // @Summary Метод удаления объектов модулей по идентификаторам
 // @Description Возвращает количество удаленных модулей
 // @Tags Модули
@@ -63,9 +61,7 @@ func (*module) DeleteModules(identities []string) (*domain.DeleteResponse, error
 	return &deleteResponse, err
 }
 
-// GetModuleByName godoc
 // @Summary Метод получения модуля по имени
-// @Description Модуль
 // @Tags Модули
 // @Accept json
 // @Produce json
@@ -86,12 +82,11 @@ func (c *module) GetModuleByName(req domain.GetByModuleNameRequest) (*entity.Mod
 }
 
 // @Summary Метод отправки события всем подключенным модулям
-// @Description Модуль
 // @Tags Модули
 // @Accept json
 // @Produce json
 // @Param body body cluster.BroadcastEvent true "событие"
-// @Success 200 ""
+// @Success 200 "OK"
 // @Failure 500 {object} structure.GrpcError
 // @Router /module/broadcast_event [POST]
 func (c *module) BroadcastEvent(req cluster.BroadcastEvent) error {
