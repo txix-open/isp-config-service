@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	CommonConfigService = commonConfigService{}
+	CommonConfig = commonConfigService{}
 )
 
 type commonConfigService struct{}

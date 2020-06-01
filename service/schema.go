@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	SchemaService schemaService
+	Schema schemaService
 )
 
 type schemaService struct{}

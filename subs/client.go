@@ -52,9 +52,9 @@ func (h *SocketEventHandler) handleModuleRequirements(conn etp.Conn, data []byte
 	}
 
 	h.store.VisitReadonlyState(func(state state.ReadonlyState) {
-		service.DiscoveryService.Subscribe(conn, declaration.RequiredModules, state.Mesh())
+		service.Discovery.Subscribe(conn, declaration.RequiredModules, state.Mesh())
 		if declaration.RequireRoutes {
-			service.RoutesService.SubscribeRoutes(conn, state.Mesh())
+			service.Routes.SubscribeRoutes(conn, state.Mesh())
 		}
 	})
 	return []byte(utils.WsOkResponse)

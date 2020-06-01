@@ -173,7 +173,7 @@ func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration,
 			back := structure.BackendDeclaration{ModuleName: cfg.ModuleName, Address: addressConfiguration}
 			log.WithMetadata(map[string]interface{}{"declaration": back}).
 				Infof(codes.LeaderManualDeleteLeader, "manually delete disconnected leader's declaration")
-			service.ClusterMeshService.HandleDeleteBackendDeclarationCommand(back, s)
+			service.ClusterMesh.HandleDeleteBackendDeclarationCommand(back, s)
 		})
 	})
 	holder.ClusterClient = clusterClient

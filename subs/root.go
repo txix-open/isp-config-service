@@ -43,7 +43,7 @@ func (h *SocketEventHandler) handleConnect(conn etp.Conn) {
 		_ = conn.Close()
 		return
 	}
-	holder.EtpServer.Rooms().Join(conn, moduleName+service.ConfigWatchersRoomSuffix)
+	holder.EtpServer.Rooms().Join(conn, service.Room.Module(moduleName))
 	now := state.GenerateDate()
 	module := entity.Module{
 		Id:              state.GenerateId(),
@@ -83,7 +83,7 @@ func (h *SocketEventHandler) handleDisconnect(conn etp.Conn, _ error) {
 	moduleName, _ := Parameters(conn)
 	log.Debugf(0, "handleDisconnect from %s", moduleName) // REMOVE
 	if moduleName != "" {
-		holder.EtpServer.Rooms().Leave(conn, moduleName+service.ConfigWatchersRoomSuffix)
+		holder.EtpServer.Rooms().Leave(conn, service.Room.Module(moduleName))
 		now := state.GenerateDate()
 		module := entity.Module{
 			Id:                 state.GenerateId(),
@@ -96,8 +96,8 @@ func (h *SocketEventHandler) handleDisconnect(conn etp.Conn, _ error) {
 		_, _ = SyncApplyCommand(command)
 	}
 
-	service.DiscoveryService.HandleDisconnect(conn.ID())
-	service.RoutesService.HandleDisconnect(conn.ID())
+	service.Discovery.HandleDisconnect(conn.ID())
+	service.Routes.HandleDisconnect(conn.ID())
 	backend, ok := ExtractBackendDeclaration(conn)
 	if ok {
 		command := cluster.PrepareDeleteBackendDeclarationCommand(backend)

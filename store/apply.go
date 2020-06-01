@@ -7,6 +7,7 @@ import (
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/service"
+	"time"
 )
 
 func (s *Store) applyUpdateBackendDeclarationCommand(data []byte) (interface{}, error) {
@@ -15,7 +16,7 @@ func (s *Store) applyUpdateBackendDeclarationCommand(data []byte) (interface{}, 
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal structure.BackendDeclaration")
 	}
-	service.ClusterMeshService.HandleUpdateBackendDeclarationCommand(declaration, s.state)
+	service.ClusterMesh.HandleUpdateBackendDeclarationCommand(declaration, s.state)
 	return nil, nil
 }
 
@@ -25,7 +26,7 @@ func (s *Store) applyDeleteBackendDeclarationCommand(data []byte) (interface{}, 
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal structure.BackendDeclaration")
 	}
-	service.ClusterMeshService.HandleDeleteBackendDeclarationCommand(declaration, s.state)
+	service.ClusterMesh.HandleDeleteBackendDeclarationCommand(declaration, s.state)
 	return nil, nil
 }
 
@@ -35,7 +36,7 @@ func (s *Store) applyUpdateConfigSchemaCommand(data []byte) (interface{}, error)
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal entity.ConfigSchema")
 	}
-	err = service.SchemaService.HandleUpdateConfigSchemaCommand(schema, s.state)
+	err = service.Schema.HandleUpdateConfigSchemaCommand(schema, s.state)
 	if err != nil {
 		return nil, errors.WithMessage(err, "update config schema")
 	}
@@ -48,7 +49,7 @@ func (s *Store) applyModuleConnectedCommand(data []byte) (interface{}, error) {
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal entity.Module")
 	}
-	service.ModuleRegistryService.HandleModuleConnectedCommand(module, s.state)
+	service.ModuleRegistry.HandleModuleConnectedCommand(module, s.state)
 	return nil, nil
 }
 
@@ -58,7 +59,7 @@ func (s *Store) applyModuleDisconnectedCommand(data []byte) (interface{}, error)
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal entity.Module")
 	}
-	service.ModuleRegistryService.HandleModuleDisconnectedCommand(module, s.state)
+	service.ModuleRegistry.HandleModuleDisconnectedCommand(module, s.state)
 	return nil, nil
 }
 
@@ -68,7 +69,7 @@ func (s *Store) applyDeleteModulesCommand(data []byte) (interface{}, error) {
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal cluster.DeleteModules")
 	}
-	deleted := service.ModuleRegistryService.HandleDeleteModulesCommand(deleteModules, s.state)
+	deleted := service.ModuleRegistry.HandleDeleteModulesCommand(deleteModules, s.state)
 	return domain.DeleteResponse{Deleted: deleted}, nil
 }
 
@@ -108,7 +109,7 @@ func (s *Store) applyDeleteCommonConfigsCommand(data []byte) (interface{}, error
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal cluster.DeleteCommonConfig")
 	}
-	response := service.CommonConfigService.HandleDeleteConfigsCommand(deleteConfigs, s.state)
+	response := service.CommonConfig.HandleDeleteConfigsCommand(deleteConfigs, s.state)
 	return response, nil
 }
 
@@ -118,7 +119,7 @@ func (s *Store) applyUpsertCommonConfigCommand(data []byte) (interface{}, error)
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal cluster.UpsertCommonConfig")
 	}
-	response := service.CommonConfigService.HandleUpsertConfigCommand(config, s.state)
+	response := service.CommonConfig.HandleUpsertConfigCommand(config, s.state)
 	return response, nil
 }
 
@@ -128,6 +129,8 @@ func (s *Store) applyBroadcastEventCommand(data []byte) (interface{}, error) {
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal cluster.BroadcastEvent")
 	}
-	service.DiscoveryService.BroadcastEvent(event)
+	if event.PerformUntil.After(time.Now().UTC()) {
+		service.Discovery.BroadcastEvent(event)
+	}
 	return nil, nil
 }

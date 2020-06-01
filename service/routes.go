@@ -14,20 +14,16 @@ import (
 	"isp-config-service/store/state"
 )
 
-const (
-	RoutesSubscribersRoom = "__routesSubscribers"
-)
-
-var RoutesService routesService
+var Routes routesService
 
 type routesService struct{}
 
 func (rs *routesService) HandleDisconnect(connID string) {
-	holder.EtpServer.Rooms().LeaveByConnId(connID, RoutesSubscribersRoom)
+	holder.EtpServer.Rooms().LeaveByConnId(connID, Room.RoutesSubscribers())
 }
 
 func (rs *routesService) SubscribeRoutes(conn etp.Conn, mesh state.ReadonlyMesh) {
-	holder.EtpServer.Rooms().Join(conn, RoutesSubscribersRoom)
+	holder.EtpServer.Rooms().Join(conn, Room.RoutesSubscribers())
 	routes := mesh.GetRoutes()
 	go func(conn etp.Conn, routes structure.RoutingConfig) {
 		err := rs.sendRoutes(conn, utils.ConfigSendRoutesWhenConnected, routes)
@@ -52,7 +48,7 @@ func (rs *routesService) broadcastRoutes(event string, routes structure.RoutingC
 	if err != nil {
 		return err
 	}
-	err = holder.EtpServer.BroadcastToRoom(RoutesSubscribersRoom, event, bytes)
+	err = holder.EtpServer.BroadcastToRoom(Room.RoutesSubscribers(), event, bytes)
 	if err != nil {
 		return err
 	}

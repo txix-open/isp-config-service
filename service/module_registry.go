@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	ModuleRegistryService = moduleRegistryService{}
+	ModuleRegistry = moduleRegistryService{}
 )
 
 type moduleRegistryService struct{}

@@ -4,9 +4,16 @@ definitions:
     properties:
       event:
         type: string
+      moduleNames:
+        items:
+          type: string
+        type: array
       payload:
         $ref: '#/definitions/json.RawMessage'
         type: object
+      performUntil:
+        description: stateless events, must be broadcast until this in UTC
+        type: string
     type: object
   domain.CommonConfigLinks:
     additionalProperties:
@@ -261,9 +268,8 @@ definitions:
         description: RFC draft-wright-json-schema-00
         type: string
       additionalItems:
-        $ref: '#/definitions/jsonschema.Type'
         description: section 5.9
-        type: object
+        type: integer
       additionalProperties:
         $ref: '#/definitions/json.RawMessage'
         description: section 5.18
@@ -271,12 +277,12 @@ definitions:
       allOf:
         description: section 5.22
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       anyOf:
         description: section 5.23
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       binaryEncoding:
         description: section 4.3
@@ -310,9 +316,8 @@ definitions:
         description: section 7
         type: string
       items:
-        $ref: '#/definitions/jsonschema.Type'
         description: section 5.9
-        type: object
+        type: integer
       maxItems:
         description: section 5.10
         type: integer
@@ -326,9 +331,8 @@ definitions:
         description: section 5.2
         type: integer
       media:
-        $ref: '#/definitions/jsonschema.Type'
         description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: object
+        type: integer
       minItems:
         description: section 5.11
         type: integer
@@ -345,13 +349,12 @@ definitions:
         description: RFC draft-wright-json-schema-validation-00, section 5
         type: integer
       not:
-        $ref: '#/definitions/jsonschema.Type'
         description: section 5.25
-        type: object
+        type: integer
       oneOf:
         description: section 5.24
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       pattern:
         description: section 5.8
@@ -390,9 +393,8 @@ definitions:
         description: RFC draft-wright-json-schema-00
         type: string
       additionalItems:
-        $ref: '#/definitions/jsonschema.Type'
         description: section 5.9
-        type: object
+        type: integer
       additionalProperties:
         $ref: '#/definitions/json.RawMessage'
         description: section 5.18
@@ -400,12 +402,12 @@ definitions:
       allOf:
         description: section 5.22
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       anyOf:
         description: section 5.23
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       binaryEncoding:
         description: section 4.3
@@ -440,9 +442,8 @@ definitions:
         description: section 7
         type: string
       items:
-        $ref: '#/definitions/jsonschema.Type'
         description: section 5.9
-        type: object
+        type: integer
       maxItems:
         description: section 5.10
         type: integer
@@ -456,9 +457,8 @@ definitions:
         description: section 5.2
         type: integer
       media:
-        $ref: '#/definitions/jsonschema.Type'
         description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: object
+        type: integer
       minItems:
         description: section 5.11
         type: integer
@@ -475,13 +475,12 @@ definitions:
         description: RFC draft-wright-json-schema-validation-00, section 5
         type: integer
       not:
-        $ref: '#/definitions/jsonschema.Type'
         description: section 5.25
-        type: object
+        type: integer
       oneOf:
         description: section 5.24
         items:
-          $ref: '#/definitions/jsonschema.Type'
+          type: integer
         type: array
       pattern:
         description: section 5.8
@@ -628,8 +627,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает флаг удаления и набор связей с модулями и конфигурациями,
-        в случае наличия связей deleted всегда false
+      description: Возвращает флаг удаления и набор связей с модулями и конфигурациями, в случае наличия связей deleted всегда false
       parameters:
       - description: id общей конфигурации
         in: body
@@ -655,8 +653,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает массив конфигураций по запрошенным идентификаторам (все,
-        если массив пустой)
+      description: Возвращает массив конфигураций по запрошенным идентификаторам (все, если массив пустой)
       produces:
       - application/json
       responses:
@@ -673,8 +670,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает ассоциативный массив, ключами которого являются название
-        модулей, а значения - название конфигурации модуля
+      description: Возвращает ассоциативный массив, ключами которого являются название модулей, а значения - название конфигурации модуля
       parameters:
       - description: id общей конфигурации
         in: body
@@ -790,8 +786,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Активирует указанную конфигурацию и деактивирует остальные, возвращает
-        активированную конфигурацию
+      description: Активирует указанную конфигурацию и деактивирует остальные, возвращает активированную конфигурацию
       parameters:
       - description: id конфигурации для изменения
         in: body
@@ -901,8 +896,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает полное состояние всех модулей в кластере (конфигурация,
-        схема конфигурации, подключенные экземпляры)
+      description: Возвращает полное состояние всех модулей в кластере (конфигурация, схема конфигурации, подключенные экземпляры)
       produces:
       - application/json
       responses:

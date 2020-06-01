@@ -111,7 +111,7 @@ func (c *commonConfig) CompileConfigs(req domain.CompileConfigsRequest) domain.C
 func (c *commonConfig) GetLinks(req domain.ConfigIdRequest) domain.CommonConfigLinks {
 	var result domain.CommonConfigLinks
 	c.rstore.VisitReadonlyState(func(state state.ReadonlyState) {
-		result = service.CommonConfigService.GetCommonConfigLinks(req.Id, state)
+		result = service.CommonConfig.GetCommonConfigLinks(req.Id, state)
 	})
 	return result
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"github.com/pkg/errors"
 	"sync"
 	"time"
 
@@ -18,12 +19,14 @@ import (
 )
 
 const (
+	AllModules = "*"
+
 	messagesBackoffInterval   = 100 * time.Millisecond
 	messagesBackoffMaxRetries = 3
 )
 
 var (
-	DiscoveryService = NewDiscoveryService()
+	Discovery = newDiscoveryService()
 )
 
 type discoveryService struct {
@@ -34,8 +37,8 @@ type discoveryService struct {
 func (ds *discoveryService) HandleDisconnect(connID string) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
-	if events, ok := ds.subs[connID]; ok {
-		holder.EtpServer.Rooms().LeaveByConnId(connID, events...)
+	if rooms, ok := ds.subs[connID]; ok {
+		holder.EtpServer.Rooms().LeaveByConnId(connID, rooms...)
 		delete(ds.subs, connID)
 	}
 }
@@ -47,15 +50,15 @@ func (ds *discoveryService) Subscribe(conn etp.Conn, modules []string, mesh stat
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 	eventsAddresses := make([][]structure.AddressConfiguration, 0, len(modules))
-	events := make([]string, 0, len(modules))
+	rooms := make([]string, 0, len(modules))
 	for _, module := range modules {
-		event := utils.ModuleConnected(module)
+		room := Room.AddressListener(module)
 		addressList := mesh.GetModuleAddresses(module)
 		eventsAddresses = append(eventsAddresses, addressList)
-		events = append(events, event)
+		rooms = append(rooms, room)
 	}
-	ds.subs[conn.ID()] = events
-	holder.EtpServer.Rooms().Join(conn, events...)
+	ds.subs[conn.ID()] = rooms
+	holder.EtpServer.Rooms().Join(conn, rooms...)
 
 	go func(events []string, eventsAddresses [][]structure.AddressConfiguration, conn etp.Conn) {
 		for i := range events {
@@ -66,12 +69,13 @@ func (ds *discoveryService) Subscribe(conn etp.Conn, modules []string, mesh stat
 				log.Errorf(codes.DiscoveryServiceSendModulesError, "send module connected %v", err)
 			}
 		}
-	}(events, eventsAddresses, conn)
+	}(rooms, eventsAddresses, conn)
 }
 
 func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, mesh state.ReadonlyMesh) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
+	room := Room.AddressListener(moduleName)
 	event := utils.ModuleConnected(moduleName)
 	addressList := mesh.GetModuleAddresses(moduleName)
 	go func(room, event string, addressList []structure.AddressConfiguration) {
@@ -79,17 +83,32 @@ func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, mesh sta
 		if err != nil {
 			log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected %v", err)
 		}
-	}(event, event, addressList)
+	}(room, event, addressList)
 }
 
 func (ds *discoveryService) BroadcastEvent(event cluster.BroadcastEvent) {
 	eventName := event.Event
 	payload := make([]byte, len(event.Payload))
-	copy(payload, event.Payload)
+	copy(payload, event.Payload) //TODO а тут точно нужно копирование ?
 
-	go func() {
-		_ = holder.EtpServer.BroadcastToAll(eventName, payload)
-	}()
+	if len(event.ModuleNames) == 1 && event.ModuleNames[0] == AllModules {
+		go func() {
+			if err := holder.EtpServer.BroadcastToAll(eventName, payload); err != nil {
+				err = errors.WithMessagef(err, "broadcast '%s' to all modules", eventName)
+				log.Error(codes.DiscoveryServiceSendModulesError, err)
+			}
+		}()
+	} else {
+		for _, moduleName := range event.ModuleNames {
+			go func(moduleName string) {
+				room := Room.Module(moduleName)
+				if err := holder.EtpServer.BroadcastToRoom(room, eventName, payload); err != nil {
+					err = errors.WithMessagef(err, "broadcast '%s' to '%s'", eventName, moduleName)
+					log.Error(codes.DiscoveryServiceSendModulesError, err)
+				}
+			}(moduleName)
+		}
+	}
 }
 
 func (ds *discoveryService) broadcastAddrList(room string, event string, addressList []structure.AddressConfiguration) error {
@@ -119,7 +138,7 @@ func (ds *discoveryService) sendAddrList(conn etp.Conn, event string, addressLis
 	return nil
 }
 
-func NewDiscoveryService() *discoveryService {
+func newDiscoveryService() *discoveryService {
 	return &discoveryService{
 		subs: make(map[string][]string),
 	}

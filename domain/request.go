@@ -1,6 +1,9 @@
 package domain
 
-import "isp-config-service/entity"
+import (
+	json2 "encoding/json"
+	"isp-config-service/entity"
+)
 
 type ConfigIdRequest struct {
 	Id string `json:"id" valid:"required~Required"`
@@ -17,6 +20,12 @@ type GetByModuleIdRequest struct {
 
 type GetByModuleNameRequest struct {
 	ModuleName string `valid:"required~Required"`
+}
+
+type BroadcastEventRequest struct {
+	ModuleNames []string `valid:"required~Required"`
+	Event       string   `valid:"required~Required"`
+	Payload     json2.RawMessage
 }
 
 type CreateUpdateConfigRequest struct {

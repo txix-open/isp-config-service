@@ -23,8 +23,6 @@ var (
 	ConfigService = configService{}
 )
 
-const ConfigWatchersRoomSuffix = "_config"
-
 type configService struct{}
 
 type validationSchemaError struct {
@@ -164,7 +162,7 @@ func (cs configService) BroadcastNewConfig(state state.ReadonlyState, configs ..
 		moduleID := configs[i].ModuleId
 		module := state.Modules().GetById(moduleID)
 		moduleName := module.Name
-		room := moduleName + ConfigWatchersRoomSuffix
+		room := Room.Module(moduleName)
 
 		compiledConfig, err := cs.GetCompiledConfig(moduleName, state)
 		if err != nil {

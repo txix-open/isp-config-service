@@ -8,9 +8,14 @@ import (
 	"isp-config-service/service"
 	"isp-config-service/store"
 	"isp-config-service/store/state"
+	"time"
 
 	"github.com/integration-system/isp-lib/v2/utils"
 	"google.golang.org/grpc/codes"
+)
+
+const (
+	defaultEventLifetime = 5 * time.Second
 )
 
 var Module *module
@@ -30,7 +35,7 @@ type module struct {
 func (c *module) GetModulesAggregatedInfo() ([]domain.ModuleInfo, error) {
 	var response []domain.ModuleInfo
 	c.rstore.VisitReadonlyState(func(state state.ReadonlyState) {
-		response = service.ModuleRegistryService.GetAggregatedModuleInfo(state)
+		response = service.ModuleRegistry.GetAggregatedModuleInfo(state)
 	})
 	return response, nil
 }
@@ -89,8 +94,14 @@ func (c *module) GetModuleByName(req domain.GetByModuleNameRequest) (*entity.Mod
 // @Success 200 "OK"
 // @Failure 500 {object} structure.GrpcError
 // @Router /module/broadcast_event [POST]
-func (c *module) BroadcastEvent(req cluster.BroadcastEvent) error {
-	command := cluster.PrepareBroadcastEventCommand(req)
+func (c *module) BroadcastEvent(req domain.BroadcastEventRequest) error {
+	cmd := cluster.BroadcastEvent{
+		Event:        req.Event,
+		ModuleNames:  req.ModuleNames,
+		Payload:      req.Payload,
+		PerformUntil: time.Now().UTC().Add(defaultEventLifetime),
+	}
+	command := cluster.PrepareBroadcastEventCommand(cmd)
 	err := PerformSyncApply(command, nil)
 	if err != nil {
 		return err

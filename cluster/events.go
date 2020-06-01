@@ -47,8 +47,10 @@ type UpsertCommonConfig struct {
 }
 
 type BroadcastEvent struct {
-	Event   string
-	Payload json2.RawMessage
+	Event        string
+	ModuleNames  []string
+	PerformUntil time.Time //stateless events, must be broadcast until this in UTC
+	Payload      json2.RawMessage
 }
 
 type ResponseWithError struct {
