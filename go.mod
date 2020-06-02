@@ -5,14 +5,14 @@ go 1.13
 require (
 	github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f
 	github.com/cenkalti/backoff/v4 v4.0.0
-	github.com/go-pg/pg/v9 v9.1.4
+	github.com/go-pg/pg/v9 v9.1.5
 	github.com/hashicorp/raft v1.1.2
 	github.com/hashicorp/raft-boltdb v0.0.0-20191021154308-4207f1bf0617
-	github.com/integration-system/bellows v0.0.0-20190821124023-244325e8836c
+	github.com/integration-system/bellows v1.0.0
 	github.com/integration-system/isp-etp-go/v2 v2.1.1
 	github.com/integration-system/isp-lib-test v1.5.0
-	github.com/integration-system/isp-lib/v2 v2.3.1
-	github.com/integration-system/isp-log v1.1.2
+	github.com/integration-system/isp-lib/v2 v2.4.1-0.20200602135750-e3a7b8267cb2
+	github.com/integration-system/isp-log v1.1.3
 	github.com/integration-system/net-mux v1.0.0
 	github.com/json-iterator/go v1.1.9
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
@@ -21,5 +21,5 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/thecodeteam/goodbye v0.0.0-20170927022442-a83968bda2d3
 	github.com/xeipuuv/gojsonschema v1.2.0
-	google.golang.org/grpc v1.28.0
+	google.golang.org/grpc v1.28.1
 )

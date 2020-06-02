@@ -25,11 +25,18 @@ type ModuleInfo struct {
 }
 
 type Connection struct {
-	LibVersion    string
-	Version       string
-	Address       structure.AddressConfiguration
-	Endpoints     []structure.EndpointDescriptor `json:",omitempty"`
-	EstablishedAt time.Time
+	LibVersion      string
+	Version         string
+	Address         structure.AddressConfiguration
+	Endpoints       []structure.EndpointDescriptor `json:",omitempty"`
+	RequiredModules []ModuleDependency             `json:",omitempty"`
+	EstablishedAt   time.Time
+}
+
+type ModuleDependency struct {
+	Id       string
+	Name     string
+	Required bool
 }
 
 type CommonConfigLinks map[string][]string
