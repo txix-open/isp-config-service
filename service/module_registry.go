@@ -104,6 +104,7 @@ func (moduleRegistryService) HandleDeleteModulesCommand(deleteModules cluster.De
 	return len(deletedModules)
 }
 
+//nolint:funlen
 func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) []domain.ModuleInfo {
 	modules := state.Modules().GetAll()
 	modulesLen := len(modules)

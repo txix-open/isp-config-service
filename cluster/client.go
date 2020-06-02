@@ -71,21 +71,23 @@ func (client *Client) SyncApply(command []byte) (*ApplyLogResponse, error) {
 		}
 		logResponse := apply.(ApplyLogResponse)
 		return &logResponse, err
-	} else {
-		if client.leaderClient == nil {
-			return nil, ErrLeaderClientNotInitialized
-		}
-		response, err := client.leaderClient.Ack(command, defaultApplyTimeout)
-		if err != nil {
-			return nil, err
-		}
-		var logResponse ApplyLogResponse
-		err = json.Unmarshal(response, &logResponse)
-		if err != nil {
-			return nil, err
-		}
-		return &logResponse, nil
 	}
+
+	if client.leaderClient == nil {
+		return nil, ErrLeaderClientNotInitialized
+	}
+	response, err := client.leaderClient.Ack(command, defaultApplyTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	var logResponse ApplyLogResponse
+	err = json.Unmarshal(response, &logResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &logResponse, nil
 }
 
 func (client *Client) SyncApplyOnLeader(command []byte) (*ApplyLogResponse, error) {
