@@ -1,4 +1,5 @@
 ### upcoming
+* add config version
 * add method `/module/broadcast_event` to broadcast arbitrary event to all connected modules
 
 ### v2.2.1

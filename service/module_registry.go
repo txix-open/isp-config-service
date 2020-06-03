@@ -131,9 +131,9 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 			Config: configs[i],
 			Valid:  false,
 		})
-
 		resMap[configs[i].ModuleId] = info
 	}
+
 	schemas := state.Schemas().GetByModuleIds(idList)
 	for _, s := range schemas {
 		info := resMap[s.ModuleId]
@@ -150,6 +150,9 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 
 	for key := range resMap {
 		info := resMap[key]
+		sort.Slice(info.Configs, func(i, j int) bool {
+			return info.Configs[i].Version < info.Configs[j].Version
+		})
 		backends := state.Mesh().GetBackends(info.Name)
 		conns := make([]domain.Connection, 0, len(backends))
 
