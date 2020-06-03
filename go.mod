@@ -11,7 +11,7 @@ require (
 	github.com/integration-system/bellows v1.0.1
 	github.com/integration-system/isp-etp-go/v2 v2.1.1
 	github.com/integration-system/isp-lib-test v1.5.4
-	github.com/integration-system/isp-lib/v2 v2.4.0
+	github.com/integration-system/isp-lib/v2 v2.5.0
 	github.com/integration-system/isp-log v1.1.3
 	github.com/integration-system/net-mux v1.0.0
 	github.com/json-iterator/go v1.1.9
@@ -21,5 +21,5 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/thecodeteam/goodbye v0.0.0-20170927022442-a83968bda2d3
 	github.com/xeipuuv/gojsonschema v1.2.0
-	google.golang.org/grpc v1.28.0
+	google.golang.org/grpc v1.29.1
 )

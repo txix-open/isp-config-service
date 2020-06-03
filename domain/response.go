@@ -19,18 +19,18 @@ type ModuleInfo struct {
 	CreatedAt          time.Time
 	LastConnectedAt    time.Time
 	LastDisconnectedAt time.Time
-	Configs            []ConfigModuleInfo `json:",omitempty"`
-	ConfigSchema       *schema.Schema     `json:",omitempty"`
-	Status             []Connection       `json:",omitempty"`
+	Configs            []ConfigModuleInfo
+	ConfigSchema       *schema.Schema
+	Status             []Connection
+	RequiredModules    []ModuleDependency
 }
 
 type Connection struct {
-	LibVersion      string
-	Version         string
-	Address         structure.AddressConfiguration
-	Endpoints       []structure.EndpointDescriptor `json:",omitempty"`
-	RequiredModules []ModuleDependency             `json:",omitempty"`
-	EstablishedAt   time.Time
+	LibVersion    string
+	Version       string
+	Address       structure.AddressConfiguration
+	Endpoints     []structure.EndpointDescriptor
+	EstablishedAt time.Time
 }
 
 type ModuleDependency struct {

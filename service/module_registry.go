@@ -154,28 +154,27 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 
 	for key := range resMap {
 		info := resMap[key]
-		sort.Slice(info.Configs, func(i, j int) bool {
-			return info.Configs[i].Version < info.Configs[j].Version
-		})
 		backends := state.Mesh().GetBackends(info.Name)
 		conns := make([]domain.Connection, 0, len(backends))
 
 		for _, back := range backends {
-			requiredModules := make([]domain.ModuleDependency, 0, len(back.RequiredModules))
-			for _, dep := range back.RequiredModules {
-				requiredModules = append(requiredModules, domain.ModuleDependency{
-					Name:     dep.Name,
-					Id:       nameIdMap[dep.Name],
-					Required: dep.Required,
-				})
+			if info.RequiredModules == nil { //get module dependencies from first connected backend
+				requiredModules := make([]domain.ModuleDependency, 0, len(back.RequiredModules))
+				for _, dep := range back.RequiredModules {
+					requiredModules = append(requiredModules, domain.ModuleDependency{
+						Name:     dep.Name,
+						Id:       nameIdMap[dep.Name],
+						Required: dep.Required,
+					})
+				}
+				info.RequiredModules = requiredModules
 			}
 
 			con := domain.Connection{
-				Version:         back.Version,
-				LibVersion:      back.LibVersion,
-				Address:         back.Address,
-				Endpoints:       back.Endpoints,
-				RequiredModules: requiredModules,
+				Version:    back.Version,
+				LibVersion: back.LibVersion,
+				Address:    back.Address,
+				Endpoints:  back.Endpoints,
 			}
 			sort.Slice(con.Endpoints, func(i, j int) bool {
 				return con.Endpoints[i].Path < con.Endpoints[j].Path
@@ -183,6 +182,9 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 			con.EstablishedAt = info.LastConnectedAt
 			conns = append(conns, con)
 		}
+		sort.Slice(info.Configs, func(i, j int) bool {
+			return info.Configs[i].Version < info.Configs[j].Version
+		})
 		sort.Slice(conns, func(i, j int) bool {
 			return conns[i].EstablishedAt.Before(conns[j].EstablishedAt)
 		})
