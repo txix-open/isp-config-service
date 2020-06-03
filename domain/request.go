@@ -30,6 +30,5 @@ type BroadcastEventRequest struct {
 
 type CreateUpdateConfigRequest struct {
 	entity.Config
-	Unsafe    bool
-	CreateNew bool
+	Unsafe bool
 }

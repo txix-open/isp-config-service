@@ -72,7 +72,7 @@ func (s commonConfigService) HandleUpsertConfigCommand(
 	}
 	if !upsertConfig.Create {
 		configsToBroadcast := state.Configs().FilterByCommonConfigs([]string{config.Id})
-		ConfigService.BroadcastNewConfig(state, configsToBroadcast...)
+		ConfigService.BroadcastActiveConfigs(state, configsToBroadcast...)
 	}
 	return cluster.NewResponse(config)
 }

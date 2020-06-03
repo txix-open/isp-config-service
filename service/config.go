@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/integration-system/bellows"
 	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
@@ -62,7 +61,7 @@ func (configService) CompileConfig(
 	return mergeNestedMaps(configsToMerge...)
 }
 
-func (configService) HandleActivateConfigCommand(
+func (cs configService) HandleActivateConfigCommand(
 	activateConfig cluster.ActivateConfig, state state.WritableState) cluster.ResponseWithError {
 	configs := state.Configs().GetByIds([]string{activateConfig.ConfigId})
 	if len(configs) == 0 {
@@ -81,7 +80,9 @@ func (configService) HandleActivateConfigCommand(
 			}
 		}
 	}
-	return cluster.NewResponse(affected[len(affected)-1])
+	config = affected[len(affected)-1]
+	cs.BroadcastActiveConfigs(state, config)
+	return cluster.NewResponse(config)
 }
 
 func (configService) HandleDeleteConfigsCommand(deleteConfigs cluster.DeleteConfigs, state state.WritableState) int {
@@ -134,7 +135,9 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 		if len(configs) == 0 {
 			return cluster.NewResponseErrorf(codes2.NotFound, "config with id %s not found", config.Id)
 		}
-		config.CreatedAt = configs[0].CreatedAt
+		lastConfig := configs[0]
+		config.CreatedAt = lastConfig.CreatedAt
+		config.Active = lastConfig.Active
 		state.WritableConfigs().UpdateById(config)
 	}
 
@@ -147,7 +150,7 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 			}).Errorf(codes.DatabaseOperationError, "upsert config: %v", err)
 		}
 	}
-	cs.BroadcastNewConfig(state, config)
+	cs.BroadcastActiveConfigs(state, config)
 	return cluster.NewResponse(domain.CreateUpdateConfigResponse{
 		Config: &domain.ConfigModuleInfo{
 			Config: config,
@@ -157,9 +160,13 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 	})
 }
 
-func (cs configService) BroadcastNewConfig(state state.ReadonlyState, configs ...entity.Config) {
+func (cs configService) BroadcastActiveConfigs(state state.ReadonlyState, configs ...entity.Config) {
 	for i := range configs {
-		moduleID := configs[i].ModuleId
+		cfg := &configs[i]
+		if !cfg.Active {
+			continue
+		}
+		moduleID := cfg.ModuleId
 		module := state.Modules().GetById(moduleID)
 		moduleName := module.Name
 		room := Room.Module(moduleName)
