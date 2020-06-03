@@ -21,5 +21,6 @@ type GetByModuleNameRequest struct {
 
 type CreateUpdateConfigRequest struct {
 	entity.Config
-	Unsafe bool
+	Unsafe    bool
+	CreateNew bool
 }

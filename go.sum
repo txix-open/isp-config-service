@@ -157,6 +157,8 @@ github.com/integration-system/bellows v0.0.0-20190821124023-244325e8836c h1:yyIH
 github.com/integration-system/bellows v0.0.0-20190821124023-244325e8836c/go.mod h1:6cf4ZNvtzZ/KMiuc+d5Y7rSHjzlYBWEqbVyDfUDhqIE=
 github.com/integration-system/go-cmp v0.0.0-20190131081942-ac5582987a2f h1:52UOJguw5yqe1y2JjmyVxGcZf3kv2BQeUodR363MkiQ=
 github.com/integration-system/go-cmp v0.0.0-20190131081942-ac5582987a2f/go.mod h1:w+dmaWojuIwNujSYg6qt1wKHhSdorLOivCEl/XuLzbM=
+github.com/integration-system/golang-socketio v1.0.0 h1:qxDzplqpauwsMsPL+sSDPYv3WvowKy78PWF4nGXxVto=
+github.com/integration-system/golang-socketio v1.0.0/go.mod h1:vVHYV9CgissmlYH4HPo+biGG6mTwhfpOXICEjQBncIg=
 github.com/integration-system/gowsdl v1.0.0/go.mod h1:ZwTCE+Av5aQLnPj2/3PIop6mzCs1FY7jXrcWDvSjrBA=
 github.com/integration-system/isp-etp-go v2.0.2+incompatible h1:+aQiqH/aMy9pUsifIxfWU/DD8cwbMo24AAIV7Ab6aP4=
 github.com/integration-system/isp-etp-go v2.0.2+incompatible/go.mod h1:NdgczkoFCer9SZOx674EVXCcKRIhFe8LYnwNwoIMDhI=
@@ -173,6 +175,8 @@ github.com/integration-system/isp-lib/v2 v2.3.1/go.mod h1:eRSmS3+S8WXTUKu7YtSimF
 github.com/integration-system/isp-log v1.0.0/go.mod h1:omfVcb7djvmc0MYWpRq32D9jxRYhyBL518IcdBL9jKY=
 github.com/integration-system/isp-log v1.1.2 h1:bnWxPjDOC1Y/tEzFxa42aG+xaPRWizuJADAwXgp2i5U=
 github.com/integration-system/isp-log v1.1.2/go.mod h1:VVMr3cHW+RuFurPUSeVz71KUnOGQxogxO5atV9N8ISs=
+github.com/integration-system/isp-log v1.1.3 h1:+oLEF5fxaDUUQI4x44FGifEEFAR2ZvXusYGTD7m+87Y=
+github.com/integration-system/isp-log v1.1.3/go.mod h1:VVMr3cHW+RuFurPUSeVz71KUnOGQxogxO5atV9N8ISs=
 github.com/integration-system/jsonschema v1.0.0 h1:Lci4sHGhOX27qCgZo5rvJ37Bjcfm+qCwU0yvw6ImEX4=
 github.com/integration-system/jsonschema v1.0.0/go.mod h1:EoqDH7RmC8Epg5EgjboIxDo7Udv3WX2exGqtIVB4hI0=
 github.com/integration-system/net-mux v1.0.0 h1:UY5y9cDq4ngfYaVzwqcIZ2FDw2l0H4slVDXp1E2gopc=
@@ -196,6 +200,8 @@ github.com/klauspost/cpuid v1.2.1/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgo
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2 h1:DB17ag19krx9CFsz4o3enTrPXyIXCl+2iCXH/aMAp9s=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
+github.com/konsorten/go-windows-terminal-sequences v1.0.3 h1:CE8S1cTafDpPvMhIxNJKvHsGVBgn1xWYf1NbHQhywc8=
+github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
@@ -300,6 +306,8 @@ github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPx
 github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMBDgk/93Q=
 github.com/sirupsen/logrus v1.4.2 h1:SPIRibHv4MatM3XXNO2BJeFLZwZ2LvZgfQ5+UNI2im4=
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
+github.com/sirupsen/logrus v1.6.0 h1:UBcNElsrwanuuMsnGSlYmtmgbb23qDR5dG+6X6Oo89I=
+github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=
 github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4kGIyLM=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v1.1.2 h1:m8/z1t7/fwjysjQRYbP0RD+bUIF/8tJwPdEZsI83ACI=
@@ -442,6 +450,8 @@ golang.org/x/sys v0.0.0-20191010194322-b09406accb47/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 h1:sfkvUWPNGwSV+8/fNqctR5lS2AqCSqYwXdrjCxp/dXo=
 golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20200602100848-8d3cce7afc34 h1:u6CI7A++8r4SItZHYe2cWeAEndN4p1p+3Oum/Ft2EzM=
+golang.org/x/sys v0.0.0-20200602100848-8d3cce7afc34/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.2 h1:tW2bmiBqwgJj/UpqtC8EpXEZVYOwU0yG4iWbprSVAcs=
 golang.org/x/text v0.3.2/go.mod h1:bEr9sfX3Q8Zfm5fL9x+3itogRgK3+ptLWKqgva+5dAk=
