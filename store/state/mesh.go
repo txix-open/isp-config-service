@@ -11,7 +11,6 @@ type WriteableMesh interface {
 }
 
 type ReadonlyMesh interface {
-	CheckBackendChanged(backend structure.BackendDeclaration) (changed bool)
 	BackendExist(backend structure.BackendDeclaration) (exist bool)
 	GetModuleAddresses(moduleName string) []structure.AddressConfiguration
 	GetBackends(module string) []structure.BackendDeclaration
@@ -23,6 +22,10 @@ type NodesMap map[string]structure.BackendDeclaration
 type Mesh struct {
 	// { "ModuleName": { "address": BackendDeclaration, ...}, ... }
 	ModulesMap map[string]NodesMap
+}
+
+func NewMesh() *Mesh {
+	return &Mesh{ModulesMap: make(map[string]NodesMap)}
 }
 
 func (m Mesh) BackendExist(backend structure.BackendDeclaration) (exist bool) {
@@ -57,47 +60,35 @@ func (m Mesh) GetModuleAddresses(moduleName string) []structure.AddressConfigura
 
 func (m Mesh) GetRoutes() structure.RoutingConfig {
 	routes := structure.RoutingConfig{}
-	for _, node := range m.ModulesMap {
-		for _, backend := range node {
+	for _, nodes := range m.ModulesMap {
+		for _, backend := range nodes {
 			routes = append(routes, backend)
 		}
 	}
 	return routes
 }
 
-func (m Mesh) CheckBackendChanged(backend structure.BackendDeclaration) (changed bool) {
+func (m *Mesh) UpsertBackend(backend structure.BackendDeclaration) bool {
 	address := backend.Address.GetAddress()
-	if nodes, ok := m.ModulesMap[backend.ModuleName]; ok {
-		if oldBackend, ok := nodes[address]; ok {
-			if oldBackend.Version != backend.Version || !oldBackend.IsPathsEqual(backend.Endpoints) || oldBackend.LibVersion != backend.LibVersion {
-				changed = true
-			}
-		} else {
-			changed = true
-		}
-	} else {
-		changed = true
-	}
-	return
-}
 
-func (m *Mesh) UpsertBackend(backend structure.BackendDeclaration) (changed bool) {
-	address := backend.Address.GetAddress()
-	if nodes, ok := m.ModulesMap[backend.ModuleName]; ok {
-		if oldBackend, ok := nodes[address]; ok {
-			if oldBackend.Version != backend.Version || !oldBackend.IsPathsEqual(backend.Endpoints) || oldBackend.LibVersion != backend.LibVersion {
-				nodes[address] = backend
-				changed = true
-			}
-		} else {
-			nodes[address] = backend
-			changed = true
-		}
-	} else {
+	nodes, ok := m.ModulesMap[backend.ModuleName]
+	if !ok {
 		m.ModulesMap[backend.ModuleName] = NodesMap{address: backend}
-		changed = true
+		return true
 	}
-	return
+
+	old, ok := nodes[address]
+	if !ok {
+		nodes[address] = backend
+		return true
+	}
+
+	if old.Version != backend.Version || !old.IsPathsEqual(backend.Endpoints) || old.LibVersion != backend.LibVersion {
+		nodes[address] = backend
+		return true
+	}
+
+	return false
 }
 
 func (m *Mesh) DeleteBackend(backend structure.BackendDeclaration) (deleted bool) {
@@ -112,8 +103,4 @@ func (m *Mesh) DeleteBackend(backend structure.BackendDeclaration) (deleted bool
 		}
 	}
 	return
-}
-
-func NewMesh() *Mesh {
-	return &Mesh{ModulesMap: make(map[string]NodesMap)}
 }

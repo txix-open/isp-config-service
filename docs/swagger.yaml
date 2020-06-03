@@ -85,6 +85,10 @@ definitions:
         type: string
       libVersion:
         type: string
+      requiredModules:
+        items:
+          $ref: '#/definitions/domain.ModuleDependency'
+        type: array
       version:
         type: string
     type: object
@@ -145,6 +149,15 @@ definitions:
         type: string
     required:
     - moduleName
+    type: object
+  domain.ModuleDependency:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      required:
+        type: boolean
     type: object
   domain.ModuleInfo:
     properties:
@@ -532,6 +545,10 @@ definitions:
         type: string
       moduleName:
         type: string
+      requiredModules:
+        items:
+          $ref: '#/definitions/structure.ModuleDependency'
+        type: array
       version:
         type: string
     type: object
@@ -559,6 +576,13 @@ definitions:
         type: string
       errorMessage:
         type: string
+    type: object
+  structure.ModuleDependency:
+    properties:
+      name:
+        type: string
+      required:
+        type: boolean
     type: object
 host: localhost:9003
 info:

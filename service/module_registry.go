@@ -104,12 +104,15 @@ func (moduleRegistryService) HandleDeleteModulesCommand(deleteModules cluster.De
 	return len(deletedModules)
 }
 
+//nolint:funlen
 func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) []domain.ModuleInfo {
 	modules := state.Modules().GetAll()
 	modulesLen := len(modules)
 	result := make([]domain.ModuleInfo, 0, modulesLen)
 	resMap := make(map[string]domain.ModuleInfo, modulesLen)
+	nameIdMap := make(map[string]string)
 	idList := make([]string, modulesLen)
+
 	for i, module := range modules {
 		idList[i] = module.Id
 		active := state.Mesh().BackendExist(structure.BackendDeclaration{ModuleName: module.Name})
@@ -122,6 +125,7 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 			LastDisconnectedAt: module.LastDisconnectedAt,
 		}
 		resMap[module.Id] = info
+		nameIdMap[module.Name] = module.Id
 	}
 
 	configs := state.Configs().GetByModuleIds(idList)
@@ -157,11 +161,21 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 		conns := make([]domain.Connection, 0, len(backends))
 
 		for _, back := range backends {
+			requiredModules := make([]domain.ModuleDependency, 0, len(back.RequiredModules))
+			for _, dep := range back.RequiredModules {
+				requiredModules = append(requiredModules, domain.ModuleDependency{
+					Name:     dep.Name,
+					Id:       nameIdMap[dep.Name],
+					Required: dep.Required,
+				})
+			}
+
 			con := domain.Connection{
-				Version:    back.Version,
-				LibVersion: back.LibVersion,
-				Address:    back.Address,
-				Endpoints:  back.Endpoints,
+				Version:         back.Version,
+				LibVersion:      back.LibVersion,
+				Address:         back.Address,
+				Endpoints:       back.Endpoints,
+				RequiredModules: requiredModules,
 			}
 			sort.Slice(con.Endpoints, func(i, j int) bool {
 				return con.Endpoints[i].Path < con.Endpoints[j].Path

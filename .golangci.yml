@@ -13,6 +13,8 @@ linters:
     - godox # находит тудушки, не нужно
     - golint # подумать, может вернуть
     - stylecheck # подумать, может вернуть
+    - godot # `Top level comment should end in a period`
+    - goerr113 # слишком много false positive
 
 linters-settings:
   maligned:
@@ -37,3 +39,4 @@ linters-settings:
       - performance
     disabled-checks:
       - hugeParam # в данном проекте не нужен
+      - rangeValCopy # в данном проекте не нужен

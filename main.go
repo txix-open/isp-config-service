@@ -83,7 +83,7 @@ func main() {
 
 	connectionReadLimit := defaultWsConnectionReadLimit
 	if cfg.WS.WsConnectionReadLimitKB > 0 {
-		//nolint gomnd
+		//nolint:gomnd
 		connectionReadLimit = cfg.WS.WsConnectionReadLimitKB << 10
 	}
 	cluster.WsConnectionReadLimit = connectionReadLimit
