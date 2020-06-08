@@ -18,9 +18,8 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/thecodeteam/goodbye v0.0.0-20170927022442-a83968bda2d3
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/tools v0.0.0-20200606014950-c42cb6316fb6 // indirect
 	google.golang.org/grpc v1.29.1
 )

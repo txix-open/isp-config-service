@@ -5,6 +5,7 @@ import (
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
 	"isp-config-service/domain"
+	"isp-config-service/entity"
 	"isp-config-service/holder"
 	"isp-config-service/model"
 	"isp-config-service/store/state"
@@ -39,4 +40,37 @@ func (versionConfigService) HandleGetAllVersionConfigCommand(cfg cluster.Identit
 	state state.WritableState) cluster.ResponseWithError {
 	resp := state.VersionConfig().GetByConfigId(cfg.Id)
 	return cluster.NewResponse(resp)
+}
+
+func (versionConfigService) updateState(version int32, id string, data entity.ConfigData,
+	writableState state.WritableState) (entity.VersionConfig, string) {
+	cfg := entity.VersionConfig{
+		Id:            state.GenerateId(),
+		ConfigVersion: version,
+		ConfigId:      id,
+		Data:          data,
+	}
+	removedVersionId := writableState.WriteableVersionConfigStore().Update(cfg)
+	return cfg, removedVersionId
+}
+
+func (versionConfigService) updateDB(cfg entity.VersionConfig, removedId string, state state.WritableState) {
+	if !state.VersionConfig().CheckCount() {
+		return
+	}
+	_, err := model.VersionStoreRep.Upsert(cfg)
+	if err != nil {
+		log.WithMetadata(map[string]interface{}{
+			"version_config": cfg,
+		}).Errorf(codes.DatabaseOperationError, "upsert version config: %v", err)
+	}
+	if removedId != "" {
+		_, err := model.VersionStoreRep.Delete(removedId)
+		if err != nil {
+			log.WithMetadata(map[string]interface{}{
+				"version_config_id": removedId,
+			}).Errorf(codes.DatabaseOperationError, "delete version config: %v", err)
+		}
+	}
+
 }

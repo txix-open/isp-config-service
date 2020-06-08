@@ -26,22 +26,19 @@ func (s *VersionConfigStore) Update(req entity.VersionConfig) string {
 	if !(s.count > 0) {
 		return req.Id
 	}
-	var (
-		newStore  []entity.VersionConfig
-		removedId string
-	)
+	var removedId string
 	store, found := s.VersionByConfigId[req.ConfigId]
 	if found {
 		if len(store) >= s.count {
 			removedId = store[0].Id
-			newStore = append(store[1:], req)
+			store = append(store[1:], req)
 		} else {
-			newStore = append(store, req)
+			store = append(store, req)
 		}
 	} else {
-		newStore = []entity.VersionConfig{req}
+		store = []entity.VersionConfig{req}
 	}
-	s.VersionByConfigId[req.ConfigId] = newStore
+	s.VersionByConfigId[req.ConfigId] = store
 	return removedId
 }
 
