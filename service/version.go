@@ -72,5 +72,4 @@ func (versionConfigService) updateDB(cfg entity.VersionConfig, removedId string,
 			}).Errorf(codes.DatabaseOperationError, "delete version config: %v", err)
 		}
 	}
-
 }
