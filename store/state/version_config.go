@@ -6,6 +6,8 @@ import (
 	"isp-config-service/entity"
 )
 
+const defaultVersionCount = 5
+
 type WriteableVersionConfigStore interface {
 	ReadonlyVersionConfigStore
 	Update(config entity.VersionConfig) (removedId string)
@@ -14,22 +16,21 @@ type WriteableVersionConfigStore interface {
 
 type ReadonlyVersionConfigStore interface {
 	GetByConfigId(id string) []entity.VersionConfig
-	CheckCount() bool
 }
 
 type VersionConfigStore struct {
 	VersionByConfigId map[string][]entity.VersionConfig
-	count             int
 }
 
 func (s *VersionConfigStore) Update(req entity.VersionConfig) string {
-	if !(s.count > 0) {
-		return req.Id
+	count := config.Get().(*conf.Configuration).VersionConfigCount
+	if count <= 0 {
+		count = defaultVersionCount
 	}
 	var removedId string
 	store, found := s.VersionByConfigId[req.ConfigId]
 	if found {
-		if len(store) >= s.count {
+		if len(store) >= count {
 			removedId = store[0].Id
 			store = append(store[1:], req)
 		} else {
@@ -66,14 +67,8 @@ func (s VersionConfigStore) GetByConfigId(id string) []entity.VersionConfig {
 	return []entity.VersionConfig{}
 }
 
-func (s *VersionConfigStore) CheckCount() bool {
-	return s.count > 0
-}
-
 func NewVersionConfigStore() *VersionConfigStore {
-	count := config.Get().(*conf.Configuration).VersionConfigCount
 	return &VersionConfigStore{
-		count:             count,
 		VersionByConfigId: make(map[string][]entity.VersionConfig),
 	}
 }

@@ -159,7 +159,7 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 			}).Errorf(codes.DatabaseOperationError, "upsert config: %v", err)
 		}
 		if !upsertConfig.Create {
-			VersionConfig.updateDB(versionConfig, removedVersionId, state)
+			VersionConfig.updateDB(versionConfig, removedVersionId)
 		}
 	}
 

@@ -54,10 +54,7 @@ func (versionConfigService) updateState(version int32, id string, data entity.Co
 	return cfg, removedVersionId
 }
 
-func (versionConfigService) updateDB(cfg entity.VersionConfig, removedId string, state state.WritableState) {
-	if !state.VersionConfig().CheckCount() {
-		return
-	}
+func (versionConfigService) updateDB(cfg entity.VersionConfig, removedId string) {
 	_, err := model.VersionStoreRep.Upsert(cfg)
 	if err != nil {
 		log.WithMetadata(map[string]interface{}{

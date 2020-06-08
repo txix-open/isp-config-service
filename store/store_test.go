@@ -2,11 +2,12 @@ package store
 
 import (
 	"bytes"
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/assert"
 	"isp-config-service/entity"
 	state2 "isp-config-service/store/state"
-	"testing"
-	"time"
 )
 
 type mockSnapshotSink struct {
