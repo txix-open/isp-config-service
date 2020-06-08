@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/integration-system/bellows"
 	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
@@ -100,18 +101,23 @@ func (configService) HandleDeleteConfigsCommand(deleteConfigs cluster.DeleteConf
 	return deleted
 }
 
-func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertConfig, state state.WritableState) cluster.ResponseWithError {
+func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertConfig,
+	writableState state.WritableState) cluster.ResponseWithError {
 	config := upsertConfig.Config
-	module := state.Modules().GetById(config.ModuleId)
+	module := writableState.Modules().GetById(config.ModuleId)
 	if module == nil {
 		return cluster.NewResponseErrorf(codes2.NotFound, "moduleId %s not found", config.ModuleId)
 	}
 
-	schemaStorage := state.Schemas().GetByModuleIds([]string{config.ModuleId})
+	var (
+		removedVersionId string
+		versionConfig    entity.VersionConfig
+	)
+	schemaStorage := writableState.Schemas().GetByModuleIds([]string{config.ModuleId})
 	if len(schemaStorage) == 0 {
 		return cluster.NewResponseErrorf(codes2.NotFound, "schema for moduleId %s not found", config.ModuleId)
 	}
-	dataForValidate := cs.CompileConfig(config.Data, state, config.CommonConfigs...)
+	dataForValidate := cs.CompileConfig(config.Data, writableState, config.CommonConfigs...)
 	validSchema, err := cs.validateSchema(schemaStorage[0], dataForValidate)
 
 	if !upsertConfig.Unsafe && err != nil {
@@ -128,17 +134,27 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 	}
 
 	if upsertConfig.Create {
-		config = state.WritableConfigs().Create(config)
+		config = writableState.WritableConfigs().Create(config)
 	} else {
 		// Update
-		configs := state.Configs().GetByIds([]string{config.Id})
+		configs := writableState.Configs().GetByIds([]string{config.Id})
 		if len(configs) == 0 {
 			return cluster.NewResponseErrorf(codes2.NotFound, "config with id %s not found", config.Id)
 		}
 		lastConfig := configs[0]
+
 		config.CreatedAt = lastConfig.CreatedAt
 		config.Active = lastConfig.Active
-		state.WritableConfigs().UpdateById(config)
+		config.Version = lastConfig.Version + 1
+
+		writableState.WritableConfigs().UpdateById(config)
+		versionConfig = entity.VersionConfig{
+			Id:            state.GenerateId(),
+			ConfigId:      lastConfig.Id,
+			ConfigVersion: lastConfig.Version,
+			Data:          lastConfig.Data,
+		}
+		removedVersionId = writableState.WriteableVersionConfigStore().Update(versionConfig)
 	}
 
 	if holder.ClusterClient.IsLeader() {
@@ -149,8 +165,25 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 				"config": config,
 			}).Errorf(codes.DatabaseOperationError, "upsert config: %v", err)
 		}
+		if !upsertConfig.Create && writableState.VersionConfig().CheckCount() {
+			_, err := model.VersionStoreRep.Upsert(versionConfig)
+			if err != nil {
+				log.WithMetadata(map[string]interface{}{
+					"config": config,
+				}).Errorf(codes.DatabaseOperationError, "upsert common config: %v", err)
+			}
+			if removedVersionId != "" {
+				_, err := model.VersionStoreRep.Delete(removedVersionId)
+				if err != nil {
+					log.WithMetadata(map[string]interface{}{
+						"config": config,
+					}).Errorf(codes.DatabaseOperationError, "upsert common config: %v", err)
+				}
+			}
+		}
 	}
-	cs.BroadcastActiveConfigs(state, config)
+
+	cs.BroadcastActiveConfigs(writableState, config)
 	return cluster.NewResponse(domain.CreateUpdateConfigResponse{
 		Config: &domain.ConfigModuleInfo{
 			Config: config,

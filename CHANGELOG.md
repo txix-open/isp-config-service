@@ -1,3 +1,8 @@
+### v2.4.0
+* add saving old configs
+* add method `/config/delete_version`
+* add method `/config/get_all_version`
+
 ### v2.3.0
 * add method `/module/broadcast_event` to broadcast arbitrary event to modules
 * add module dependencies to response `/module/get_modules_info`

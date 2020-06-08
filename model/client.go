@@ -15,8 +15,9 @@ var (
 			log.Fatal(stdcodes.InitializingDbError, err.Error())
 		}),
 	)
-	ConfigRep       ConfigRepository       = &configRepPg{rxClient: DbClient}
-	CommonConfigRep CommonConfigRepository = &commonConfigRepPg{rxClient: DbClient}
-	SchemaRep       SchemaRepository       = &schemaRepPg{rxClient: DbClient}
-	ModuleRep       ModulesRepository      = &modulesRepPg{rxClient: DbClient}
+	ConfigRep       ConfigRepository        = &configRepPg{rxClient: DbClient}
+	CommonConfigRep CommonConfigRepository  = &commonConfigRepPg{rxClient: DbClient}
+	SchemaRep       SchemaRepository        = &schemaRepPg{rxClient: DbClient}
+	ModuleRep       ModulesRepository       = &modulesRepPg{rxClient: DbClient}
+	VersionStoreRep VersionConfigRepository = &versionConfigRepPg{rxClient: DbClient}
 )

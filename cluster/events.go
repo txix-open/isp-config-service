@@ -41,6 +41,10 @@ type DeleteCommonConfig struct {
 	Id string
 }
 
+type Identity struct {
+	Id string
+}
+
 type UpsertCommonConfig struct {
 	Config entity.CommonConfig
 	Create bool

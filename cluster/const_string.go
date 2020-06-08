@@ -14,17 +14,19 @@ func _() {
 	_ = x[ModuleConnectedCommand-4]
 	_ = x[ModuleDisconnectedCommand-5]
 	_ = x[DeleteModulesCommand-6]
-	_ = x[ActivateConfigCommand-7]
-	_ = x[DeleteConfigsCommand-8]
-	_ = x[UpsertConfigCommand-9]
-	_ = x[DeleteCommonConfigsCommand-10]
-	_ = x[UpsertCommonConfigCommand-11]
-	_ = x[BroadcastEventCommand-12]
+	_ = x[DeleteVersionConfigCommand-7]
+	_ = x[GetAllVersionConfigCommand-8]
+	_ = x[ActivateConfigCommand-9]
+	_ = x[DeleteConfigsCommand-10]
+	_ = x[UpsertConfigCommand-11]
+	_ = x[DeleteCommonConfigsCommand-12]
+	_ = x[UpsertCommonConfigCommand-13]
+	_ = x[BroadcastEventCommand-14]
 }
 
-const _Command_name = "UpdateBackendDeclarationCommandDeleteBackendDeclarationCommandUpdateConfigSchemaCommandModuleConnectedCommandModuleDisconnectedCommandDeleteModulesCommandActivateConfigCommandDeleteConfigsCommandUpsertConfigCommandDeleteCommonConfigsCommandUpsertCommonConfigCommandBroadcastEventCommand"
+const _Command_name = "UpdateBackendDeclarationCommandDeleteBackendDeclarationCommandUpdateConfigSchemaCommandModuleConnectedCommandModuleDisconnectedCommandDeleteModulesCommandDeleteVersionConfigCommandGetAllVersionConfigCommandActivateConfigCommandDeleteConfigsCommandUpsertConfigCommandDeleteCommonConfigsCommandUpsertCommonConfigCommandBroadcastEventCommand"
 
-var _Command_index = [...]uint16{0, 31, 62, 87, 109, 134, 154, 175, 195, 214, 240, 265, 286}
+var _Command_index = [...]uint16{0, 31, 62, 87, 109, 134, 154, 180, 206, 227, 247, 266, 292, 317, 338}
 
 func (i Command) String() string {
 	i -= 1

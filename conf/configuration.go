@@ -6,12 +6,13 @@ import (
 )
 
 type Configuration struct {
-	Database         structure.DBConfiguration      `valid:"required~Required" schema:"База данных,настройка параметров подключения к базе данных"`
-	GrpcOuterAddress structure.AddressConfiguration `valid:"required~Required" json:"grpcOuterAddress"`
-	ModuleName       string                         `valid:"required~Required"`
-	WS               WebService                     `valid:"required~Required" schema:"Конфигурация веб сервиса"`
-	Metrics          structure.MetricConfiguration
-	Cluster          ClusterConfiguration `valid:"required~Required"`
+	Database           structure.DBConfiguration      `valid:"required~Required" schema:"База данных,настройка параметров подключения к базе данных"`
+	GrpcOuterAddress   structure.AddressConfiguration `valid:"required~Required" json:"grpcOuterAddress"`
+	ModuleName         string                         `valid:"required~Required"`
+	WS                 WebService                     `valid:"required~Required" schema:"Конфигурация веб сервиса"`
+	Metrics            structure.MetricConfiguration
+	Cluster            ClusterConfiguration `valid:"required~Required"`
+	VersionConfigCount int                  `schema:"Количество сохраняемых старых версий конфигурации"`
 }
 
 type ClusterConfiguration struct {

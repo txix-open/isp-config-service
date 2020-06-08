@@ -85,10 +85,6 @@ definitions:
         type: string
       libVersion:
         type: string
-      requiredModules:
-        items:
-          $ref: '#/definitions/domain.ModuleDependency'
-        type: array
       version:
         type: string
     type: object
@@ -180,6 +176,10 @@ definitions:
         type: string
       name:
         type: string
+      requiredModules:
+        items:
+          $ref: '#/definitions/domain.ModuleDependency'
+        type: array
       status:
         items:
           $ref: '#/definitions/domain.Connection'
@@ -265,6 +265,18 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  entity.VersionConfig:
+    properties:
+      configId:
+        type: string
+      configVersion:
+        type: integer
+      data:
+        $ref: '#/definitions/entity.ConfigData'
+        type: object
+      id:
+        type: string
     type: object
   json.RawMessage:
     $ref: '#/definitions/json.RawMessage'
@@ -651,7 +663,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает флаг удаления и набор связей с модулями и конфигурациями, в случае наличия связей deleted всегда false
+      description: Возвращает флаг удаления и набор связей с модулями и конфигурациями,
+        в случае наличия связей deleted всегда false
       parameters:
       - description: id общей конфигурации
         in: body
@@ -677,7 +690,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает массив конфигураций по запрошенным идентификаторам (все, если массив пустой)
+      description: Возвращает массив конфигураций по запрошенным идентификаторам (все,
+        если массив пустой)
       produces:
       - application/json
       responses:
@@ -694,7 +708,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает ассоциативный массив, ключами которого являются название модулей, а значения - название конфигурации модуля
+      description: Возвращает ассоциативный массив, ключами которого являются название
+        модулей, а значения - название конфигурации модуля
       parameters:
       - description: id общей конфигурации
         in: body
@@ -776,6 +791,36 @@ paths:
       summary: Метод удаления объектов конфигурации по идентификаторам
       tags:
       - Конфигурация
+  /config/delete_version:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает количество удаленных версий
+      parameters:
+      - description: id версии конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.DeleteResponse'
+        "400":
+          description: если не указан массив идентификаторов
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод удаления версии конфигурации
+      tags:
+      - Конфигурация
   /config/get_active_config_by_module_name:
     post:
       consumes:
@@ -806,11 +851,44 @@ paths:
       summary: Метод получения объекта конфигурации по названию модуля
       tags:
       - Конфигурация
+  /config/get_all_version:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает предыдущие версии конфигураций
+      parameters:
+      - description: id конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.VersionConfig'
+            type: array
+        "400":
+          description: если не указан массив идентификаторов
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получение старых версий конфигурации
+      tags:
+      - Конфигурация
   /config/mark_config_as_active:
     post:
       consumes:
       - application/json
-      description: Активирует указанную конфигурацию и деактивирует остальные, возвращает активированную конфигурацию
+      description: Активирует указанную конфигурацию и деактивирует остальные, возвращает
+        активированную конфигурацию
       parameters:
       - description: id конфигурации для изменения
         in: body
@@ -920,7 +998,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает полное состояние всех модулей в кластере (конфигурация, схема конфигурации, подключенные экземпляры)
+      description: Возвращает полное состояние всех модулей в кластере (конфигурация,
+        схема конфигурации, подключенные экземпляры)
       produces:
       - application/json
       responses:

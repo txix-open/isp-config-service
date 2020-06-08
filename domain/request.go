@@ -2,6 +2,7 @@ package domain
 
 import (
 	json2 "encoding/json"
+
 	"isp-config-service/entity"
 )
 

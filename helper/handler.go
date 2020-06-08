@@ -20,6 +20,8 @@ type Handlers struct {
 	CreateUpdateConfig          func(config domain.CreateUpdateConfigRequest) (*domain.ConfigModuleInfo, error) `method:"create_update_config" group:"config" inner:"true"`
 	MarkConfigAsActive          func(identity domain.ConfigIdRequest) (*entity.Config, error)                   `method:"mark_config_as_active" group:"config" inner:"true"`
 	DeleteConfig                func(identities []string) (*domain.DeleteResponse, error)                       `method:"delete_config" group:"config" inner:"true"`
+	DeleteVersion               func(identity domain.ConfigIdRequest) (*domain.DeleteResponse, error)           `method:"delete_version" group:"config" inner:"true"`
+	GetAllVersion               func(identity domain.ConfigIdRequest) ([]entity.VersionConfig, error)           `method:"get_all_version" group:"config" inner:"true"`
 
 	// ===== COMMON CONFIG =====
 	GetCommonConfigs         func(identities []string) []entity.CommonConfig                              `method:"get_configs" group:"common_config" inner:"true"`
@@ -46,6 +48,8 @@ func GetHandlers() *Handlers {
 		CreateUpdateConfig:          controller.Config.CreateUpdateConfig,
 		MarkConfigAsActive:          controller.Config.MarkConfigAsActive,
 		DeleteConfig:                controller.Config.DeleteConfigs,
+		DeleteVersion:               controller.Config.DeleteConfigVersion,
+		GetAllVersion:               controller.Config.GetAllVersion,
 
 		GetCommonConfigs:         controller.CommonConfig.GetConfigs,
 		CreateUpdateCommonConfig: controller.CommonConfig.CreateUpdateConfig,

@@ -33,6 +33,8 @@ const (
 	ModuleConnectedCommand
 	ModuleDisconnectedCommand
 	DeleteModulesCommand
+	DeleteVersionConfigCommand
+	GetAllVersionConfigCommand
 
 	ActivateConfigCommand
 	DeleteConfigsCommand
@@ -94,6 +96,14 @@ func PrepareUpsertCommonConfigCommand(config UpsertCommonConfig) []byte {
 
 func PrepareBroadcastEventCommand(event BroadcastEvent) []byte {
 	return prepareCommand(BroadcastEventCommand, event)
+}
+
+func PrepareDeleteConfigVersionCommand(id string) []byte {
+	return prepareCommand(DeleteVersionConfigCommand, Identity{Id: id})
+}
+
+func PrepareGetAllConfigVersionCommand(id string) []byte {
+	return prepareCommand(GetAllVersionConfigCommand, Identity{Id: id})
 }
 
 func prepareCommand(command Command, payload interface{}) []byte {

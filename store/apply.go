@@ -1,13 +1,14 @@
 package store
 
 import (
+	"time"
+
 	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/pkg/errors"
 	"isp-config-service/cluster"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/service"
-	"time"
 )
 
 func (s *Store) applyUpdateBackendDeclarationCommand(data []byte) (interface{}, error) {
@@ -133,4 +134,24 @@ func (s *Store) applyBroadcastEventCommand(data []byte) (interface{}, error) {
 		service.Discovery.BroadcastEvent(event)
 	}
 	return nil, nil
+}
+
+func (s *Store) applyDeleteVersionConfigCommand(data []byte) (interface{}, error) {
+	cfg := cluster.Identity{}
+	err := json.Unmarshal(data, &cfg)
+	if err != nil {
+		return nil, errors.WithMessage(err, "unmarshal cluster.Identity")
+	}
+	response := service.VersionConfig.HandleDeleteVersionConfigCommand(cfg, s.state)
+	return response, nil
+}
+
+func (s *Store) applyAllVersionConfigCommand(data []byte) (interface{}, error) {
+	cfg := cluster.Identity{}
+	err := json.Unmarshal(data, &cfg)
+	if err != nil {
+		return nil, errors.WithMessage(err, "unmarshal cluster.Identity")
+	}
+	response := service.VersionConfig.HandleGetAllVersionConfigCommand(cfg, s.state)
+	return response, nil
 }

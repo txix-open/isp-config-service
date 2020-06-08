@@ -128,6 +128,46 @@ func (c *config) DeleteConfigs(identities []string) (*domain.DeleteResponse, err
 	return &response, nil
 }
 
+// @Summary Метод удаления версии конфигурации
+// @Description Возвращает количество удаленных версий
+// @Tags Конфигурация
+// @Accept json
+// @Produce json
+// @Param body body domain.ConfigIdRequest true "id версии конфигурации"
+// @Success 200 {object} domain.DeleteResponse
+// @Failure 400 {object} structure.GrpcError "если не указан массив идентификаторов"
+// @Failure 500 {object} structure.GrpcError
+// @Router /config/delete_version [POST]
+func (c *config) DeleteConfigVersion(req domain.ConfigIdRequest) (*domain.DeleteResponse, error) {
+	var response domain.DeleteResponse
+	command := cluster.PrepareDeleteConfigVersionCommand(req.Id)
+	err := PerformSyncApplyWithError(command, &response)
+	if err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
+
+// @Summary Метод получение старых версий конфигурации
+// @Description Возвращает предыдущие версии конфигураций
+// @Tags Конфигурация
+// @Accept json
+// @Produce json
+// @Param body body domain.ConfigIdRequest true "id конфигурации"
+// @Success 200 {array} entity.VersionConfig
+// @Failure 400 {object} structure.GrpcError "если не указан массив идентификаторов"
+// @Failure 500 {object} structure.GrpcError
+// @Router /config/get_all_version [POST]
+func (c *config) GetAllVersion(req domain.ConfigIdRequest) ([]entity.VersionConfig, error) {
+	var response []entity.VersionConfig
+	command := cluster.PrepareGetAllConfigVersionCommand(req.Id)
+	err := PerformSyncApplyWithError(command, &response)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
 func NewConfig(rstore *store.Store) *config {
 	return &config{
 		rstore: rstore,

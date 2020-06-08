@@ -24,6 +24,11 @@ func NewStateFromRepository() (*state.State, error) {
 		return nil, errors.WithMessage(err, "load common configs")
 	}
 
-	st := state.NewStateFromSnapshot(configs, schemas, modules, commonConfigs)
+	versionStore, err := model.VersionStoreRep.Snapshot()
+	if err != nil {
+		return nil, errors.WithMessage(err, "load version store")
+	}
+
+	st := state.NewStateFromSnapshot(configs, schemas, modules, commonConfigs, versionStore)
 	return st, nil
 }

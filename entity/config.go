@@ -16,11 +16,11 @@ type Config struct {
 	CommonConfigs []string   `json:"commonConfigs" pg:",array"`
 	Description   string     `json:"description"`
 	ModuleId      string     `json:"moduleId" valid:"required~Required"`
-	Version       int32      `json:"version" sql:",null"`
-	Active        bool       `json:"active" sql:",null"`
-	CreatedAt     time.Time  `json:"createdAt" sql:",null"`
-	UpdatedAt     time.Time  `json:"updatedAt" sql:",null"`
-	Data          ConfigData `json:"data" sql:",notnull"`
+	Version       int32      `json:"version" pg:",null"`
+	Active        bool       `json:"active" pg:",null"`
+	CreatedAt     time.Time  `json:"createdAt" pg:",null"`
+	UpdatedAt     time.Time  `json:"updatedAt" pg:",null"`
+	Data          ConfigData `json:"data" pg:",notnull"`
 }
 
 type CommonConfig struct {
@@ -29,9 +29,9 @@ type CommonConfig struct {
 	Id          string     `json:"id"`
 	Name        string     `json:"name" valid:"required~Required"`
 	Description string     `json:"description"`
-	CreatedAt   time.Time  `json:"createdAt" sql:",null"`
-	UpdatedAt   time.Time  `json:"updatedAt" sql:",null"`
-	Data        ConfigData `json:"data" sql:",notnull"`
+	CreatedAt   time.Time  `json:"createdAt" pg:",null"`
+	UpdatedAt   time.Time  `json:"updatedAt" pg:",null"`
+	Data        ConfigData `json:"data" pg:",notnull"`
 }
 
 type ConfigSchema struct {

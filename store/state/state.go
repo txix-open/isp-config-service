@@ -10,6 +10,7 @@ type State struct {
 	SchemasStore       *SchemaStore
 	ModulesStore       *ModuleStore
 	CommonConfigsStore *CommonConfigStore
+	VersionConfigStore *VersionConfigStore
 }
 
 func (s State) Mesh() ReadonlyMesh {
@@ -32,6 +33,10 @@ func (s State) CommonConfigs() ReadonlyCommonConfigStore {
 	return s.CommonConfigsStore
 }
 
+func (s State) VersionConfig() ReadonlyVersionConfigStore {
+	return s.VersionConfigStore
+}
+
 func (s *State) WritableMesh() WriteableMesh {
 	return s.MeshStore
 }
@@ -52,6 +57,10 @@ func (s *State) WritableCommonConfigs() WriteableCommonConfigStore {
 	return s.CommonConfigsStore
 }
 
+func (s *State) WriteableVersionConfigStore() WriteableVersionConfigStore {
+	return s.VersionConfigStore
+}
+
 type WritableState interface {
 	ReadonlyState
 	WritableMesh() WriteableMesh
@@ -59,6 +68,7 @@ type WritableState interface {
 	WritableSchemas() WriteableSchemaStore
 	WritableModules() WriteableModuleStore
 	WritableCommonConfigs() WriteableCommonConfigStore
+	WriteableVersionConfigStore() WriteableVersionConfigStore
 }
 
 type ReadonlyState interface {
@@ -67,6 +77,7 @@ type ReadonlyState interface {
 	Schemas() ReadonlySchemaStore
 	Modules() ReadonlyModuleStore
 	CommonConfigs() ReadonlyCommonConfigStore
+	VersionConfig() ReadonlyVersionConfigStore
 }
 
 func NewState() *State {
@@ -76,16 +87,18 @@ func NewState() *State {
 		SchemasStore:       NewSchemaStore(),
 		ModulesStore:       NewModuleStore(),
 		CommonConfigsStore: NewCommonConfigStore(),
+		VersionConfigStore: NewVersionConfigStore(),
 	}
 }
 
 func NewStateFromSnapshot(configs []entity.Config, schemas []entity.ConfigSchema,
-	modules []entity.Module, commConfigs []entity.CommonConfig) *State {
+	modules []entity.Module, commConfigs []entity.CommonConfig, versionStore []entity.VersionConfig) *State {
 	return &State{
 		MeshStore:          NewMesh(),
 		ConfigsStore:       &ConfigStore{Configs: configs},
 		SchemasStore:       &SchemaStore{Schemas: schemas},
 		ModulesStore:       &ModuleStore{Modules: modules},
 		CommonConfigsStore: &CommonConfigStore{Configs: commConfigs},
+		VersionConfigStore: NewVersionConfigStoreFromSnapshot(versionStore),
 	}
 }

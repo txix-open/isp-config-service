@@ -21,5 +21,6 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/thecodeteam/goodbye v0.0.0-20170927022442-a83968bda2d3
 	github.com/xeipuuv/gojsonschema v1.2.0
+	golang.org/x/tools v0.0.0-20200606014950-c42cb6316fb6 // indirect
 	google.golang.org/grpc v1.29.1
 )

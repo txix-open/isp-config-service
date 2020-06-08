@@ -131,6 +131,8 @@ func NewStateStore(st *state.State) *Store {
 		cluster.DeleteCommonConfigsCommand:      store.applyDeleteCommonConfigsCommand,
 		cluster.UpsertCommonConfigCommand:       store.applyUpsertCommonConfigCommand,
 		cluster.BroadcastEventCommand:           store.applyBroadcastEventCommand,
+		cluster.DeleteVersionConfigCommand:      store.applyDeleteVersionConfigCommand,
+		cluster.GetAllVersionConfigCommand:      store.applyAllVersionConfigCommand,
 	}
 	return store
 }
