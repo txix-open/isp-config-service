@@ -12,12 +12,12 @@ import (
 )
 
 var (
-	VersionConfig = versionConfigService{}
+	ConfigHistory = configHistoryService{}
 )
 
-type versionConfigService struct{}
+type configHistoryService struct{}
 
-func (versionConfigService) HandleDeleteVersionConfigCommand(cfg cluster.Identity,
+func (configHistoryService) HandleDeleteVersionConfigCommand(cfg cluster.Identity,
 	state state.WritableState) cluster.ResponseWithError {
 	state.WriteableVersionConfigStore().Delete(cfg.Id)
 	var (
@@ -36,25 +36,27 @@ func (versionConfigService) HandleDeleteVersionConfigCommand(cfg cluster.Identit
 	return cluster.NewResponse(domain.DeleteResponse{Deleted: deleted})
 }
 
-func (versionConfigService) HandleGetAllVersionConfigCommand(cfg cluster.Identity,
+func (configHistoryService) HandleGetAllVersionConfigCommand(cfg cluster.Identity,
 	state state.WritableState) cluster.ResponseWithError {
 	resp := state.VersionConfig().GetByConfigId(cfg.Id)
 	return cluster.NewResponse(resp)
 }
 
-func (versionConfigService) updateState(version int32, id string, data entity.ConfigData,
-	writableState state.WritableState) (entity.VersionConfig, string) {
+func (s configHistoryService) SaveConfigVersion(oldConfig entity.Config, writableState state.WritableState) entity.VersionConfig {
 	cfg := entity.VersionConfig{
-		Id:            state.GenerateId(),
-		ConfigVersion: version,
-		ConfigId:      id,
-		Data:          data,
+		Id:            state.GenerateId(), //todo all node generate own id
+		ConfigVersion: oldConfig.Version,
+		ConfigId:      oldConfig.Id,
+		Data:          oldConfig.Data,
 	}
 	removedVersionId := writableState.WriteableVersionConfigStore().Update(cfg)
-	return cfg, removedVersionId
+	if holder.ClusterClient.IsLeader() {
+		s.updateDB(cfg, removedVersionId)
+	}
+	return cfg
 }
 
-func (versionConfigService) updateDB(cfg entity.VersionConfig, removedId string) {
+func (configHistoryService) updateDB(cfg entity.VersionConfig, removedId string) {
 	_, err := model.VersionStoreRep.Upsert(cfg)
 	if err != nil {
 		log.WithMetadata(map[string]interface{}{

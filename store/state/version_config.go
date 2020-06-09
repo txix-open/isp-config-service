@@ -23,14 +23,14 @@ type VersionConfigStore struct {
 }
 
 func (s *VersionConfigStore) Update(req entity.VersionConfig) string {
-	count := config.Get().(*conf.Configuration).VersionConfigCount
-	if count <= 0 {
-		count = defaultVersionCount
+	limit := config.Get().(*conf.Configuration).VersionConfigCount
+	if limit <= 0 {
+		limit = defaultVersionCount
 	}
 	var removedId string
 	store, found := s.VersionByConfigId[req.ConfigId]
 	if found {
-		if len(store) >= count {
+		if len(store) >= limit {
 			removedId = store[0].Id
 			store = append(store[1:], req)
 		} else {

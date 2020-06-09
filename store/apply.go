@@ -142,7 +142,7 @@ func (s *Store) applyDeleteVersionConfigCommand(data []byte) (interface{}, error
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal cluster.Identity")
 	}
-	response := service.VersionConfig.HandleDeleteVersionConfigCommand(cfg, s.state)
+	response := service.ConfigHistory.HandleDeleteVersionConfigCommand(cfg, s.state)
 	return response, nil
 }
 
@@ -152,6 +152,6 @@ func (s *Store) applyAllVersionConfigCommand(data []byte) (interface{}, error) {
 	if err != nil {
 		return nil, errors.WithMessage(err, "unmarshal cluster.Identity")
 	}
-	response := service.VersionConfig.HandleGetAllVersionConfigCommand(cfg, s.state)
+	response := service.ConfigHistory.HandleGetAllVersionConfigCommand(cfg, s.state)
 	return response, nil
 }
