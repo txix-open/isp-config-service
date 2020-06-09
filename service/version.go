@@ -36,14 +36,11 @@ func (configHistoryService) HandleDeleteVersionConfigCommand(cfg cluster.Identit
 	return cluster.NewResponse(domain.DeleteResponse{Deleted: deleted})
 }
 
-func (configHistoryService) HandleGetAllVersionConfigCommand(cfg cluster.Identity,
-	state state.WritableState) cluster.ResponseWithError {
-	resp := state.VersionConfig().GetByConfigId(cfg.Id)
-	return cluster.NewResponse(resp)
+func (configHistoryService) GetAllVersionConfigById(id string, state state.ReadonlyState) []entity.VersionConfig {
+	return state.VersionConfig().GetByConfigId(id)
 }
 
-func (s configHistoryService) SaveConfigVersion(id string, oldConfig entity.Config,
-	state state.WritableState) entity.VersionConfig {
+func (s configHistoryService) SaveConfigVersion(id string, oldConfig entity.Config, state state.WritableState) {
 	cfg := entity.VersionConfig{
 		Id:            id,
 		ConfigVersion: oldConfig.Version,
@@ -54,7 +51,6 @@ func (s configHistoryService) SaveConfigVersion(id string, oldConfig entity.Conf
 	if holder.ClusterClient.IsLeader() {
 		s.updateDB(cfg, removedVersionId)
 	}
-	return cfg
 }
 
 func (configHistoryService) updateDB(cfg entity.VersionConfig, removedId string) {

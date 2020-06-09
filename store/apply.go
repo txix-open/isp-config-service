@@ -145,13 +145,3 @@ func (s *Store) applyDeleteVersionConfigCommand(data []byte) (interface{}, error
 	response := service.ConfigHistory.HandleDeleteVersionConfigCommand(cfg, s.state)
 	return response, nil
 }
-
-func (s *Store) applyAllVersionConfigCommand(data []byte) (interface{}, error) {
-	cfg := cluster.Identity{}
-	err := json.Unmarshal(data, &cfg)
-	if err != nil {
-		return nil, errors.WithMessage(err, "unmarshal cluster.Identity")
-	}
-	response := service.ConfigHistory.HandleGetAllVersionConfigCommand(cfg, s.state)
-	return response, nil
-}

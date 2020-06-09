@@ -161,11 +161,9 @@ func (c *config) DeleteConfigVersion(req domain.ConfigIdRequest) (*domain.Delete
 // @Router /config/get_all_version [POST]
 func (c *config) GetAllVersion(req domain.ConfigIdRequest) ([]entity.VersionConfig, error) {
 	var response []entity.VersionConfig
-	command := cluster.PrepareGetAllConfigVersionCommand(req.Id)
-	err := PerformSyncApplyWithError(command, &response)
-	if err != nil {
-		return nil, err
-	}
+	c.rstore.VisitReadonlyState(func(state state.ReadonlyState) {
+		response = state.VersionConfig().GetByConfigId(req.Id)
+	})
 	return response, nil
 }
 

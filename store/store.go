@@ -132,7 +132,6 @@ func NewStateStore(st *state.State) *Store {
 		cluster.UpsertCommonConfigCommand:       store.applyUpsertCommonConfigCommand,
 		cluster.BroadcastEventCommand:           store.applyBroadcastEventCommand,
 		cluster.DeleteVersionConfigCommand:      store.applyDeleteVersionConfigCommand,
-		cluster.GetAllVersionConfigCommand:      store.applyAllVersionConfigCommand,
 	}
 	return store
 }

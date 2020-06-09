@@ -129,10 +129,6 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 		}
 	}
 
-	var (
-		removedVersionId string
-		versionConfig    entity.VersionConfig
-	)
 	if upsertConfig.Create {
 		config = state.WritableConfigs().Create(config)
 	} else {
@@ -147,7 +143,7 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 		config.Version = oldCfg.Version + 1
 		state.WritableConfigs().UpdateById(config)
 
-		versionConfig = ConfigHistory.SaveConfigVersion(upsertConfig.VersionId, oldCfg, state)
+		ConfigHistory.SaveConfigVersion(upsertConfig.VersionId, oldCfg, state)
 	}
 
 	if holder.ClusterClient.IsLeader() {
@@ -157,9 +153,6 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 			log.WithMetadata(map[string]interface{}{
 				"config": config,
 			}).Errorf(codes.DatabaseOperationError, "upsert config: %v", err)
-		}
-		if !upsertConfig.Create {
-			ConfigHistory.updateDB(versionConfig, removedVersionId)
 		}
 	}
 
