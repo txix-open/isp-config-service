@@ -64,8 +64,9 @@ func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*d
 	config.CreatedAt = now
 	config.UpdatedAt = now
 	upsertConfig := cluster.UpsertConfig{
-		Config: config.Config,
-		Unsafe: config.Unsafe,
+		Config:    config.Config,
+		Unsafe:    config.Unsafe,
+		VersionId: state.GenerateId(),
 	}
 	if config.Id == "" {
 		upsertConfig.Config.Id = state.GenerateId()

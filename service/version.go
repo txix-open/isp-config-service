@@ -42,14 +42,15 @@ func (configHistoryService) HandleGetAllVersionConfigCommand(cfg cluster.Identit
 	return cluster.NewResponse(resp)
 }
 
-func (s configHistoryService) SaveConfigVersion(oldConfig entity.Config, writableState state.WritableState) entity.VersionConfig {
+func (s configHistoryService) SaveConfigVersion(id string, oldConfig entity.Config,
+	state state.WritableState) entity.VersionConfig {
 	cfg := entity.VersionConfig{
-		Id:            state.GenerateId(), //todo all node generate own id
+		Id:            id,
 		ConfigVersion: oldConfig.Version,
 		ConfigId:      oldConfig.Id,
 		Data:          oldConfig.Data,
 	}
-	removedVersionId := writableState.WriteableVersionConfigStore().Update(cfg)
+	removedVersionId := state.WriteableVersionConfigStore().Update(cfg)
 	if holder.ClusterClient.IsLeader() {
 		s.updateDB(cfg, removedVersionId)
 	}
