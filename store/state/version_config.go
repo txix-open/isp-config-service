@@ -62,9 +62,16 @@ func (s *VersionConfigStore) Delete(id string) {
 func (s VersionConfigStore) GetByConfigId(id string) []entity.VersionConfig {
 	response, found := s.VersionByConfigId[id]
 	if found {
-		return response
+		return s.reverse(response)
 	}
 	return []entity.VersionConfig{}
+}
+
+func (s VersionConfigStore) reverse(cfg []entity.VersionConfig) []entity.VersionConfig {
+	for i, j := 0, len(cfg)-1; i < j; i, j = i+1, j-1 {
+		cfg[i], cfg[j] = cfg[j], cfg[i]
+	}
+	return cfg
 }
 
 func NewVersionConfigStore() *VersionConfigStore {
