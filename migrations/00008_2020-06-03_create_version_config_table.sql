@@ -5,7 +5,7 @@ CREATE TABLE version_config
     config_id      VARCHAR(255) NOT NULL,
     config_version INT4         NOT NULL,
     data           JSONB        NOT NULL DEFAULT '{}',
-    created_at     TIMESTAMP    NOT NULL DEFAULT NOW()
+    created_at     TIMESTAMP    NOT NULL DEFAULT (now() at time zone 'utc')
 );
 
 -- +goose Down

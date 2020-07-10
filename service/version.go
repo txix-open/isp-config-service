@@ -1,6 +1,8 @@
 package service
 
 import (
+	"time"
+
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
@@ -46,6 +48,7 @@ func (s configHistoryService) SaveConfigVersion(id string, oldConfig entity.Conf
 		ConfigVersion: oldConfig.Version,
 		ConfigId:      oldConfig.Id,
 		Data:          oldConfig.Data,
+		CreatedAt:     time.Now().UTC(),
 	}
 	removedVersionId := state.WriteableVersionConfigStore().Update(cfg)
 	if holder.ClusterClient.IsLeader() {

@@ -1,10 +1,15 @@
 package entity
 
+import (
+	"time"
+)
+
 type VersionConfig struct {
 	//nolint
 	tableName     string `pg:"?db_schema.version_config" json:"-"`
 	Id            string
-	ConfigVersion int32
 	ConfigId      string
+	ConfigVersion int32
 	Data          ConfigData `json:"data" pg:",notnull"`
+	CreatedAt     time.Time
 }
