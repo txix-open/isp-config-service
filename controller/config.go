@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"time"
+
 	"github.com/integration-system/isp-lib/v2/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -64,9 +66,10 @@ func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*d
 	config.CreatedAt = now
 	config.UpdatedAt = now
 	upsertConfig := cluster.UpsertConfig{
-		Config:    config.Config,
-		Unsafe:    config.Unsafe,
-		VersionId: state.GenerateId(),
+		Config:          config.Config,
+		Unsafe:          config.Unsafe,
+		VersionId:       state.GenerateId(),
+		VersionCreateAt: time.Now().UTC(),
 	}
 	if config.Id == "" {
 		upsertConfig.Config.Id = state.GenerateId()

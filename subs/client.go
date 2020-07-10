@@ -2,6 +2,7 @@ package subs
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/asaskevich/govalidator"
 	etp "github.com/integration-system/isp-etp-go/v2"
@@ -109,10 +110,11 @@ func (h *SocketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 			UpdatedAt: now,
 		}
 		upsertConfig := cluster.UpsertConfig{
-			Config:    config,
-			Create:    true,
-			Unsafe:    true,
-			VersionId: state.GenerateId(),
+			Config:          config,
+			Create:          true,
+			Unsafe:          true,
+			VersionId:       state.GenerateId(),
+			VersionCreateAt: time.Now().UTC(),
 		}
 
 		command := cluster.PrepareUpsertConfigCommand(upsertConfig)

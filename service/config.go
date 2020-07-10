@@ -143,7 +143,7 @@ func (cs configService) HandleUpsertConfigCommand(upsertConfig cluster.UpsertCon
 		config.Version = oldCfg.Version + 1
 		state.WritableConfigs().UpdateById(config)
 
-		ConfigHistory.SaveConfigVersion(upsertConfig.VersionId, oldCfg, state)
+		ConfigHistory.SaveConfigVersion(upsertConfig.VersionId, oldCfg, state, upsertConfig.VersionCreateAt)
 	}
 
 	if holder.ClusterClient.IsLeader() {

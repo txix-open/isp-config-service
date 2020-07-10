@@ -28,10 +28,11 @@ type ActivateConfig struct {
 }
 
 type UpsertConfig struct {
-	Config    entity.Config
-	VersionId string
-	Create    bool
-	Unsafe    bool
+	Config          entity.Config
+	VersionId       string
+	VersionCreateAt time.Time
+	Create          bool
+	Unsafe          bool
 }
 
 type DeleteConfigs struct {
