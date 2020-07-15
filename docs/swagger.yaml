@@ -1,6 +1,6 @@
 basePath: /api/config
 definitions:
-  cluster.BroadcastEvent:
+  domain.BroadcastEventRequest:
     properties:
       event:
         type: string
@@ -11,9 +11,9 @@ definitions:
       payload:
         $ref: '#/definitions/json.RawMessage'
         type: object
-      performUntil:
-        description: stateless events, must be broadcast until this in UTC
-        type: string
+    required:
+    - event
+    - moduleNames
     type: object
   domain.CommonConfigLinks:
     additionalProperties:
@@ -272,6 +272,8 @@ definitions:
         type: string
       configVersion:
         type: integer
+      createdAt:
+        type: string
       data:
         $ref: '#/definitions/entity.ConfigData'
         type: object
@@ -663,8 +665,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает флаг удаления и набор связей с модулями и конфигурациями,
-        в случае наличия связей deleted всегда false
+      description: Возвращает флаг удаления и набор связей с модулями и конфигурациями, в случае наличия связей deleted всегда false
       parameters:
       - description: id общей конфигурации
         in: body
@@ -690,8 +691,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает массив конфигураций по запрошенным идентификаторам (все,
-        если массив пустой)
+      description: Возвращает массив конфигураций по запрошенным идентификаторам (все, если массив пустой)
       produces:
       - application/json
       responses:
@@ -708,8 +708,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает ассоциативный массив, ключами которого являются название
-        модулей, а значения - название конфигурации модуля
+      description: Возвращает ассоциативный массив, ключами которого являются название модулей, а значения - название конфигурации модуля
       parameters:
       - description: id общей конфигурации
         in: body
@@ -887,8 +886,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Активирует указанную конфигурацию и деактивирует остальные, возвращает
-        активированную конфигурацию
+      description: Активирует указанную конфигурацию и деактивирует остальные, возвращает активированную конфигурацию
       parameters:
       - description: id конфигурации для изменения
         in: body
@@ -924,7 +922,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/cluster.BroadcastEvent'
+          $ref: '#/definitions/domain.BroadcastEventRequest'
       produces:
       - application/json
       responses:
@@ -998,8 +996,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает полное состояние всех модулей в кластере (конфигурация,
-        схема конфигурации, подключенные экземпляры)
+      description: Возвращает полное состояние всех модулей в кластере (конфигурация, схема конфигурации, подключенные экземпляры)
       produces:
       - application/json
       responses:

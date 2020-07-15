@@ -90,7 +90,7 @@ func (c *module) GetModuleByName(req domain.GetByModuleNameRequest) (*entity.Mod
 // @Tags Модули
 // @Accept json
 // @Produce json
-// @Param body body cluster.BroadcastEvent true "событие"
+// @Param body body domain.BroadcastEventRequest true "событие"
 // @Success 200 "OK"
 // @Failure 500 {object} structure.GrpcError
 // @Router /module/broadcast_event [POST]

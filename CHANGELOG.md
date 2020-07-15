@@ -1,3 +1,6 @@
+### v2.3.1
+* fix old configs order
+* add `createdAt` field to config version
 ### v2.3.0
 * add method `/module/broadcast_event` to broadcast arbitrary event to modules
 * add module dependencies to response `/module/get_modules_info`
