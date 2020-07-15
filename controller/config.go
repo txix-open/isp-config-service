@@ -69,7 +69,7 @@ func (c *config) CreateUpdateConfig(config domain.CreateUpdateConfigRequest) (*d
 		Config:          config.Config,
 		Unsafe:          config.Unsafe,
 		VersionId:       state.GenerateId(),
-		VersionCreateAt: time.Now().UTC(),
+		VersionCreateAt: time.Now(),
 	}
 	if config.Id == "" {
 		upsertConfig.Config.Id = state.GenerateId()
