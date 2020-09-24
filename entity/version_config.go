@@ -10,6 +10,6 @@ type VersionConfig struct {
 	Id            string
 	ConfigId      string
 	ConfigVersion int32
-	Data          ConfigData `json:"data" pg:",notnull"`
+	Data          ConfigData `json:"data,omitempty" pg:",notnull"`
 	CreatedAt     time.Time
 }

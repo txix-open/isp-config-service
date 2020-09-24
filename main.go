@@ -20,6 +20,7 @@ import (
 	"isp-config-service/codes"
 	"isp-config-service/conf"
 	"isp-config-service/controller"
+	_ "isp-config-service/docs"
 	"isp-config-service/helper"
 	"isp-config-service/holder"
 	"isp-config-service/model"
@@ -50,7 +51,7 @@ func init() {
 }
 
 // @title ISP configuration service
-// @version 2.0.0
+// @version 2.4.0
 // @description Сервис управления конфигурацией модулей ISP кластера
 
 // @license.name GNU GPL v3.0
@@ -59,7 +60,7 @@ func init() {
 // @BasePath /api/config
 
 //go:generate swag init --parseDependency
-//go:generate rm -f docs/docs.go docs/swagger.json
+//go:generate rm -f docs/swagger.json
 func main() {
 	ctx := context.Background()
 	cfg := config.Get().(*conf.Configuration)

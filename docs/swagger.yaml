@@ -605,7 +605,7 @@ info:
   license:
     name: GNU GPL v3.0
   title: ISP configuration service
-  version: 2.0.0
+  version: 2.3.2
 paths:
   /common_config/compile:
     post:
@@ -880,6 +880,72 @@ paths:
           schema:
             $ref: '#/definitions/structure.GrpcError'
       summary: Метод получение старых версий конфигурации
+      tags:
+      - Конфигурация
+  /config/get_config_by_id:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает актуальную версию конфигурации без дополнительного содержимого (ConfigData)
+      parameters:
+      - description: id конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Config'
+        "400":
+          description: если не указан идентификатор конфигурации
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получение актуальной конфигурации конфигурации
+      tags:
+      - Конфигурация
+  /config/get_configs_by_module_id:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает список конфиграции по ID модуля
+      parameters:
+      - description: ID модуля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.GetByModuleIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Config'
+            type: array
+        "400":
+          description: если идентификатор не указан
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "404":
+          description: если конфигурация не найдена
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получения списка конфигураций по ID модуля
       tags:
       - Конфигурация
   /config/mark_config_as_active:
