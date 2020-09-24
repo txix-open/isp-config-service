@@ -1,3 +1,7 @@
+### v2.4.0
+* add method `/config/get_config_by_id`
+* add method `/config/get_configs_by_module_id`
+* updated docs
 ### v2.3.1
 * fix old configs order
 * add `createdAt` field to config version

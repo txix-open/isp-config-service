@@ -49,6 +49,30 @@ func (c *config) GetActiveConfigByModuleName(request domain.GetByModuleNameReque
 	return config, nil
 }
 
+// @Summary Метод получения списка конфигураций по ID модуля
+// @Description Возвращает список конфиграции по ID модуля
+// @Tags Конфигурация
+// @Accept json
+// @Produce json
+// @Param body body domain.GetByModuleIdRequest true "ID модуля"
+// @Success 200 {array}  entity.Config
+// @Failure 400 {object} structure.GrpcError "если идентификатор не указан"
+// @Failure 404 {object} structure.GrpcError "если конфигурация не найдена"
+// @Failure 500 {object} structure.GrpcError
+// @Router /config/get_configs_by_module_id [POST]
+func (c *config) GetConfigsByModuleId(request domain.GetByModuleIdRequest) ([]entity.Config, error) {
+	var config []entity.Config
+
+	c.rstore.VisitReadonlyState(func(state state.ReadonlyState) {
+		config = state.Configs().GetByModuleIds([]string{request.ModuleId})
+	})
+
+	if config == nil {
+		return nil, status.Errorf(codes.NotFound, "configs for module '%s' not found", request.ModuleId)
+	}
+	return config, nil
+}
+
 // @Summary Метод обновления конфигурации
 // @Description Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
 // @Description В случае обновления рассылает всем подключенным модулям актуальную конфигурацию
@@ -168,6 +192,30 @@ func (c *config) GetAllVersion(req domain.ConfigIdRequest) ([]entity.VersionConf
 		response = state.VersionConfig().GetByConfigId(req.Id)
 	})
 	return response, nil
+}
+
+// @Summary Метод получение актуальной конфигурации конфигурации
+// @Description Возвращает актуальную версию конфигурации без дополнительного содержимого (ConfigData)
+// @Tags Конфигурация
+// @Accept json
+// @Produce json
+// @Param body body domain.ConfigIdRequest true "id конфигурации"
+// @Success 200 {object} entity.Config
+// @Failure 400 {object} structure.GrpcError "если не указан идентификатор конфигурации"
+// @Failure 500 {object} structure.GrpcError
+// @Router /config/get_config_by_id [POST]
+func (c *config) GetConfigById(req domain.ConfigIdRequest) (entity.Config, error) {
+	var response []entity.Config
+	c.rstore.VisitReadonlyState(func(state state.ReadonlyState) {
+		response = state.Configs().GetByIds([]string{req.Id})
+	})
+
+	if len(response) > 0 {
+		response[0].Data = nil
+		return response[0], nil
+	}
+
+	return entity.Config{}, status.Errorf(codes.NotFound, "config with id '%s' not found", req.Id)
 }
 
 func NewConfig(rstore *store.Store) *config {

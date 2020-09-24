@@ -20,7 +20,7 @@ type Config struct {
 	Active        bool       `json:"active" pg:",null"`
 	CreatedAt     time.Time  `json:"createdAt" pg:",null"`
 	UpdatedAt     time.Time  `json:"updatedAt" pg:",null"`
-	Data          ConfigData `json:"data" pg:",notnull"`
+	Data          ConfigData `json:"data,omitempty" pg:",notnull"`
 }
 
 type CommonConfig struct {
