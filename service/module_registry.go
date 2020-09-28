@@ -104,6 +104,18 @@ func (moduleRegistryService) HandleDeleteModulesCommand(deleteModules cluster.De
 	return len(deletedModules)
 }
 
+func (moduleRegistryService) ValidateConfig(config entity.Config, state state.ReadonlyState) bool {
+	schemas := state.Schemas().GetByModuleIds([]string{config.ModuleId})
+	valid := false
+
+	for _, s := range schemas {
+		dataForValidate := ConfigService.CompileConfig(config.Data, state, config.CommonConfigs...)
+		valid, _ = ConfigService.validateSchema(s, dataForValidate)
+	}
+
+	return valid
+}
+
 //nolint:funlen
 func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) []domain.ModuleInfo {
 	modules := state.Modules().GetAll()
