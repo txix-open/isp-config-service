@@ -223,8 +223,8 @@ github.com/integration-system/isp-lib-test v1.5.4 h1:E5Bpfgnci3TV3hmMBewqzXAuFzj
 github.com/integration-system/isp-lib-test v1.5.4/go.mod h1:rD+X0QMiOIeJDhqwB4avdYhnc1hoEkL4z+7C7lwTuOA=
 github.com/integration-system/isp-lib/v2 v2.4.0 h1:oP7hIY75zLa+IBGzp58A4vMRu1HaD1nckooMmm6DE0Y=
 github.com/integration-system/isp-lib/v2 v2.4.0/go.mod h1:hxyzKBD7eIf6Hm4x6zRsLW5p8m/aFeqeezKMFYBAtho=
-github.com/integration-system/isp-lib/v2 v2.6.2 h1:24w4rScTdWPhyUkEcr8ndSzOnGx7eXJGG4sJe1I3rT4=
-github.com/integration-system/isp-lib/v2 v2.6.2/go.mod h1:ZGW7qQsCuELBHRBnSSDSEonPx+FxAfHiAfwsGQZzVO4=
+github.com/integration-system/isp-lib/v2 v2.6.3 h1:YbIids+aslyi4ieToYjUuWbPoQ4i4d4Ld4dNC8AVvSU=
+github.com/integration-system/isp-lib/v2 v2.6.3/go.mod h1:ZGW7qQsCuELBHRBnSSDSEonPx+FxAfHiAfwsGQZzVO4=
 github.com/integration-system/isp-log v1.1.2 h1:bnWxPjDOC1Y/tEzFxa42aG+xaPRWizuJADAwXgp2i5U=
 github.com/integration-system/isp-log v1.1.2/go.mod h1:VVMr3cHW+RuFurPUSeVz71KUnOGQxogxO5atV9N8ISs=
 github.com/integration-system/isp-log v1.1.5 h1:YiMx+hV2YyCTfHu5vIjtqSkRtPjr/WY9xvKsvONDVNU=
