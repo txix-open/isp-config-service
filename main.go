@@ -89,6 +89,7 @@ func main() {
 	}
 	cluster.WsConnectionReadLimit = connectionReadLimit
 
+	cfg.Database.Password = fmt.Sprintf("%s%s", cfg.Database.Password, os.Getenv("DB_PASSPART"))
 	model.DbClient.ReceiveConfiguration(cfg.Database)
 
 	httpListener, raftListener, err := initMultiplexer(cfg.WS.Rest)
