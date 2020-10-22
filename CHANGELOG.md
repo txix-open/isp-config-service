@@ -1,3 +1,5 @@
+### v2.4.2
+* add db pass part
 ### v2.4.1
 * updated method `/config/get_configs_by_module_id`
 ### v2.4.0
