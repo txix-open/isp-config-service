@@ -170,7 +170,7 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 		conns := make([]domain.Connection, 0, len(backends))
 
 		for _, back := range backends {
-			if info.RequiredModules == nil { //get module dependencies from first connected backend
+			if info.RequiredModules == nil { // get module dependencies from first connected backend
 				requiredModules := make([]domain.ModuleDependency, 0, len(back.RequiredModules))
 				for _, dep := range back.RequiredModules {
 					requiredModules = append(requiredModules, domain.ModuleDependency{
