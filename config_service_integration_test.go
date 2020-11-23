@@ -186,7 +186,7 @@ func getConfigServiceAddress(num int, port string) structure.AddressConfiguratio
 }
 
 func testClusterReady(a *assert.Assertions, except int) bool {
-	clients := make([]*backend.RxGrpcClient, configsNumber)
+	clients := make([]*backend.RxGrpcClient, 0, configsNumber)
 	defer func() {
 		for _, client := range clients {
 			_ = client.Close()
