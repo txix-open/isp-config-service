@@ -58,9 +58,14 @@ linters-settings:
     disabled-checks:
       - hugeParam
       - rangeValCopy
+  exhaustive:
+    default-signifies-exhaustive: true
 
 issues:
   exclude-rules:
     - path: _test\.go # to exclude all test files for linter errcheck
       linters:
         - errcheck
+    - linters:
+        - gosec
+      text: "G101:"
