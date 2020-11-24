@@ -1,3 +1,6 @@
+### v2.4.3
+* updated isp-lib
+* updated isp-event-lib
 ### v2.4.2
 * add db pass part
 ### v2.4.1

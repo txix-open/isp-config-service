@@ -97,7 +97,7 @@ func (h *SocketEventHandler) handleConfigSchema(conn etp.Conn, data []byte) []by
 	h.store.VisitReadonlyState(func(readState state.ReadonlyState) {
 		configs = readState.Configs().GetByModuleIds([]string{module.Id})
 	})
-	if len(configs) == 0 { //create empty default config
+	if len(configs) == 0 { // create empty default config
 		if configSchema.DefaultConfig == nil {
 			configSchema.DefaultConfig = make(map[string]interface{})
 		}

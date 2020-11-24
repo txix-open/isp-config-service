@@ -114,8 +114,8 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 			cfg.Images.Module, c, nil,
 			docker.WithName(c.GrpcOuterAddress.IP),
 			docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard, "DeleteCommonConfigsCommand")),
-			//docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard, "Apply 10 command")),
-			//docker.PullImage(cfg.Registry.Username, cfg.Registry.Password),
+			// docker.WithLogger(NewWriteLogger(strconv.Itoa(i)+"_config:", ioutil.Discard, "Apply 10 command")),
+			// docker.PullImage(cfg.Registry.Username, cfg.Registry.Password),
 			docker.WithEnv(peersAddrsEnv),
 		)
 		grpcAddr := configsGrpcAddrs[i]
@@ -128,8 +128,8 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 
 		configsCtxs[i] = ctx
 	}
-
-	//time.Sleep(3 * time.Second)
+	//nolint
+	// time.Sleep(3 * time.Second)
 	return runTest()
 }
 
@@ -186,7 +186,7 @@ func getConfigServiceAddress(num int, port string) structure.AddressConfiguratio
 }
 
 func testClusterReady(a *assert.Assertions, except int) bool {
-	var clients []*backend.RxGrpcClient
+	clients := make([]*backend.RxGrpcClient, 0, configsNumber)
 	defer func() {
 		for _, client := range clients {
 			_ = client.Close()
@@ -240,8 +240,8 @@ func newGrpcClient(configAddr structure.AddressConfiguration, a *assert.Assertio
 		if code != codes.Unknown {
 			return nil, nil
 		}
-
-		//log.Println("connect to grpc err:", err)
+		//nolint
+		// log.Println("connect to grpc err:", err)
 		return nil, err
 	}, maxAwaitingTime, attemptTimeout)
 
@@ -265,7 +265,8 @@ func testRaftReady(client *backend.RxGrpcClient, a *assert.Assertions) bool {
 			req,
 			response,
 		)
-		//log.Println("send grpc request. response: ", response, "err: ", err)
+		//nolint
+		// log.Println("send grpc request. response: ", response, "err: ", err)
 		return nil, err
 	}
 	_, _ = await(f, maxAwaitingTime, attemptTimeout)
@@ -288,8 +289,8 @@ func getRoutes(client *backend.RxGrpcClient, a *assert.Assertions) []structure.B
 		} else if len(response) == 0 {
 			return nil, errors.New("zero routes")
 		}
-
-		//log.Println("routes:", response)
+		//nolint
+		// log.Println("routes:", response)
 		return nil, nil
 	}
 

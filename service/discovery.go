@@ -89,7 +89,7 @@ func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, mesh sta
 func (ds *discoveryService) BroadcastEvent(event cluster.BroadcastEvent) {
 	eventName := event.Event
 	payload := make([]byte, len(event.Payload))
-	copy(payload, event.Payload) //TODO а тут точно нужно копирование ?
+	copy(payload, event.Payload) // TODO а тут точно нужно копирование ?
 
 	if len(event.ModuleNames) == 1 && event.ModuleNames[0] == AllModules {
 		go func() {
