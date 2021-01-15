@@ -44,7 +44,7 @@ func SyncApplyCommand(command []byte) (interface{}, error) {
 
 func FormatErrorConnection(err error) []byte {
 	errMap := map[string]interface{}{
-		"error": err,
+		"error": err.Error(),
 	}
 	data, _ := json.Marshal(errMap)
 	return data
