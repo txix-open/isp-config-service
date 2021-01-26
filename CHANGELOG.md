@@ -1,3 +1,5 @@
+### v2.4.5
+* updated isp-lib
 ### v2.4.4
 * fix marshaling body of `ERROR_CONNECTION` event
 ### v2.4.3
