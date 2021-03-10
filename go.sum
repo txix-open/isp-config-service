@@ -308,8 +308,8 @@ github.com/integration-system/isp-event-lib v1.6.0 h1:zLW5RXvAA9v1KQBI44kzjdi8Y2
 github.com/integration-system/isp-event-lib v1.6.0/go.mod h1:lCzAci6oS+vc51W8EfHVCh9p3p057r0DpMuY4T0lSj0=
 github.com/integration-system/isp-lib-test v1.5.4 h1:E5Bpfgnci3TV3hmMBewqzXAuFzjlpKTx9xHzPANMUQ8=
 github.com/integration-system/isp-lib-test v1.5.4/go.mod h1:rD+X0QMiOIeJDhqwB4avdYhnc1hoEkL4z+7C7lwTuOA=
-github.com/integration-system/isp-lib-test v1.6.0 h1:OKSfF09Sod8p6umSKuI4Uce2bII8FlxPc3TNVqJM9+w=
-github.com/integration-system/isp-lib-test v1.6.0/go.mod h1:If5QK5jsXE48DZuq6WzCw8yC22k7GogLrEnMngXiE2Y=
+github.com/integration-system/isp-lib-test v1.6.1-0.20210310100925-56790210498c h1:cz6HmqMYWKiipz50ikPknNoqy3MCujhl1UIWWPw71sY=
+github.com/integration-system/isp-lib-test v1.6.1-0.20210310100925-56790210498c/go.mod h1:BfzuvzDd4SISwKGYDr6sT2Y3Xo81aSJsxACwdMkHNYM=
 github.com/integration-system/isp-lib/v2 v2.4.0 h1:oP7hIY75zLa+IBGzp58A4vMRu1HaD1nckooMmm6DE0Y=
 github.com/integration-system/isp-lib/v2 v2.4.0/go.mod h1:hxyzKBD7eIf6Hm4x6zRsLW5p8m/aFeqeezKMFYBAtho=
 github.com/integration-system/isp-lib/v2 v2.6.2/go.mod h1:ZGW7qQsCuELBHRBnSSDSEonPx+FxAfHiAfwsGQZzVO4=

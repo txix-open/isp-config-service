@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -54,6 +55,12 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("config_test.yml:")
+	j, _ := json.MarshalIndent(cfg, "", "  ")
+	fmt.Println(string(j))
+	fmt.Println()
+	fmt.Printf("username is empty: %v\n", cfg.Registry.Username == "")
 	test.PrepareAndRun()
 }
 
@@ -134,6 +141,7 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 }
 
 func TestClusterElection(t *testing.T) {
+	t.Fail()
 	defer func() {
 		err := recover()
 		if err != nil {
