@@ -237,7 +237,7 @@ func newGrpcClient(configAddr structure.AddressConfiguration, a *assert.Assertio
 	_, err := await(func() (interface{}, error) {
 		err := client.Invoke(getRoutesCommand, -1, nil, nil)
 		code := status.Code(err)
-		if code != codes.Unknown {
+		if code != codes.Unknown && code != codes.Unavailable {
 			return nil, nil
 		}
 		//nolint
