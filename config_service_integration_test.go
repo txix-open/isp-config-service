@@ -141,6 +141,13 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 }
 
 func TestClusterElection(t *testing.T) {
+	go func() {
+		go func() {
+			panic("panic to trigger -cleanup later")
+		}()
+	}()
+	time.Sleep(time.Second)
+
 	t.Fail()
 	defer func() {
 		err := recover()
