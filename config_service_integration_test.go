@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -56,11 +55,6 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	fmt.Println("config_test.yml:")
-	j, _ := json.MarshalIndent(cfg, "", "  ")
-	fmt.Println(string(j))
-	fmt.Println()
-	fmt.Printf("username is empty: %v\n", cfg.Registry.Username == "")
 	test.PrepareAndRun()
 }
 
