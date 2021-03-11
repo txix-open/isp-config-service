@@ -25,7 +25,6 @@ import (
 	"google.golang.org/grpc/status"
 	"isp-config-service/conf"
 	"isp-config-service/domain"
-	_ "isp-config-service/migrations"
 )
 
 const (
@@ -56,6 +55,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	fmt.Println("brr")
 	test.PrepareAndRun()
 }
 
