@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/status"
 	"isp-config-service/conf"
 	"isp-config-service/domain"
+	_ "isp-config-service/migrations"
 )
 
 const (
@@ -135,14 +136,6 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 }
 
 func TestClusterElection(t *testing.T) {
-	go func() {
-		go func() {
-			panic("panic to trigger -cleanup later")
-		}()
-	}()
-	time.Sleep(time.Second)
-
-	t.Fail()
 	defer func() {
 		err := recover()
 		if err != nil {
