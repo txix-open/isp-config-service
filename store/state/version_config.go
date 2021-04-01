@@ -6,7 +6,7 @@ import (
 	"isp-config-service/entity"
 )
 
-const defaultVersionCount = 5
+const defaultVersionCount = 15
 
 type WriteableVersionConfigStore interface {
 	ReadonlyVersionConfigStore
