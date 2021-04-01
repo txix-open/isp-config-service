@@ -120,12 +120,12 @@ func (client *Client) listenLeader() {
 			client.leaderClient = nil
 		}
 		if n.LeaderElected && !n.IsLeader {
-			leaderClient := NewSocketLeaderClient(n.CurrentLeaderAddress, func() {
-				client.onClientDisconnect(client.leaderState.leaderAddr)
+			leaderAddr := n.CurrentLeaderAddress
+			leaderClient := NewSocketLeaderClient(leaderAddr, func() {
+				client.onClientDisconnect(leaderAddr)
 			})
 			if err := leaderClient.Dial(leaderConnectionTimeout); err != nil {
 				log.Fatalf(codes.LeaderClientConnectionError, "could not connect to leader: %v", err)
-				continue
 			}
 			client.leaderClient = leaderClient
 
