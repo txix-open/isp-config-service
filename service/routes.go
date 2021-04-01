@@ -6,7 +6,6 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	etp "github.com/integration-system/isp-etp-go/v2"
-	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/codes"
@@ -25,47 +24,41 @@ func (rs *routesService) HandleDisconnect(connID string) {
 func (rs *routesService) SubscribeRoutes(conn etp.Conn, mesh state.ReadonlyMesh) {
 	holder.EtpServer.Rooms().Join(conn, Room.RoutesSubscribers())
 	routes := mesh.GetRoutes()
-	go func(conn etp.Conn, routes structure.RoutingConfig) {
-		err := rs.sendRoutes(conn, utils.ConfigSendRoutesWhenConnected, routes)
+	bytes, err := json.Marshal(routes)
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		err := rs.sendRoutes(conn, utils.ConfigSendRoutesWhenConnected, bytes)
 		if err != nil {
 			log.Errorf(codes.RoutesServiceSendRoutesError, "send routes %v", err)
 		}
-	}(conn, routes)
+	}()
 }
 
 func (rs *routesService) BroadcastRoutes(mesh state.ReadonlyMesh) {
 	routes := mesh.GetRoutes()
-	go func(routes structure.RoutingConfig) {
-		err := rs.broadcastRoutes(utils.ConfigSendRoutesChanged, routes)
+	bytes, err := json.Marshal(routes)
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		err := holder.EtpServer.BroadcastToRoom(Room.RoutesSubscribers(), utils.ConfigSendRoutesChanged, bytes)
 		if err != nil {
 			log.Errorf(codes.RoutesServiceSendRoutesError, "broadcast routes %v", err)
 		}
-	}(routes)
+	}()
 }
 
-func (rs *routesService) broadcastRoutes(event string, routes structure.RoutingConfig) error {
-	bytes, err := json.Marshal(routes)
+func (rs *routesService) sendRoutes(conn etp.Conn, event string, bytes []byte) error {
+	bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(messagesBackoffInterval), messagesBackoffMaxRetries)
+	err := backoff.Retry(func() error {
+		return conn.Emit(context.Background(), event, bytes)
+	}, bf)
 	if err != nil {
 		return err
-	}
-	err = holder.EtpServer.BroadcastToRoom(Room.RoutesSubscribers(), event, bytes)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (rs *routesService) sendRoutes(conn etp.Conn, event string, routes structure.RoutingConfig) error {
-	if bytes, err := json.Marshal(routes); err != nil {
-		return err
-	} else {
-		bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(messagesBackoffInterval), messagesBackoffMaxRetries)
-		err := backoff.Retry(func() error {
-			return conn.Emit(context.Background(), event, bytes)
-		}, bf)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }

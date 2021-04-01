@@ -11,7 +11,6 @@ type WriteableMesh interface {
 }
 
 type ReadonlyMesh interface {
-	BackendExist(backend structure.BackendDeclaration) (exist bool)
 	GetModuleAddresses(moduleName string) []structure.AddressConfiguration
 	GetBackends(module string) []structure.BackendDeclaration
 	GetRoutes() structure.RoutingConfig
@@ -26,16 +25,6 @@ type Mesh struct {
 
 func NewMesh() *Mesh {
 	return &Mesh{ModulesMap: make(map[string]NodesMap)}
-}
-
-func (m Mesh) BackendExist(backend structure.BackendDeclaration) (exist bool) {
-	address := backend.Address.GetAddress()
-	if nodes, ok := m.ModulesMap[backend.ModuleName]; ok {
-		if _, ok := nodes[address]; ok {
-			exist = true
-		}
-	}
-	return
 }
 
 func (m Mesh) GetBackends(module string) []structure.BackendDeclaration {

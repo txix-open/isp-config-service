@@ -127,11 +127,9 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 
 	for i, module := range modules {
 		idList[i] = module.Id
-		active := state.Mesh().BackendExist(structure.BackendDeclaration{ModuleName: module.Name})
 		info := domain.ModuleInfo{
 			Id:                 module.Id,
 			Name:               module.Name,
-			Active:             active,
 			CreatedAt:          module.CreatedAt,
 			LastConnectedAt:    module.LastConnectedAt,
 			LastDisconnectedAt: module.LastDisconnectedAt,
@@ -169,25 +167,27 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 		backends := state.Mesh().GetBackends(info.Name)
 		conns := make([]domain.Connection, 0, len(backends))
 
-		for _, back := range backends {
-			if info.RequiredModules == nil { // get module dependencies from first connected backend
-				requiredModules := make([]domain.ModuleDependency, 0, len(back.RequiredModules))
-				for _, dep := range back.RequiredModules {
-					requiredModules = append(requiredModules, domain.ModuleDependency{
-						Name:     dep.Name,
-						Id:       nameIdMap[dep.Name],
-						Required: dep.Required,
-					})
-				}
-				info.RequiredModules = requiredModules
+		if len(backends) > 0 {
+			back := backends[0]
+			requiredModules := make([]domain.ModuleDependency, 0, len(back.RequiredModules))
+			for _, dep := range back.RequiredModules {
+				requiredModules = append(requiredModules, domain.ModuleDependency{
+					Name:     dep.Name,
+					Id:       nameIdMap[dep.Name],
+					Required: dep.Required,
+				})
 			}
+			info.RequiredModules = requiredModules
+		}
 
+		for _, back := range backends {
 			con := domain.Connection{
 				Version:    back.Version,
 				LibVersion: back.LibVersion,
 				Address:    back.Address,
-				Endpoints:  back.Endpoints,
+				Endpoints:  make([]structure.EndpointDescriptor, len(back.Endpoints)),
 			}
+			copy(con.Endpoints, back.Endpoints)
 			sort.Slice(con.Endpoints, func(i, j int) bool {
 				return con.Endpoints[i].Path < con.Endpoints[j].Path
 			})
@@ -201,6 +201,7 @@ func (moduleRegistryService) GetAggregatedModuleInfo(state state.ReadonlyState) 
 			return conns[i].EstablishedAt.Before(conns[j].EstablishedAt)
 		})
 		info.Status = conns
+		info.Active = len(conns) > 0
 		result = append(result, info)
 	}
 
