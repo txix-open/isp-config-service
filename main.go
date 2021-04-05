@@ -11,6 +11,7 @@ import (
 	"github.com/integration-system/isp-lib/v2/backend"
 	"github.com/integration-system/isp-lib/v2/bootstrap"
 	"github.com/integration-system/isp-lib/v2/config"
+	"github.com/integration-system/isp-lib/v2/metric"
 	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
@@ -100,6 +101,10 @@ func main() {
 	_, raftStore := initRaft(raftListener, cfg.Cluster, declaration)
 	initWebsocket(ctx, connectionReadLimit, httpListener, raftStore)
 	initGrpc(cfg.WS.Grpc, raftStore)
+
+	metric.InitProfiling(cfg.ModuleName)
+	metric.InitCollectors(cfg.Metrics, structure.MetricConfiguration{})
+	metric.InitHttpServer(cfg.Metrics)
 
 	defer goodbye.Exit(ctx, -1)
 	goodbye.Notify(ctx)
