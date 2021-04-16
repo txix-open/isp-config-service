@@ -6,7 +6,7 @@ import (
 	"isp-config-service/entity"
 )
 
-const defaultVersionCount = 15
+const DefaultVersionCount = 15
 
 type WriteableVersionConfigStore interface {
 	ReadonlyVersionConfigStore
@@ -25,7 +25,7 @@ type VersionConfigStore struct {
 func (s *VersionConfigStore) Update(req entity.VersionConfig) string {
 	limit := config.Get().(*conf.Configuration).VersionConfigCount
 	if limit <= 0 {
-		limit = defaultVersionCount
+		limit = DefaultVersionCount
 	}
 	var removedId string
 	store, found := s.VersionByConfigId[req.ConfigId]

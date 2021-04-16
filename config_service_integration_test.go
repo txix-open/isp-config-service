@@ -2,12 +2,16 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,6 +22,7 @@ import (
 	"github.com/integration-system/isp-lib-test/utils"
 	"github.com/integration-system/isp-lib-test/utils/postgres"
 	"github.com/integration-system/isp-lib/v2/backend"
+	"github.com/integration-system/isp-lib/v2/bootstrap"
 	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -25,6 +30,8 @@ import (
 	"google.golang.org/grpc/status"
 	"isp-config-service/conf"
 	"isp-config-service/domain"
+	"isp-config-service/entity"
+	"isp-config-service/store/state"
 )
 
 const (
@@ -36,8 +43,11 @@ const (
 	maxAwaitingTime = 25 * time.Second
 	attemptTimeout  = 300 * time.Millisecond
 
-	deleteCommonConfigsCommand = "config/common_config/delete_config"
-	getRoutesCommand           = "config/routing/get_routes"
+	deleteCommonConfigsCommand  = "config/common_config/delete_config"
+	getRoutesCommand            = "config/routing/get_routes"
+	getModulesInfoCommand       = "config/module/get_modules_info"
+	createUpdateConfigCommand   = "config/config/create_update_config"
+	getAllConfigVersionsCommand = "config/config/get_all_version"
 )
 
 var (
@@ -46,6 +56,19 @@ var (
 	configsHttpAddrs = make([]structure.AddressConfiguration, configsNumber)
 	configsGrpcAddrs = make([]structure.AddressConfiguration, configsNumber)
 	configsCtxs      = make([]*docker.ContainerContext, configsNumber)
+)
+
+const mockModuleName = "mockModule"
+
+type (
+	mockRemoteConfig struct {
+		Value1 string `json:"value1"`
+		Value2 int    `json:"value2"`
+		Value3 Value3 `json:"value3"`
+	}
+	Value3 struct {
+		Value31 string `json:"value31"`
+	}
 )
 
 func TestMain(m *testing.M) {
@@ -134,16 +157,8 @@ func setup(testCtx *ctx.TestContext, runTest func() int) int {
 }
 
 func TestClusterElection(t *testing.T) {
-	defer func() {
-		err := recover()
-		if err != nil {
-			log.Println(err)
-		}
-	}()
 	a := assert.New(t)
-	var ready bool
-
-	ready = testClusterReady(a, -1)
+	ready := testClusterReady(a, -1)
 	if !ready {
 		return
 	}
@@ -174,6 +189,94 @@ func TestClusterElection(t *testing.T) {
 	}
 }
 
+//nolint:funlen
+func TestUpdateConfig(t *testing.T) {
+	a := assert.New(t)
+	ready := testClusterReady(a, -1)
+	if !ready {
+		return
+	}
+
+	httpAddr := configsHttpAddrs[configsNumber-1]
+	grpcAddr := configsGrpcAddrs[configsNumber-1]
+
+	remoteConfig := mockRemoteConfig{
+		Value1: "sad",
+		Value2: 6,
+		Value3: Value3{
+			Value31: "32",
+		},
+	}
+	tempDir := t.TempDir()
+	remoteCfgPath := filepath.Join(tempDir, "remote_config.json")
+	remoteCfgJson, err := json.Marshal(remoteConfig)
+	a.NoError(err)
+	a.NoError(os.WriteFile(remoteCfgPath, remoteCfgJson, 0666))
+	go newMockModule(a, httpAddr, remoteCfgPath)
+	time.Sleep(5 * time.Second) // TODO
+
+	client := newGrpcClient(a, grpcAddr)
+	if client == nil {
+		a.FailNow("unable to connect to config")
+	}
+
+	getModuleConfig := func() entity.Config {
+		modulesInfo := getModulesInfo(a, client)
+		a.Len(modulesInfo, 2)
+		mockModule := modulesInfo[1]
+		a.Equal(mockModuleName, mockModule.Name)
+		if !a.Len(mockModule.Configs, 1) {
+			t.FailNow()
+		}
+		return mockModule.Configs[0].Config
+	}
+	initialConfig := getModuleConfig()
+
+	initialConfigVersions := getAllConfigVersions(a, client, initialConfig.Id)
+	a.Len(initialConfigVersions, 0)
+	a.EqualValues(1, initialConfig.Version)
+	a.EqualValues(remoteConfig.Value2, initialConfig.Data["value2"])
+
+	remCfg := map[string]interface{}{
+		"value1": "test1",
+		"value2": 0,
+		"value3": map[string]interface{}{
+			"value31": "something",
+		},
+	}
+	configForUpdate := entity.Config{
+		Id:          initialConfig.Id,
+		Name:        initialConfig.Name,
+		ModuleId:    initialConfig.ModuleId,
+		Description: initialConfig.Description,
+		Data:        remCfg,
+	}
+	const updatesCount = state.DefaultVersionCount + 1
+	for i := 0; i < updatesCount; i++ {
+		remCfg["value2"] = i
+		updatedConfig := updateConfig(a, client, configForUpdate)
+		a.EqualValues(i, updatedConfig.Data["value2"])
+	}
+	// wait until raft is synchronized to non-leader nodes
+	time.Sleep(3 * time.Second) // TODO remove?
+
+	const lastVersion = updatesCount + 1
+	const lastDataValue = updatesCount - 1
+	finalConfig := getModuleConfig()
+	a.EqualValues(lastVersion, finalConfig.Version)
+	a.EqualValues(lastDataValue, finalConfig.Data["value2"])
+
+	configVersions := getAllConfigVersions(a, client, initialConfig.Id)
+	a.Len(configVersions, state.DefaultVersionCount)
+	for i, cfgVer := range configVersions {
+		// -1 because last config is not listed in versions
+		version := lastVersion - i - 1
+		dataValue := lastDataValue - i - 1
+		a.EqualValues(dataValue, cfgVer.Data["value2"])
+		a.EqualValues(version, cfgVer.ConfigVersion)
+	}
+}
+
 func getConfigServiceAddress(num int, port string) structure.AddressConfiguration {
 	lastIP := pgCfg.Address
 	ip := net.ParseIP(lastIP).To4()
@@ -198,22 +301,22 @@ func testClusterReady(a *assert.Assertions, except int) bool {
 			continue
 		}
 		configAddr := configsGrpcAddrs[j]
-		client := newGrpcClient(configAddr, a)
+		client := newGrpcClient(a, configAddr)
 		if client == nil {
 			a.Fail(fmt.Sprintf("unable to connect to %d config", j))
 			return false
 		}
 		clients = append(clients, client)
-		ready := testRaftReady(client, a)
+		ready := testRaftReady(a, client)
 		if !ready {
 			return ready
 		}
 	}
 
-	prevRoutes := getRoutes(clients[0], a)
+	prevRoutes := getRoutes(a, clients[0])
 	routesLen := len(clients)
 	for i := 1; i < len(clients); i++ {
-		routes := getRoutes(clients[i], a)
+		routes := getRoutes(a, clients[i])
 		t := a.Len(routes, routesLen, "invalid length")
 		if !t {
 			return t
@@ -227,7 +330,7 @@ func testClusterReady(a *assert.Assertions, except int) bool {
 	return true
 }
 
-func newGrpcClient(configAddr structure.AddressConfiguration, a *assert.Assertions) *backend.RxGrpcClient {
+func newGrpcClient(a *assert.Assertions, configAddr structure.AddressConfiguration) *backend.RxGrpcClient {
 	start := time.Now()
 	client := backend.NewRxGrpcClient(backend.WithDialOptions(
 		grpc.WithInsecure(),
@@ -252,7 +355,7 @@ func newGrpcClient(configAddr structure.AddressConfiguration, a *assert.Assertio
 	return client
 }
 
-func testRaftReady(client *backend.RxGrpcClient, a *assert.Assertions) bool {
+func testRaftReady(a *assert.Assertions, client *backend.RxGrpcClient) bool {
 	var err error
 	req := new(domain.ConfigIdRequest)
 	req.Id = "33"
@@ -274,7 +377,7 @@ func testRaftReady(client *backend.RxGrpcClient, a *assert.Assertions) bool {
 	return a.NoError(err)
 }
 
-func getRoutes(client *backend.RxGrpcClient, a *assert.Assertions) []structure.BackendDeclaration {
+func getRoutes(a *assert.Assertions, client *backend.RxGrpcClient) []structure.BackendDeclaration {
 	var response []structure.BackendDeclaration
 	var err error
 	f := func() (interface{}, error) {
@@ -295,6 +398,45 @@ func getRoutes(client *backend.RxGrpcClient, a *assert.Assertions) []structure.B
 	}
 
 	_, _ = await(f, time.Second, 50*time.Millisecond)
+	a.NoError(err)
+	return response
+}
+
+func getModulesInfo(a *assert.Assertions, client *backend.RxGrpcClient) []domain.ModuleInfo {
+	var response []domain.ModuleInfo
+	err := client.Invoke(
+		getModulesInfoCommand,
+		-1,
+		nil,
+		&response,
+	)
+
+	a.NoError(err)
+	return response
+}
+
+func updateConfig(a *assert.Assertions, client *backend.RxGrpcClient, config entity.Config) domain.ConfigModuleInfo {
+	var response domain.ConfigModuleInfo
+	err := client.Invoke(
+		createUpdateConfigCommand,
+		-1,
+		domain.CreateUpdateConfigRequest{Config: config},
+		&response,
+	)
+
+	a.NoError(err)
+	return response
+}
+
+func getAllConfigVersions(a *assert.Assertions, client *backend.RxGrpcClient, configId string) []entity.VersionConfig {
+	var response []entity.VersionConfig
+	err := client.Invoke(
+		getAllConfigVersionsCommand,
+		-1,
+		domain.ConfigIdRequest{Id: configId},
+		&response,
+	)
+
 	a.NoError(err)
 	return response
 }
@@ -341,4 +483,53 @@ func (l *writeLogger) Write(p []byte) (int, error) {
 // printing the prefix and the string data written.
 func NewWriteLogger(prefix string, w io.Writer, filter string) io.Writer {
 	return &writeLogger{prefix, w, filter}
+}
+
+func newMockModule(a *assert.Assertions, configAddr structure.AddressConfiguration, remoteCfgPath string) {
+	makeDeclaration := func(localConfig interface{}) bootstrap.ModuleInfo {
+		return bootstrap.ModuleInfo{
+			ModuleName:    mockModuleName,
+			ModuleVersion: "dev",
+			GrpcOuterAddress: structure.AddressConfiguration{
+				IP:   "128.3.3.3",
+				Port: "9999",
+			},
+			Endpoints: nil,
+		}
+	}
+
+	socketConfiguration := func(cfg interface{}) structure.SocketConfiguration {
+		return structure.SocketConfiguration{
+			Host:   configAddr.IP,
+			Port:   configAddr.Port,
+			Secure: false,
+			UrlParams: map[string]string{
+				"module_name":   mockModuleName,
+				"instance_uuid": "ec183598-746a-425f-b5e5-27b7fa8bc6af",
+			},
+		}
+	}
+
+	cfg := bootstrap.
+		ServiceBootstrap(&conf.Configuration{}, &mockRemoteConfig{}).
+		DefaultRemoteConfigPath(remoteCfgPath).
+		SocketConfiguration(socketConfiguration).
+		OnSocketErrorReceive(func(errorMessage map[string]interface{}) {
+			a.Fail("OnSocketErrorReceive", errorMessage)
+		}).
+		OnConfigErrorReceive(func(errorMessage string) {
+			fmt.Printf("OnConfigErrorReceive: %s\n", errorMessage)
+		}).
+		DeclareMe(makeDeclaration).
+		OnShutdown(func(ctx context.Context, sig os.Signal) {
+			a.Fail("OnShutdown")
+		}).
+		OnRemoteConfigReceive(func(remoteConfig, _ *mockRemoteConfig) {
+			// TODO: compare configs?
+			fmt.Println("OnRemoteConfigReceive", remoteConfig)
+		}).OnModuleReady(func() {
+		fmt.Println("OnModuleReady")
+	})
+
+	cfg.Run()
 }
