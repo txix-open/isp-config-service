@@ -103,7 +103,7 @@ func (client *Client) SyncApplyOnLeader(command []byte) (*ApplyLogResponse, erro
 		return nil, fmt.Errorf("apply to raft as a leader: %v", err)
 	}
 	logResponse := apply.(ApplyLogResponse)
-	return &logResponse, err
+	return &logResponse, nil
 }
 
 func (client *Client) listenLeader() {
