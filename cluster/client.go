@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -67,10 +68,10 @@ func (client *Client) SyncApply(command []byte) (*ApplyLogResponse, error) {
 	if client.leaderState.isLeader {
 		apply, err := client.r.SyncApply(command)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("apply to raft as a leader: %v", err)
 		}
 		logResponse := apply.(ApplyLogResponse)
-		return &logResponse, err
+		return &logResponse, nil
 	}
 
 	if client.leaderClient == nil {
@@ -78,7 +79,7 @@ func (client *Client) SyncApply(command []byte) (*ApplyLogResponse, error) {
 	}
 	response, err := client.leaderClient.Ack(command, defaultApplyTimeout)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("send to leader to apply: %v", err)
 	}
 
 	var logResponse ApplyLogResponse
@@ -99,7 +100,7 @@ func (client *Client) SyncApplyOnLeader(command []byte) (*ApplyLogResponse, erro
 	}
 	apply, err := client.r.SyncApply(command)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("apply to raft as a leader: %v", err)
 	}
 	logResponse := apply.(ApplyLogResponse)
 	return &logResponse, err
@@ -115,7 +116,6 @@ func (client *Client) listenLeader() {
 		}).Info(codes.LeaderStateChanged, "leader state changed")
 
 		if client.leaderClient != nil {
-			log.Debugf(0, "close previous leader ws connection %s", client.leaderState.leaderAddr)
 			client.leaderClient.Close()
 			client.leaderClient = nil
 		}
@@ -148,7 +148,9 @@ func (client *Client) declareMyselfToLeader(leaderClient *SocketLeaderClient) {
 	if err != nil {
 		log.Warnf(codes.SendDeclarationToLeader, "send declaration to leader. err: %v", err)
 	} else if response != utils.WsOkResponse {
-		log.Warnf(codes.SendDeclarationToLeader, "send declaration to leader. response: %s", response)
+		log.Warnf(codes.SendDeclarationToLeader, "send declaration to leader. error response: '%s'", response)
+	} else {
+		log.Info(codes.SendDeclarationToLeader, "successfully sent my declaration to leader")
 	}
 }
 

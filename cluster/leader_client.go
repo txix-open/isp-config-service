@@ -62,9 +62,9 @@ func (c *SocketLeaderClient) Close() {
 	c.cancel()
 	err := c.client.Close()
 	if err != nil {
-		log.Warnf(codes.LeaderClientConnectionError, "leader client close err: %v", err)
+		log.Warnf(codes.LeaderClientConnectionError, "leader client %s close err: %v", c.url, err)
 	}
-	log.Debug(0, "leader client connection closed")
+	log.Debugf(0, "close previous leader ws connection %s", c.url)
 }
 
 func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *SocketLeaderClient {
@@ -84,12 +84,16 @@ func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *
 	leaderClient.client.OnDisconnect(func(err error) {
 		log.WithMetadata(map[string]interface{}{
 			"leaderAddr": address,
+			"error":      err,
 		}).Warn(codes.LeaderClientDisconnected, "disconnected ws from leader")
 		leaderDisconnectionCallback()
 	})
 
 	leaderClient.client.OnError(func(err error) {
-		log.Warnf(codes.LeaderClientConnectionError, "leader client on error: %v", err)
+		log.WithMetadata(map[string]interface{}{
+			"leaderAddr": address,
+			"error":      err,
+		}).Warn(codes.LeaderClientDisconnected, "leader client on error")
 	})
 	leaderClient.client.OnConnect(func() {
 		log.WithMetadata(map[string]interface{}{
