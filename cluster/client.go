@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/integration-system/isp-lib/v2/atomic"
 	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
@@ -32,6 +33,7 @@ type Client struct {
 	r *raft.Raft
 
 	leaderMu           sync.RWMutex
+	isLeader           *atomic.AtomicBool
 	leaderState        leaderState
 	leaderClient       *SocketLeaderClient
 	declaration        structure.BackendDeclaration
@@ -51,10 +53,7 @@ func (client *Client) Shutdown() error {
 }
 
 func (client *Client) IsLeader() bool {
-	client.leaderMu.RLock()
-	defer client.leaderMu.RUnlock()
-
-	return client.leaderState.isLeader
+	return client.isLeader.Get()
 }
 
 func (client *Client) SyncApply(command []byte) (*ApplyLogResponse, error) {
@@ -122,7 +121,7 @@ func (client *Client) listenLeader() {
 		if n.LeaderElected && !n.IsLeader {
 			leaderAddr := n.CurrentLeaderAddress
 			leaderClient := NewSocketLeaderClient(leaderAddr, func() {
-				client.onClientDisconnect(leaderAddr)
+				go client.onClientDisconnect(leaderAddr)
 			})
 			if err := leaderClient.Dial(leaderConnectionTimeout); err != nil {
 				log.Fatalf(codes.LeaderClientConnectionError, "could not connect to leader: %v", err)
@@ -139,6 +138,7 @@ func (client *Client) listenLeader() {
 			isLeader:      n.IsLeader,
 			leaderAddr:    n.CurrentLeaderAddress,
 		}
+		client.isLeader.Set(n.IsLeader)
 
 		client.leaderMu.Unlock()
 	}
@@ -182,6 +182,7 @@ func NewRaftClusterClient(r *raft.Raft, declaration structure.BackendDeclaration
 		declaration:        declaration,
 		leaderState:        leaderState{},
 		onClientDisconnect: onLeaderDisconnect,
+		isLeader:           atomic.NewAtomicBool(false),
 	}
 	go client.listenLeader()
 
