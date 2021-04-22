@@ -180,7 +180,7 @@ func TestClusterElection(t *testing.T) {
 		log.Printf("starting %d container\n", i)
 		a.NoError(configsCtxs[i].StartContainer())
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(4 * time.Second)
 		log.Printf("checking cluster, iteration %d\n", i+1)
 		ready = testClusterReady(a, -1)
 		if !ready {
@@ -356,13 +356,12 @@ func newGrpcClient(a *assert.Assertions, configAddr structure.AddressConfigurati
 }
 
 func testRaftReady(a *assert.Assertions, client *backend.RxGrpcClient) bool {
-	var err error
 	req := new(domain.ConfigIdRequest)
 	req.Id = "33"
 	response := new(structure.GrpcError)
 	start := time.Now()
 	f := func() (interface{}, error) {
-		err = client.Invoke(
+		err := client.Invoke(
 			deleteCommonConfigsCommand,
 			-1,
 			req,
@@ -372,16 +371,15 @@ func testRaftReady(a *assert.Assertions, client *backend.RxGrpcClient) bool {
 		// log.Println("send grpc request. response: ", response, "err: ", err)
 		return nil, err
 	}
-	_, _ = await(f, maxAwaitingTime, attemptTimeout)
+	_, err := await(f, maxAwaitingTime, attemptTimeout)
 	log.Println("waiting until raft ready:", time.Since(start).Round(time.Second))
 	return a.NoError(err)
 }
 
 func getRoutes(a *assert.Assertions, client *backend.RxGrpcClient) []structure.BackendDeclaration {
-	var response []structure.BackendDeclaration
-	var err error
 	f := func() (interface{}, error) {
-		err = client.Invoke(
+		var response []structure.BackendDeclaration
+		err := client.Invoke(
 			getRoutesCommand,
 			-1,
 			nil,
@@ -394,12 +392,13 @@ func getRoutes(a *assert.Assertions, client *backend.RxGrpcClient) []structure.B
 		}
 		//nolint
 		// log.Println("routes:", response)
-		return nil, nil
+		return response, nil
 	}
 
-	_, _ = await(f, time.Second, 50*time.Millisecond)
+	response, err := await(f, time.Second, 50*time.Millisecond)
 	a.NoError(err)
-	return response
+	declarations, _ := response.([]structure.BackendDeclaration)
+	return declarations
 }
 
 func getModulesInfo(a *assert.Assertions, client *backend.RxGrpcClient) []domain.ModuleInfo {
