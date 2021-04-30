@@ -187,14 +187,17 @@ func (cs configService) BroadcastActiveConfigs(state state.ReadonlyState, config
 			go cs.broadcast(room, utils.ConfigError, []byte(err.Error()))
 			continue
 		}
-		go cs.broadcast(room, utils.ConfigSendConfigWhenConnected, data)
+		go cs.broadcast(room, utils.ConfigSendConfigChanged, data)
 	}
 }
 
-func (cs configService) broadcast(room, event string, data []byte) {
-	err := holder.EtpServer.BroadcastToRoom(room, utils.ConfigSendConfigWhenConnected, data)
-	if err != nil {
-		log.Errorf(codes.ConfigServiceBroadcastConfigError, "broadcast %s err: %v", event, err)
+func (cs configService) broadcast(room, event string, body []byte) {
+	conns := holder.EtpServer.Rooms().ToBroadcast(room)
+	for _, conn := range conns {
+		err := EmitConnWithTimeout(conn, event, body)
+		if err != nil {
+			log.Errorf(codes.ConfigServiceBroadcastConfigError, "broadcast '%s' to %s: %v", event, conn.RemoteAddr(), err)
+		}
 	}
 }
 

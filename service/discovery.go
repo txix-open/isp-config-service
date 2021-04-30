@@ -1,13 +1,9 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"sync"
-	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	etp "github.com/integration-system/isp-etp-go/v2"
 	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/integration-system/isp-lib/v2/utils"
@@ -20,13 +16,12 @@ import (
 
 const (
 	AllModules = "*"
-
-	messagesBackoffInterval   = 100 * time.Millisecond
-	messagesBackoffMaxRetries = 3
 )
 
 var (
-	Discovery = newDiscoveryService()
+	Discovery = &discoveryService{
+		subs: make(map[string][]string),
+	}
 )
 
 type discoveryService struct {
@@ -64,9 +59,13 @@ func (ds *discoveryService) Subscribe(conn etp.Conn, modules []string, mesh stat
 		for i := range events {
 			event := events[i]
 			addressList := eventsAddresses[i]
-			err := ds.sendAddrList(conn, event, addressList)
+			body, err := json.Marshal(addressList)
 			if err != nil {
-				log.Errorf(codes.DiscoveryServiceSendModulesError, "send module connected %v", err)
+				panic(err)
+			}
+			err = EmitConnWithTimeout(conn, event, body)
+			if err != nil {
+				log.Errorf(codes.DiscoveryServiceSendModulesError, "send module connected to %s: %v", conn.RemoteAddr(), err)
 			}
 		}
 	}(rooms, eventsAddresses, conn)
@@ -78,12 +77,7 @@ func (ds *discoveryService) BroadcastModuleAddresses(moduleName string, mesh sta
 	room := Room.AddressListener(moduleName)
 	event := utils.ModuleConnected(moduleName)
 	addressList := mesh.GetModuleAddresses(moduleName)
-	go func(room, event string, addressList []structure.AddressConfiguration) {
-		err := ds.broadcastAddrList(room, event, addressList)
-		if err != nil {
-			log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected %v", err)
-		}
-	}(room, event, addressList)
+	go ds.broadcastModuleAddrList(room, event, addressList)
 }
 
 func (ds *discoveryService) BroadcastEvent(event cluster.BroadcastEvent) {
@@ -93,53 +87,49 @@ func (ds *discoveryService) BroadcastEvent(event cluster.BroadcastEvent) {
 
 	if len(event.ModuleNames) == 1 && event.ModuleNames[0] == AllModules {
 		go func() {
-			if err := holder.EtpServer.BroadcastToAll(eventName, payload); err != nil {
-				err = errors.WithMessagef(err, "broadcast '%s' to all modules", eventName)
-				log.Error(codes.DiscoveryServiceSendModulesError, err)
+			conns := holder.EtpServer.Rooms().AllConns()
+			for _, conn := range conns {
+				err := EmitConnWithTimeout(conn, eventName, payload)
+				if err != nil {
+					log.WithMetadata(map[string]interface{}{
+						"eventName":      eventName,
+						"remote_address": conn.RemoteAddr(),
+					}).Errorf(codes.DiscoveryServiceSendModulesError, "broadcast event to all modules: %v", err)
+				}
 			}
 		}()
-	} else {
-		for _, moduleName := range event.ModuleNames {
-			go func(moduleName string) {
-				room := Room.Module(moduleName)
-				if err := holder.EtpServer.BroadcastToRoom(room, eventName, payload); err != nil {
-					err = errors.WithMessagef(err, "broadcast '%s' to '%s'", eventName, moduleName)
-					log.Error(codes.DiscoveryServiceSendModulesError, err)
-				}
-			}(moduleName)
+		return
+	}
+
+	rooms := make([]string, 0, len(event.ModuleNames))
+	for _, moduleName := range event.ModuleNames {
+		room := Room.Module(moduleName)
+		rooms = append(rooms, room)
+	}
+	go func(rooms []string) {
+		conns := holder.EtpServer.Rooms().ToBroadcast(rooms...)
+		for _, conn := range conns {
+			err := EmitConnWithTimeout(conn, eventName, payload)
+			if err != nil {
+				log.WithMetadata(map[string]interface{}{
+					"eventName":      eventName,
+					"remote_address": conn.RemoteAddr(),
+				}).Errorf(codes.DiscoveryServiceSendModulesError, "broadcast event: %v", err)
+			}
 		}
-	}
+	}(rooms)
 }
 
-func (ds *discoveryService) broadcastAddrList(room string, event string, addressList []structure.AddressConfiguration) error {
-	bytes, err := json.Marshal(addressList)
+func (ds *discoveryService) broadcastModuleAddrList(room string, event string, addressList []structure.AddressConfiguration) {
+	body, err := json.Marshal(addressList)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	err = holder.EtpServer.BroadcastToRoom(room, event, bytes)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (ds *discoveryService) sendAddrList(conn etp.Conn, event string, addressList []structure.AddressConfiguration) error {
-	bytes, err := json.Marshal(addressList)
-	if err != nil {
-		return err
-	}
-	bf := backoff.WithMaxRetries(backoff.NewConstantBackOff(messagesBackoffInterval), messagesBackoffMaxRetries)
-	err = backoff.Retry(func() error {
-		return conn.Emit(context.Background(), event, bytes)
-	}, bf)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func newDiscoveryService() *discoveryService {
-	return &discoveryService{
-		subs: make(map[string][]string),
+	conns := holder.EtpServer.Rooms().ToBroadcast(room)
+	for _, conn := range conns {
+		err := EmitConnWithTimeout(conn, event, body)
+		if err != nil {
+			log.Errorf(codes.DiscoveryServiceSendModulesError, "broadcast module connected to %s: %v", conn.RemoteAddr(), err)
+		}
 	}
 }

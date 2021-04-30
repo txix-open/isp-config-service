@@ -81,7 +81,7 @@ func (h *SocketEventHandler) handleConnect(conn etp.Conn) {
 
 func (h *SocketEventHandler) handleDisconnect(conn etp.Conn, _ error) {
 	moduleName, _ := Parameters(conn)
-	log.Debugf(0, "handleDisconnect from %s", moduleName) // REMOVE
+	log.Debugf(0, "websocket handleDisconnect from module '%s' addr '%s'", moduleName, conn.RemoteAddr())
 	if moduleName != "" {
 		holder.EtpServer.Rooms().Leave(conn, service.Room.Module(moduleName))
 		now := state.GenerateDate()
@@ -105,8 +105,9 @@ func (h *SocketEventHandler) handleDisconnect(conn etp.Conn, _ error) {
 	}
 }
 
-func (h *SocketEventHandler) handleError(_ etp.Conn, err error) {
-	log.Warnf(codes.WebsocketError, "isp-etp: %v", err)
+func (h *SocketEventHandler) handleError(conn etp.Conn, err error) {
+	moduleName, _ := Parameters(conn)
+	log.Warnf(codes.WebsocketError, "websocket handleError module '%s' from %s: %v", moduleName, conn.RemoteAddr(), err)
 }
 
 func NewSocketEventHandler(server etp.Server, store *store.Store) *SocketEventHandler {

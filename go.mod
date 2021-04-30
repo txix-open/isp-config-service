@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/raft v1.2.0
 	github.com/hashicorp/raft-boltdb/v2 v2.0.0-20210409134258-03c10cc3d4ea
 	github.com/integration-system/bellows v1.0.1
-	github.com/integration-system/isp-etp-go/v2 v2.1.2
+	github.com/integration-system/isp-etp-go/v2 v2.1.3-0.20210430094727-13f5801ec901
 	github.com/integration-system/isp-lib-test v1.6.3
 	github.com/integration-system/isp-lib/v2 v2.8.4
 	github.com/integration-system/isp-log v1.1.6

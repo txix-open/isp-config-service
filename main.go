@@ -231,13 +231,13 @@ func gracefulShutdown() {
 
 func onShutdown(ctx context.Context) {
 	backend.StopGrpcServer()
-	holder.EtpServer.Close()
 
 	if err := holder.HTTPServer.Shutdown(ctx); err != nil {
 		log.Warnf(codes.ShutdownHttpServerError, "http server shutdown err: %v", err)
 	} else {
 		log.Info(codes.ShutdownHttpServerInfo, "http server shutdown success")
 	}
+	holder.EtpServer.Close()
 
 	if err := holder.ClusterClient.Shutdown(); err != nil {
 		log.Warnf(codes.RaftShutdownError, "raft shutdown err: %v", err)

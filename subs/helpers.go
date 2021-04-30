@@ -1,7 +1,6 @@
 package subs
 
 import (
-	"context"
 	"errors"
 
 	etp "github.com/integration-system/isp-etp-go/v2"
@@ -9,10 +8,11 @@ import (
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
 	"isp-config-service/holder"
+	"isp-config-service/service"
 )
 
 func EmitConn(conn etp.Conn, event string, body []byte) {
-	err := conn.Emit(context.Background(), event, body)
+	err := service.EmitConnWithTimeout(conn, event, body)
 	if err != nil {
 		log.WithMetadata(map[string]interface{}{
 			"event": event,
