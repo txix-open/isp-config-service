@@ -69,8 +69,10 @@ func (c *SocketLeaderClient) Close() {
 
 func NewSocketLeaderClient(address string, leaderDisconnectionCallback func()) *SocketLeaderClient {
 	etpConfig := etp.Config{
-		HttpClient:          http.DefaultClient,
-		ConnectionReadLimit: WsConnectionReadLimit,
+		HttpClient:              &http.Client{},
+		ConnectionReadLimit:     WsConnectionReadLimit,
+		WorkersNum:              1,
+		WorkersBufferMultiplier: 1,
 	}
 	client := etp.NewClient(etpConfig)
 	leaderClient := &SocketLeaderClient{
