@@ -1,3 +1,12 @@
+### v2.4.6
+* increase default version config count to 15
+* fix leader address race on leader disconnect (it was possible that after the change of the leader, one of the nodes will not be declared available, although this is not so)
+* enable metric server
+* add integration test for multiple config updates
+* fix service hanging on shutdown
+* improve raft logging
+* fix deadlock in cluster client
+* add timeouts to all websocket emits to prevent connections leakage
 ### v2.4.5
 * updated isp-lib
 ### v2.4.4
