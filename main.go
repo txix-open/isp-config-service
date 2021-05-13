@@ -165,7 +165,7 @@ func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration,
 		return nil, nil
 	}
 	clusterClient := cluster.NewRaftClusterClient(r, declaration, func(address string) {
-		raftStore.VisitState(func(s state.WritableState) {
+		go raftStore.VisitState(func(s state.WritableState) {
 			cfg := config.Get().(*conf.Configuration)
 			addr, err := net.ResolveTCPAddr("tcp", address)
 			if err != nil {
@@ -202,13 +202,14 @@ func initGrpc(bindAddress structure.AddressConfiguration, raftStore *store.Store
 
 func gracefulShutdown() {
 	const (
-		gracefulTimeout  = 3 * time.Second
-		terminateTimeout = 4 * time.Second
+		gracefulTimeout  = 10 * time.Second
+		terminateTimeout = 11 * time.Second
 	)
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
-	log.Infof(0, "received signal '%s'", <-quit)
+	signalsCh := make(chan os.Signal, 1)
+	signal.Notify(signalsCh, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	sig := <-signalsCh
+	log.Infof(0, "received signal '%s'", sig)
 
 	finishedCh := make(chan struct{})
 	go func() {
@@ -217,7 +218,7 @@ func gracefulShutdown() {
 			log.Fatal(0, "exit timeout reached: terminating")
 		case <-finishedCh:
 			// ok
-		case sig := <-quit:
+		case sig := <-signalsCh:
 			log.Fatalf(0, "received duplicate exit signal '%s': terminating", sig)
 		}
 	}()
