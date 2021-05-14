@@ -6,16 +6,19 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/integration-system/isp-etp-go/v2"
 	"github.com/integration-system/isp-lib/v2/backend"
 	"github.com/integration-system/isp-lib/v2/bootstrap"
 	"github.com/integration-system/isp-lib/v2/config"
+	"github.com/integration-system/isp-lib/v2/metric"
 	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
 	mux "github.com/integration-system/net-mux"
-	"github.com/thecodeteam/goodbye"
 	"isp-config-service/cluster"
 	"isp-config-service/codes"
 	"isp-config-service/conf"
@@ -39,8 +42,7 @@ const (
 var (
 	version = "0.1.0"
 
-	shutdownChan = make(chan struct{})
-	muxer        mux.Mux
+	muxer mux.Mux
 )
 
 func init() {
@@ -62,7 +64,6 @@ func init() {
 //go:generate swag init --parseDependency
 //go:generate rm -f docs/swagger.json
 func main() {
-	ctx := context.Background()
 	cfg := config.Get().(*conf.Configuration)
 	handlers := helper.GetHandlers()
 	endpoints := backend.GetEndpoints(cfg.ModuleName, handlers)
@@ -98,14 +99,14 @@ func main() {
 	}
 
 	_, raftStore := initRaft(raftListener, cfg.Cluster, declaration)
-	initWebsocket(ctx, connectionReadLimit, httpListener, raftStore)
+	initWebsocket(connectionReadLimit, httpListener, raftStore)
 	initGrpc(cfg.WS.Grpc, raftStore)
 
-	defer goodbye.Exit(ctx, -1)
-	goodbye.Notify(ctx)
-	goodbye.Register(onShutdown)
+	metric.InitProfiling(cfg.ModuleName)
+	metric.InitCollectors(cfg.Metrics, structure.MetricConfiguration{})
+	metric.InitHttpServer(cfg.Metrics)
 
-	<-shutdownChan
+	gracefulShutdown()
 }
 
 func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.Listener, net.Listener, error) {
@@ -130,12 +131,12 @@ func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.L
 	return httpListener, raftListener, nil
 }
 
-func initWebsocket(ctx context.Context, connectionReadLimit int64, listener net.Listener, raftStore *store.Store) {
+func initWebsocket(connectionReadLimit int64, listener net.Listener, raftStore *store.Store) {
 	etpConfig := etp.ServerConfig{
 		InsecureSkipVerify:  true,
 		ConnectionReadLimit: connectionReadLimit,
 	}
-	etpServer := etp.NewServer(ctx, etpConfig)
+	etpServer := etp.NewServer(context.Background(), etpConfig)
 	subs.NewSocketEventHandler(etpServer, raftStore).SubscribeAll()
 
 	mux := http.NewServeMux()
@@ -164,7 +165,7 @@ func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration,
 		return nil, nil
 	}
 	clusterClient := cluster.NewRaftClusterClient(r, declaration, func(address string) {
-		raftStore.VisitState(func(s state.WritableState) {
+		go raftStore.VisitState(func(s state.WritableState) {
 			cfg := config.Get().(*conf.Configuration)
 			addr, err := net.ResolveTCPAddr("tcp", address)
 			if err != nil {
@@ -199,22 +200,54 @@ func initGrpc(bindAddress structure.AddressConfiguration, raftStore *store.Store
 	backend.StartBackendGrpcServer(bindAddress, defaultService)
 }
 
-func onShutdown(ctx context.Context, _ os.Signal) {
-	defer close(shutdownChan)
+func gracefulShutdown() {
+	const (
+		gracefulTimeout  = 10 * time.Second
+		terminateTimeout = 11 * time.Second
+	)
 
+	signalsCh := make(chan os.Signal, 1)
+	signal.Notify(signalsCh, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	sig := <-signalsCh
+	log.Infof(0, "received signal '%s'", sig)
+
+	finishedCh := make(chan struct{})
+	go func() {
+		select {
+		case <-time.After(terminateTimeout):
+			log.Fatal(0, "exit timeout reached: terminating")
+		case <-finishedCh:
+			// ok
+		case sig := <-signalsCh:
+			log.Fatalf(0, "received duplicate exit signal '%s': terminating", sig)
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), gracefulTimeout)
+	defer cancel()
+	onShutdown(ctx)
+	finishedCh <- struct{}{}
+	log.Info(0, "application exited normally")
+}
+
+func onShutdown(ctx context.Context) {
 	backend.StopGrpcServer()
-	holder.EtpServer.Close()
 
 	if err := holder.HTTPServer.Shutdown(ctx); err != nil {
 		log.Warnf(codes.ShutdownHttpServerError, "http server shutdown err: %v", err)
 	} else {
 		log.Info(codes.ShutdownHttpServerInfo, "http server shutdown success")
 	}
+	holder.EtpServer.Close()
 
 	if err := holder.ClusterClient.Shutdown(); err != nil {
 		log.Warnf(codes.RaftShutdownError, "raft shutdown err: %v", err)
 	} else {
 		log.Info(codes.RaftShutdownInfo, "raft shutdown success")
+	}
+
+	if err := model.DbClient.Close(); err != nil {
+		log.Warnf(0, "database shutdown err: %v", err)
 	}
 
 	_ = muxer.Close()

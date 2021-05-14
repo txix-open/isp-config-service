@@ -2,9 +2,11 @@ package cluster
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/integration-system/isp-lib/v2/atomic"
 	"github.com/integration-system/isp-lib/v2/structure"
 	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
@@ -31,6 +33,7 @@ type Client struct {
 	r *raft.Raft
 
 	leaderMu           sync.RWMutex
+	isLeader           *atomic.AtomicBool
 	leaderState        leaderState
 	leaderClient       *SocketLeaderClient
 	declaration        structure.BackendDeclaration
@@ -50,10 +53,7 @@ func (client *Client) Shutdown() error {
 }
 
 func (client *Client) IsLeader() bool {
-	client.leaderMu.RLock()
-	defer client.leaderMu.RUnlock()
-
-	return client.leaderState.isLeader
+	return client.isLeader.Get()
 }
 
 func (client *Client) SyncApply(command []byte) (*ApplyLogResponse, error) {
@@ -67,10 +67,10 @@ func (client *Client) SyncApply(command []byte) (*ApplyLogResponse, error) {
 	if client.leaderState.isLeader {
 		apply, err := client.r.SyncApply(command)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("apply to raft as a leader: %v", err)
 		}
 		logResponse := apply.(ApplyLogResponse)
-		return &logResponse, err
+		return &logResponse, nil
 	}
 
 	if client.leaderClient == nil {
@@ -78,7 +78,7 @@ func (client *Client) SyncApply(command []byte) (*ApplyLogResponse, error) {
 	}
 	response, err := client.leaderClient.Ack(command, defaultApplyTimeout)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("send to leader to apply: %v", err)
 	}
 
 	var logResponse ApplyLogResponse
@@ -99,10 +99,10 @@ func (client *Client) SyncApplyOnLeader(command []byte) (*ApplyLogResponse, erro
 	}
 	apply, err := client.r.SyncApply(command)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("apply to raft as a leader: %v", err)
 	}
 	logResponse := apply.(ApplyLogResponse)
-	return &logResponse, err
+	return &logResponse, nil
 }
 
 func (client *Client) listenLeader() {
@@ -115,17 +115,16 @@ func (client *Client) listenLeader() {
 		}).Info(codes.LeaderStateChanged, "leader state changed")
 
 		if client.leaderClient != nil {
-			log.Debugf(0, "close previous leader ws connection %s", client.leaderState.leaderAddr)
 			client.leaderClient.Close()
 			client.leaderClient = nil
 		}
 		if n.LeaderElected && !n.IsLeader {
-			leaderClient := NewSocketLeaderClient(n.CurrentLeaderAddress, func() {
-				client.onClientDisconnect(client.leaderState.leaderAddr)
+			leaderAddr := n.CurrentLeaderAddress
+			leaderClient := NewSocketLeaderClient(leaderAddr, func() {
+				client.onClientDisconnect(leaderAddr)
 			})
 			if err := leaderClient.Dial(leaderConnectionTimeout); err != nil {
 				log.Fatalf(codes.LeaderClientConnectionError, "could not connect to leader: %v", err)
-				continue
 			}
 			client.leaderClient = leaderClient
 
@@ -139,6 +138,7 @@ func (client *Client) listenLeader() {
 			isLeader:      n.IsLeader,
 			leaderAddr:    n.CurrentLeaderAddress,
 		}
+		client.isLeader.Set(n.IsLeader)
 
 		client.leaderMu.Unlock()
 	}
@@ -148,7 +148,9 @@ func (client *Client) declareMyselfToLeader(leaderClient *SocketLeaderClient) {
 	if err != nil {
 		log.Warnf(codes.SendDeclarationToLeader, "send declaration to leader. err: %v", err)
 	} else if response != utils.WsOkResponse {
-		log.Warnf(codes.SendDeclarationToLeader, "send declaration to leader. response: %s", response)
+		log.Warnf(codes.SendDeclarationToLeader, "send declaration to leader. error response: '%s'", response)
+	} else {
+		log.Info(codes.SendDeclarationToLeader, "successfully sent my declaration to leader")
 	}
 }
 
@@ -180,6 +182,7 @@ func NewRaftClusterClient(r *raft.Raft, declaration structure.BackendDeclaration
 		declaration:        declaration,
 		leaderState:        leaderState{},
 		onClientDisconnect: onLeaderDisconnect,
+		isLeader:           atomic.NewAtomicBool(false),
 	}
 	go client.listenLeader()
 

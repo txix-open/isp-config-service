@@ -18,7 +18,7 @@ func TestVersionConfigStore(t *testing.T) {
 		removedId string
 	}
 
-	config.UnsafeSet(&conf.Configuration{VersionConfigCount: 0})
+	config.UnsafeSet(&conf.Configuration{VersionConfigCount: 5})
 	vcs := NewVersionConfigStore()
 	for _, e := range []example{
 		{cfg: entity.VersionConfig{Id: "1", ConfigId: "1"}, removedId: ""},

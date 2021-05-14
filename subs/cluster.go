@@ -1,6 +1,8 @@
 package subs
 
 import (
+	"fmt"
+
 	etp "github.com/integration-system/isp-etp-go/v2"
 	log "github.com/integration-system/isp-log"
 	"isp-config-service/cluster"
@@ -14,8 +16,8 @@ func (h *SocketEventHandler) applyCommandOnLeader(_ etp.Conn, cmd []byte) (data 
 	obj, err := holder.ClusterClient.SyncApplyOnLeader(cmdCopy)
 	if err != nil {
 		var logResponse cluster.ApplyLogResponse
-		logResponse.ApplyError = err.Error()
-		data, err = json.Marshal(obj)
+		logResponse.ApplyError = fmt.Sprintf("SyncApplyOnLeader: %v", err)
+		data, err = json.Marshal(logResponse)
 		if err != nil {
 			log.Fatalf(codes.SyncApplyError, "marshaling ApplyLogResponse: %v", err)
 		}

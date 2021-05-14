@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/raft"
-	raftboltdb "github.com/hashicorp/raft-boltdb"
+	"github.com/hashicorp/raft-boltdb/v2"
 	"github.com/integration-system/isp-log/adapter"
 	"github.com/pkg/errors"
 	"isp-config-service/codes"

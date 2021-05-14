@@ -1,11 +1,19 @@
 package service
 
-import "github.com/integration-system/isp-lib/v2/utils"
+import (
+	"context"
+	"time"
+
+	etp "github.com/integration-system/isp-etp-go/v2"
+	"github.com/integration-system/isp-lib/v2/utils"
+)
 
 const (
 	configWatchersRoomSuffix = "_config"
 	routesSubscribersRoom    = "__routesSubscribers"
 )
+
+const wsWriteTimeout = time.Second
 
 var (
 	Room = roomService{}
@@ -23,4 +31,10 @@ func (s roomService) RoutesSubscribers() string {
 
 func (s roomService) AddressListener(moduleName string) string {
 	return utils.ModuleConnected(moduleName)
+}
+
+func EmitConnWithTimeout(conn etp.Conn, event string, body []byte) error {
+	ctx, cancel := context.WithTimeout(context.Background(), wsWriteTimeout)
+	defer cancel()
+	return conn.Emit(ctx, event, body)
 }
