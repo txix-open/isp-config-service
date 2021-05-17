@@ -1,3 +1,5 @@
+### v2.4.7
+* updated dependencies
 ### v2.4.6
 * increase default version config count to 15
 * fix leader address race on leader disconnect (it was possible that after the change of the leader, one of the nodes will not be declared available, although this is not so)
