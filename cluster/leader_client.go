@@ -114,8 +114,6 @@ func getURL(address string) string {
 
 	params := url.Values{}
 	params.Add(GETParam, "true")
-	// TODO выпилить instance_uuid ?
 	params.Add(utils.ModuleNameGetParamKey, cfg.ModuleName)
-	params.Add(utils.InstanceUuidGetParamKey, "9d89354b-c728-4b48-b002-a7d3b229f151")
 	return fmt.Sprintf("ws://%s:%d/isp-etp/?%s", addr.IP.String(), addr.Port, params.Encode())
 }

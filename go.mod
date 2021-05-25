@@ -11,7 +11,7 @@ require (
 	github.com/integration-system/bellows v1.0.1
 	github.com/integration-system/isp-etp-go/v2 v2.1.3
 	github.com/integration-system/isp-lib-test v1.6.4
-	github.com/integration-system/isp-lib/v2 v2.8.5
+	github.com/integration-system/isp-lib/v2 v2.8.6
 	github.com/integration-system/isp-log v1.1.8
 	github.com/integration-system/net-mux v1.0.1
 	github.com/json-iterator/go v1.1.11
