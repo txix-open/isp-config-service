@@ -303,7 +303,7 @@ func testClusterReady(a *assert.Assertions, except int) bool {
 		configAddr := configsGrpcAddrs[j]
 		client := newGrpcClient(a, configAddr)
 		if client == nil {
-			a.Fail(fmt.Sprintf("unable to connect to %d config", j))
+			a.Failf("", "unable to connect to %d config", j)
 			return false
 		}
 		clients = append(clients, client)
@@ -503,8 +503,7 @@ func newMockModule(a *assert.Assertions, configAddr structure.AddressConfigurati
 			Port:   configAddr.Port,
 			Secure: false,
 			UrlParams: map[string]string{
-				"module_name":   mockModuleName,
-				"instance_uuid": "ec183598-746a-425f-b5e5-27b7fa8bc6af",
+				"module_name": mockModuleName,
 			},
 		}
 	}

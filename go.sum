@@ -338,8 +338,8 @@ github.com/integration-system/isp-lib-test v1.6.4/go.mod h1:k8DiXG/Bx3k8cft0QI/+
 github.com/integration-system/isp-lib/v2 v2.4.0/go.mod h1:hxyzKBD7eIf6Hm4x6zRsLW5p8m/aFeqeezKMFYBAtho=
 github.com/integration-system/isp-lib/v2 v2.6.2/go.mod h1:ZGW7qQsCuELBHRBnSSDSEonPx+FxAfHiAfwsGQZzVO4=
 github.com/integration-system/isp-lib/v2 v2.8.4/go.mod h1:bKFyatmLqEkaQWJjww0R1Dz+cRn8T7YSaf4VrROgeTw=
-github.com/integration-system/isp-lib/v2 v2.8.5 h1:HKtkNTjkqmVPV9cf26rq0vcqHM182ex5ERh/tYwIZ8o=
-github.com/integration-system/isp-lib/v2 v2.8.5/go.mod h1:ePZcmFjJHUSiivvLxI03BB3Aux0v5rf5wmIYQ8qjOhQ=
+github.com/integration-system/isp-lib/v2 v2.8.6 h1:BCEQ9pQc1wa1BHXrM9fIPVEhQN0T68ffkYU5Zl5Eg7I=
+github.com/integration-system/isp-lib/v2 v2.8.6/go.mod h1:ePZcmFjJHUSiivvLxI03BB3Aux0v5rf5wmIYQ8qjOhQ=
 github.com/integration-system/isp-log v1.1.2/go.mod h1:VVMr3cHW+RuFurPUSeVz71KUnOGQxogxO5atV9N8ISs=
 github.com/integration-system/isp-log v1.1.5/go.mod h1:VVMr3cHW+RuFurPUSeVz71KUnOGQxogxO5atV9N8ISs=
 github.com/integration-system/isp-log v1.1.6/go.mod h1:TpUZ/Tx84sRipAT/YXZ8V7Z21C4iZ8o3wXQs3Cee0Pk=

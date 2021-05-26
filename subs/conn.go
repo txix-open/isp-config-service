@@ -17,7 +17,6 @@ func IsConfigClusterNode(conn etp.Conn) bool {
 }
 
 func Parameters(conn etp.Conn) (moduleName string, err error) {
-	// TODO remove instanceUUID from isp-lib
 	_, moduleName, err = utils.ParseParameters(conn.URL().RawQuery)
 	return moduleName, err
 }
