@@ -71,7 +71,7 @@ type (
 	}
 )
 
-func TestMain(m *testing.M) {
+func testMain(m *testing.M) {
 	cfg := ctx.BaseTestConfiguration{}
 	test, err := ctx.NewIntegrationTest(m, &cfg, setup)
 	if err != nil {
