@@ -1,3 +1,5 @@
+### v2.4.9
+* обновлены зависимости (исправляет panic при запуске)
 ### v2.4.8
 * do not check for instance_uuid anymore
 ### v2.4.7
