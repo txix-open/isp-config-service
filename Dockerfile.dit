@@ -1,0 +1,19 @@
+FROM dockerhub.mos.ru/golang:1.19-alpine3.16 as builder
+WORKDIR /build
+ARG version
+ENV version_env=$version
+ARG app_name
+ENV app_name_env=$app_name
+COPY . .
+ENV GOPROXY=https://repo-mirror.mos.ru/repository/go-public
+RUN go build -ldflags="-X 'main.version=$version_env'" -o /main .
+
+FROM dockerhub.mos.ru/alpine:3.16.0
+WORKDIR /app
+ARG app_name
+ENV app_name_env=$app_name
+COPY --from=builder main /app/$app_name_env
+COPY /conf/config.yml /app/config.yml
+COPY /conf/default_remote_config.json* /app/default_remote_config.json
+COPY /migrations /app/migrations
+ENTRYPOINT /app/$app_name_env
