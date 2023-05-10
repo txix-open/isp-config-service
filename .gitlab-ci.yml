@@ -1,0 +1,29 @@
+docker-build:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - set
+    - docker build -f Dockerfile.dit --force-rm --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" .
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+        tag=""
+        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = ':latest'"
+        #docker pull "$CI_REGISTRY_IMAGE${tag}"
+        #docker tag "$CI_REGISTRY_IMAGE${tag}" "$CI_REGISTRY_IMAGE:pre"
+        #docker rmi "$CI_REGISTRY_IMAGE${tag}"
+        #docker push "$CI_REGISTRY_IMAGE:pre"
+        #docker rmi -f "$CI_REGISTRY_IMAGE:pre"
+        docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" "$CI_REGISTRY_IMAGE${tag}"
+        docker rmi "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+        docker push "$CI_REGISTRY_IMAGE${tag}"
+        docker rmi -f "$CI_REGISTRY_IMAGE${tag}"
+      else
+        tag=":$CI_COMMIT_BRANCH"
+        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+      fi
+  after_script:
+    - docker logout $CI_REGISTRY
