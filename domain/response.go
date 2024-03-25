@@ -3,32 +3,57 @@ package domain
 import (
 	"time"
 
+	"github.com/integration-system/isp-lib/v2/config/schema"
+	"github.com/integration-system/isp-lib/v2/structure"
 	"isp-config-service/entity"
-
-	"github.com/integration-system/isp-lib/config/schema"
-	"github.com/integration-system/isp-lib/structure"
 )
 
 type DeleteResponse struct {
 	Deleted int
 }
 
-type Connection struct {
-	LibVersion    string
-	Version       string
-	Address       structure.AddressConfiguration
-	Endpoints     []structure.EndpointConfig `json:",omitempty"`
-	EstablishedAt time.Time
-}
-
 type ModuleInfo struct {
-	Id                 int32
+	Id                 string
 	Name               string
 	Active             bool
 	CreatedAt          time.Time
 	LastConnectedAt    time.Time
 	LastDisconnectedAt time.Time
-	Configs            []entity.Config `json:",omitempty"`
-	ConfigSchema       *schema.Schema  `json:",omitempty"`
-	Status             []Connection    `json:",omitempty"`
+	Configs            []ConfigModuleInfo
+	ConfigSchema       *schema.Schema
+	Status             []Connection
+	RequiredModules    []ModuleDependency
+}
+
+type Connection struct {
+	LibVersion    string
+	Version       string
+	Address       structure.AddressConfiguration
+	Endpoints     []structure.EndpointDescriptor
+	EstablishedAt time.Time
+}
+
+type ModuleDependency struct {
+	Id       string
+	Name     string
+	Required bool
+}
+
+type CommonConfigLinks map[string][]string
+
+type CompiledConfigResponse map[string]interface{}
+
+type DeleteCommonConfigResponse struct {
+	Deleted bool
+	Links   CommonConfigLinks
+}
+
+type CreateUpdateConfigResponse struct {
+	ErrorDetails map[string]string
+	Config       *ConfigModuleInfo
+}
+
+type ConfigModuleInfo struct {
+	entity.Config
+	Valid bool
 }

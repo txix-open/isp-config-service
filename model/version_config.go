@@ -1,4 +1,3 @@
-//nolint:dupl
 package model
 
 import (
@@ -7,25 +6,25 @@ import (
 	"isp-config-service/entity"
 )
 
-type ModulesRepository interface {
-	Snapshot() ([]entity.Module, error)
-	Upsert(module entity.Module) (*entity.Module, error)
-	Delete(identities []string) (int, error)
+type VersionConfigRepository interface {
+	Snapshot() ([]entity.VersionConfig, error)
+	Upsert(model entity.VersionConfig) (*entity.VersionConfig, error)
+	Delete(identities string) (int, error)
 }
 
-type modulesRepPg struct {
+type versionConfigRepPg struct {
 	rxClient *database.RxDbClient
 }
 
-func (r *modulesRepPg) Snapshot() ([]entity.Module, error) {
-	modules := make([]entity.Module, 0)
+func (r *versionConfigRepPg) Snapshot() ([]entity.VersionConfig, error) {
+	modules := make([]entity.VersionConfig, 0)
 	err := r.rxClient.Visit(func(db *pg.DB) error {
 		return db.Model(&modules).Select()
 	})
 	return modules, err
 }
 
-func (r *modulesRepPg) Upsert(module entity.Module) (*entity.Module, error) {
+func (r *versionConfigRepPg) Upsert(module entity.VersionConfig) (*entity.VersionConfig, error) {
 	err := r.rxClient.Visit(func(db *pg.DB) error {
 		_, err := db.Model(&module).
 			OnConflict("(id) DO UPDATE").
@@ -39,12 +38,12 @@ func (r *modulesRepPg) Upsert(module entity.Module) (*entity.Module, error) {
 	return &module, err
 }
 
-func (r *modulesRepPg) Delete(identities []string) (int, error) {
+func (r *versionConfigRepPg) Delete(id string) (int, error) {
 	var err error
 	var res pg.Result
 	err = r.rxClient.Visit(func(db *pg.DB) error {
-		res, err = db.Model(&entity.Module{}).
-			Where("id IN (?)", pg.In(identities)).Delete()
+		res, err = db.Model(&entity.VersionConfig{}).
+			Where("id = ?", id).Delete()
 		return err
 	})
 	if err != nil {

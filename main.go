@@ -1,247 +1,263 @@
 package main
 
 import (
-	"flag"
-	"github.com/integration-system/isp-lib/bootstrap"
-	"github.com/valyala/fasthttp"
-	"isp-config-service/domain"
-	"isp-config-service/module"
+	"context"
+	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
-	rn "runtime"
+	"syscall"
 	"time"
 
+	"github.com/integration-system/isp-etp-go/v2"
+	"github.com/integration-system/isp-lib/v2/backend"
+	"github.com/integration-system/isp-lib/v2/bootstrap"
+	"github.com/integration-system/isp-lib/v2/config"
+	"github.com/integration-system/isp-lib/v2/metric"
+	"github.com/integration-system/isp-lib/v2/structure"
+	"github.com/integration-system/isp-lib/v2/utils"
+	log "github.com/integration-system/isp-log"
+	mux "github.com/integration-system/net-mux"
+	"isp-config-service/cluster"
+	"isp-config-service/codes"
 	"isp-config-service/conf"
-	"isp-config-service/generated"
+	"isp-config-service/controller"
+	_ "isp-config-service/docs"
 	"isp-config-service/helper"
+	"isp-config-service/holder"
 	"isp-config-service/model"
-	"isp-config-service/socket"
-
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/integration-system/isp-lib/backend"
-	"github.com/integration-system/isp-lib/config"
-	"github.com/integration-system/isp-lib/controller"
-	"github.com/integration-system/isp-lib/database"
-	"github.com/integration-system/isp-lib/logger"
-	"github.com/integration-system/isp-lib/metric"
-	"github.com/integration-system/isp-lib/structure"
-	"github.com/integration-system/isp-lib/utils"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
+	"isp-config-service/raft"
+	"isp-config-service/service"
+	"isp-config-service/store"
+	"isp-config-service/store/state"
+	"isp-config-service/subs"
 )
 
 const (
-	routerModule    = "router"
-	converterModule = "converter"
+	moduleName                         = "config"
+	defaultWsConnectionReadLimit int64 = 4 << 20 // 4 MB
 )
 
 var (
-	configData        *conf.Configuration
-	echoEndpoint      *string
-	executableFileDir string
-	version           = "0.1.0"
-	date              = "undefined"
+	version = "0.1.0"
+
+	muxer mux.Mux
 )
 
 func init() {
-	configData = config.InitConfig(&conf.Configuration{}).(*conf.Configuration)
-	database.InitDbWithSchema(configData.Database, configData.Database.Schema)
-	db := database.GetDBManager()
-	model.InitDbManager(db.Db)
-	model.SetSchema(configData.Database.Schema)
-	echoEndpoint = flag.String("echo_endpoint", configData.WS.Grpc.GetAddress(), "endpoint of YourService")
-	module.Version = version
+	config.InitConfig(&conf.Configuration{})
+	if utils.LOG_LEVEL != "" {
+		_ = log.SetLevel(utils.LOG_LEVEL)
+	}
 }
 
+// @title ISP configuration service
+// @version 2.4.1
+// @description Сервис управления конфигурацией модулей ISP кластера
+
+// @license.name GNU GPL v3.0
+
+// @host localhost:9003
+// @BasePath /api/config
+
+//go:generate swag init --parseDependency
+//go:generate rm -f docs/swagger.json
 func main() {
-	ex, err := os.Executable()
-	executableFileDir = path.Dir(ex)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	if utils.DEV {
-		_, filename, _, _ := rn.Caller(0)
-		executableFileDir = path.Dir(filename)
-	}
-	metric.InitCollectors(configData.Metrics, structure.MetricConfiguration{})
-	metric.InitStatusChecker("routers", checkRouters)
-	metric.InitStatusChecker("converters", checkConverters)
-	metric.InitHttpServer(configData.Metrics)
-	metric.GerHttpRouter().GET("/modules", handleModulesRequest)
-
-	createGrpcServer()
-	createRestServer(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{OrigName: true, EmitDefaults: true}))
-}
-
-func checkRouters() interface{} {
-	result := make([]string, 0)
-
-	instances, err := model.InstanceRep.GetInstances(nil)
-	if err != nil {
-		logger.Warn(err)
-	}
-	for _, v := range instances {
-		list := socket.GetModuleAddressList(v.Uuid, routerModule)
-		for _, v := range list {
-			result = append(result, v.GetAddress())
-		}
-	}
-
-	return result
-}
-
-func checkConverters() interface{} {
-	result := make([]string, 0)
-	instances, err := model.InstanceRep.GetInstances(nil)
-	if err != nil {
-		logger.Warn(err)
-	}
-	for _, v := range instances {
-		list := socket.GetModuleAddressList(v.Uuid, converterModule)
-		for _, v := range list {
-			result = append(result, v.GetAddress())
-		}
-	}
-	return result
-}
-
-// newGateway returns a new gateway server which translates HTTP into gRPC.
-func newGateway(ctx context.Context, opts ...runtime.ServeMuxOption) (http.Handler, error) {
-	mux := runtime.NewServeMux(opts...)
-	dialOpts := []grpc.DialOption{grpc.WithInsecure()}
-	err := isp.RegisterBackendServiceHandlerFromEndpoint(ctx, mux, *echoEndpoint, dialOpts)
-	if err != nil {
-		logger.Fatalf("failed to serve rest proxy: %v", err)
-	}
-	return mux, nil
-}
-
-// Start a GRPC server.
-func createGrpcServer() {
-	// Run our server in a goroutine so that it doesn't block.
+	cfg := config.Get().(*conf.Configuration)
 	handlers := helper.GetHandlers()
-	addr := structure.AddressConfiguration{IP: configData.WS.Grpc.IP, Port: configData.WS.Grpc.Port}
-	addrOuter := structure.AddressConfiguration{IP: configData.GrpcOuterAddress.IP, Port: configData.GrpcOuterAddress.Port}
-	backend.StartBackendGrpcServer(addr, backend.GetDefaultService(configData.ModuleName, handlers))
-	enndpoints := backend.GetEndpoints(configData.ModuleName, handlers)
-
-	socket.SetBackendMethods(&structure.BackendDeclaration{
-		ModuleName: configData.ModuleName,
+	endpoints := backend.GetEndpoints(cfg.ModuleName, handlers)
+	address := cfg.GrpcOuterAddress
+	if address.IP == "" {
+		ip, err := getOutboundIP()
+		if err != nil {
+			panic(err)
+		}
+		address.IP = ip
+	}
+	declaration := structure.BackendDeclaration{
+		ModuleName: cfg.ModuleName,
 		Version:    version,
 		LibVersion: bootstrap.LibraryVersion,
-		Endpoints:  enndpoints,
-		Address:    addrOuter,
-	})
-	logger.Infof("EXPORTED MODULE METHODS: %v, module_name: %s, version: %s",
-		enndpoints, configData.ModuleName, version)
+		Endpoints:  endpoints,
+		Address:    address,
+	}
+
+	connectionReadLimit := defaultWsConnectionReadLimit
+	if cfg.WS.WsConnectionReadLimitKB > 0 {
+		//nolint:gomnd
+		connectionReadLimit = cfg.WS.WsConnectionReadLimitKB << 10
+	}
+	cluster.WsConnectionReadLimit = connectionReadLimit
+
+	cfg.Database.Password = fmt.Sprintf("%s%s", cfg.Database.Password, os.Getenv("DB_PASSPART"))
+	model.DbClient.ReceiveConfiguration(cfg.Database)
+
+	httpListener, raftListener, err := initMultiplexer(cfg.WS.Rest)
+	if err != nil {
+		log.Fatalf(codes.InitMuxError, "init mux: %v", err)
+	}
+
+	_, raftStore := initRaft(raftListener, cfg.Cluster, declaration)
+	initWebsocket(connectionReadLimit, httpListener, raftStore)
+	initGrpc(cfg.WS.Grpc, raftStore)
+
+	metric.InitProfiling(cfg.ModuleName)
+	metric.InitCollectors(cfg.Metrics, structure.MetricConfiguration{})
+	metric.InitHttpServer(cfg.Metrics)
+
+	gracefulShutdown()
 }
 
-// Start a HTTP server.
-func createRestServer(opts ...runtime.ServeMuxOption) {
-
-	mux := http.NewServeMux()
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	// === Socket.IO ===
-	mux.Handle("/socket.io/", socket.Get())
-
-	// === REST ===
-	mux.Handle("/swagger/", controller.StaticHandler(
-		http.StripPrefix(
-			"/swagger/", http.FileServer(
-				http.Dir(path.Join(executableFileDir, "static", "swagger-ui"))))))
-
-	gw, err := newGateway(ctx, opts...)
+func initMultiplexer(addressConfiguration structure.AddressConfiguration) (net.Listener, net.Listener, error) {
+	outerAddr, err := net.ResolveTCPAddr("tcp4", addressConfiguration.GetAddress())
 	if err != nil {
-		logger.Fatalf("failed to serve: %v", err)
+		return nil, nil, fmt.Errorf("resolve outer address: %v", err)
 	}
-	mux.Handle("/", gw)
-
-	/*r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	})*/
-
-	var wait time.Duration
-	flag.DurationVar(&wait, "graceful-timeout", time.Second*15,
-		"the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
-	flag.Parse()
-
-	restAddress := configData.WS.Rest.GetAddress()
-	logger.Infof("Serving at %s ...", restAddress)
-	srv := &http.Server{
-		Addr: restAddress,
-		// Good practice to set timeouts to avoid Slowloris attacks.
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
-		IdleTimeout:  time.Second * 60,
-		Handler:      mux, // Pass our instance of gorilla/mux in.
+	tcpListener, err := net.ListenTCP("tcp4", outerAddr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("create tcp transport: %v", err)
 	}
+
+	muxer = mux.New(tcpListener)
+	httpListener := muxer.Match(mux.HTTP1())
+	raftListener := muxer.Match(mux.Any())
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			logger.Fatal(err)
+		if err := muxer.Serve(); err != nil {
+			log.Fatalf(codes.InitMuxError, "serve mux: %v", err)
+		}
+	}()
+	return httpListener, raftListener, nil
+}
+
+func initWebsocket(connectionReadLimit int64, listener net.Listener, raftStore *store.Store) {
+	etpConfig := etp.ServerConfig{
+		InsecureSkipVerify:  true,
+		ConnectionReadLimit: connectionReadLimit,
+	}
+	etpServer := etp.NewServer(context.Background(), etpConfig)
+	subs.NewSocketEventHandler(etpServer, raftStore).SubscribeAll()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/isp-etp/", etpServer.ServeHttp)
+	httpServer := &http.Server{Handler: mux}
+	go func() {
+		if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
+			log.Fatalf(codes.StartHttpServerError, "http server closed: %v", err)
+		}
+	}()
+	holder.EtpServer = etpServer
+	holder.HTTPServer = httpServer
+}
+
+func initRaft(listener net.Listener, clusterCfg conf.ClusterConfiguration,
+	declaration structure.BackendDeclaration) (*cluster.Client, *store.Store) {
+	raftState, err := store.NewStateFromRepository()
+	if err != nil {
+		log.Fatal(codes.RestoreFromRepositoryError, err)
+		return nil, nil
+	}
+	raftStore := store.NewStateStore(raftState)
+	r, err := raft.NewRaft(listener, clusterCfg, raftStore)
+	if err != nil {
+		log.Fatalf(codes.InitRaftError, "unable to create raft server. %v", err)
+		return nil, nil
+	}
+	clusterClient := cluster.NewRaftClusterClient(r, declaration, func(address string) {
+		go raftStore.VisitState(func(s state.WritableState) {
+			cfg := config.Get().(*conf.Configuration)
+			addr, err := net.ResolveTCPAddr("tcp", address)
+			if err != nil {
+				panic(err) // must never occurred
+			}
+			port := cfg.GrpcOuterAddress.Port
+			addressConfiguration := structure.AddressConfiguration{Port: port, IP: addr.IP.String()}
+			back := structure.BackendDeclaration{ModuleName: cfg.ModuleName, Address: addressConfiguration}
+			log.WithMetadata(map[string]interface{}{"declaration": back}).
+				Infof(codes.LeaderManualDeleteLeader, "manually delete disconnected leader's declaration")
+			service.ClusterMesh.HandleDeleteBackendDeclarationCommand(back, s)
+		})
+	})
+	holder.ClusterClient = clusterClient
+
+	if clusterCfg.BootstrapCluster {
+		err = r.BootstrapCluster() // err can be ignored
+		if err != nil {
+			log.Errorf(codes.BootstrapClusterError, "bootstrap cluster. %v", err)
+		}
+	}
+	return clusterClient, raftStore
+}
+
+func initGrpc(bindAddress structure.AddressConfiguration, raftStore *store.Store) {
+	controller.Routes = controller.NewRoutes(raftStore)
+	controller.Schema = controller.NewSchema(raftStore)
+	controller.Module = controller.NewModule(raftStore)
+	controller.Config = controller.NewConfig(raftStore)
+	controller.CommonConfig = controller.NewCommonConfig(raftStore)
+	defaultService := backend.GetDefaultService(moduleName, helper.GetHandlers())
+	backend.StartBackendGrpcServer(bindAddress, defaultService)
+}
+
+func gracefulShutdown() {
+	const (
+		gracefulTimeout  = 10 * time.Second
+		terminateTimeout = 11 * time.Second
+	)
+
+	signalsCh := make(chan os.Signal, 1)
+	signal.Notify(signalsCh, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	sig := <-signalsCh
+	log.Infof(0, "received signal '%s'", sig)
+
+	finishedCh := make(chan struct{})
+	go func() {
+		select {
+		case <-time.After(terminateTimeout):
+			log.Fatal(0, "exit timeout reached: terminating")
+		case <-finishedCh:
+			// ok
+		case sig := <-signalsCh:
+			log.Fatalf(0, "received duplicate exit signal '%s': terminating", sig)
 		}
 	}()
 
-	c := make(chan os.Signal, 1)
-	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
-	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
-	signal.Notify(c, os.Interrupt)
-
-	// Block until we receive our signal.
-	<-c
-
-	// Create a deadline to wait for.
-	ctx, cancel = context.WithTimeout(context.Background(), wait)
+	ctx, cancel := context.WithTimeout(context.Background(), gracefulTimeout)
 	defer cancel()
-	// Doesn't block if no connections, but will otherwise wait
-	// until the timeout deadline.
-	_ = srv.Shutdown(ctx)
-	// Optionally, you could run srv.Shutdown in a goroutine and block on
-	// <-ctx.Done() if your application should wait for other services
-	// to finalize based on context cancellation.
-	logger.Info("shutting down")
-	os.Exit(0)
+	onShutdown(ctx)
+	finishedCh <- struct{}{}
+	log.Info(0, "application exited normally")
 }
 
-func handleModulesRequest(ctx *fasthttp.RequestCtx) {
-	instances, err := model.InstanceRep.GetInstances(nil)
-	if err != nil {
-		logger.Warn(err)
-		ctx.Error("internal server error", http.StatusInternalServerError)
-		return
-	}
+func onShutdown(ctx context.Context) {
+	backend.StopGrpcServer()
 
-	result := make(map[string][]*domain.ModuleInfo, len(instances))
-	for _, i := range instances {
-		info, err := module.GetAggregatedModuleInfo(i.Uuid)
-		if err != nil {
-			logger.Warn(err)
-			continue
-		}
-
-		for _, inf := range info {
-			inf.ConfigSchema = nil
-			inf.Configs = nil
-			for i := range inf.Status {
-				s := &inf.Status[i]
-				s.Endpoints = nil
-			}
-		}
-
-		result[i.Uuid] = info
-	}
-
-	if bytes, err := utils.ConvertInterfaceToBytes(result, nil); err != nil {
-		logger.Warn(err)
-		ctx.Error("internal server error", http.StatusInternalServerError)
+	if err := holder.HTTPServer.Shutdown(ctx); err != nil {
+		log.Warnf(codes.ShutdownHttpServerError, "http server shutdown err: %v", err)
 	} else {
-		ctx.SetStatusCode(http.StatusOK)
-		ctx.SetContentType("application/json; charset=utf-8")
-		ctx.SetBody(bytes)
+		log.Info(codes.ShutdownHttpServerInfo, "http server shutdown success")
 	}
+	holder.EtpServer.Close()
+
+	if err := holder.ClusterClient.Shutdown(); err != nil {
+		log.Warnf(codes.RaftShutdownError, "raft shutdown err: %v", err)
+	} else {
+		log.Info(codes.RaftShutdownInfo, "raft shutdown success")
+	}
+
+	if err := model.DbClient.Close(); err != nil {
+		log.Warnf(0, "database shutdown err: %v", err)
+	}
+
+	_ = muxer.Close()
+}
+
+func getOutboundIP() (string, error) {
+	conn, err := net.Dial("udp", "9.9.9.9:80")
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close()
+	return conn.LocalAddr().(*net.UDPAddr).IP.To4().String(), nil
 }

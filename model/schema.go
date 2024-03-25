@@ -1,30 +1,54 @@
+//nolint:dupl
 package model
 
 import (
-	"github.com/go-pg/pg"
-	"github.com/go-pg/pg/orm"
+	"github.com/go-pg/pg/v9"
+	"github.com/integration-system/isp-lib/v2/database"
 	"isp-config-service/entity"
 )
 
-type SchemaRepository struct {
-	DB orm.DB
+type SchemaRepository interface {
+	Snapshot() ([]entity.ConfigSchema, error)
+	Upsert(schema entity.ConfigSchema) (*entity.ConfigSchema, error)
+	Delete(identities []string) (int, error)
 }
 
-func (r *SchemaRepository) InsertConfigSchema(s *entity.ConfigSchema) (*entity.ConfigSchema, error) {
-	_, err := r.DB.Model(s).Returning("*").Insert()
-	return s, err
+type schemaRepPg struct {
+	rxClient *database.RxDbClient
 }
 
-func (r *SchemaRepository) UpdateConfigSchema(s *entity.ConfigSchema) (*entity.ConfigSchema, error) {
-	_, err := r.DB.Model(s).Returning("*").WherePK().Update()
-	return s, err
+func (r *schemaRepPg) Snapshot() ([]entity.ConfigSchema, error) {
+	schemas := make([]entity.ConfigSchema, 0)
+	err := r.rxClient.Visit(func(db *pg.DB) error {
+		return db.Model(&schemas).Select()
+	})
+	return schemas, err
 }
 
-func (r *SchemaRepository) GetSchemasByModulesId(modulesId []int32) ([]entity.ConfigSchema, error) {
-	var res []entity.ConfigSchema
-	err := r.DB.Model(&res).Where("module_id IN (?)", pg.In(modulesId)).Select()
+func (r *schemaRepPg) Upsert(schema entity.ConfigSchema) (*entity.ConfigSchema, error) {
+	err := r.rxClient.Visit(func(db *pg.DB) error {
+		_, err := db.Model(&schema).
+			OnConflict("(id) DO UPDATE").
+			Returning("*").
+			Insert()
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	return &schema, err
+}
+
+func (r *schemaRepPg) Delete(identities []string) (int, error) {
+	var err error
+	var res pg.Result
+	err = r.rxClient.Visit(func(db *pg.DB) error {
+		res, err = db.Model(&entity.ConfigSchema{}).
+			Where("id IN (?)", pg.In(identities)).Delete()
+		return err
+	})
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected(), err
 }

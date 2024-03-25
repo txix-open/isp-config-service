@@ -1,16 +1,16 @@
 database:
   address: "127.0.0.1"
   schema: "config_service"
-  database: "isp"
+  database: "test"
   port: "5432"
-  username: "isp"
-  password: "isp_password"
+  username: "test"
+  password: "password"
   createSchema: true
 
 moduleName: "config"
 grpcOuterAddress:
-  ip: 127.0.0.1
-  port: 9001
+  ip: ""
+  port: 9002
 
 ws:
   rest:
@@ -28,3 +28,14 @@ metrics:
       ip: "0.0.0.0"
       port: "9551"
     path: "/metrics"
+
+cluster:
+  dataDir: ./data
+  inMemory: true
+  outerAddress: 127.0.0.1:9001
+  connectTimeoutSeconds: 5
+  bootstrapCluster: true
+  peers:
+    - 127.0.0.1:9001
+
+versionConfigCount: 15

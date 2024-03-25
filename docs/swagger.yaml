@@ -1,0 +1,1129 @@
+basePath: /api/config
+definitions:
+  domain.BroadcastEventRequest:
+    properties:
+      event:
+        type: string
+      moduleNames:
+        items:
+          type: string
+        type: array
+      payload:
+        $ref: '#/definitions/json.RawMessage'
+        type: object
+    required:
+    - event
+    - moduleNames
+    type: object
+  domain.CommonConfigLinks:
+    additionalProperties:
+      items:
+        type: string
+      type: array
+    type: object
+  domain.CompileConfigsRequest:
+    properties:
+      commonConfigsIdList:
+        items:
+          type: string
+        type: array
+      data:
+        additionalProperties: true
+        type: object
+    type: object
+  domain.CompiledConfigResponse:
+    additionalProperties: true
+    type: object
+  domain.ConfigIdRequest:
+    properties:
+      id:
+        type: string
+    required:
+    - id
+    type: object
+  domain.ConfigModuleInfo:
+    properties:
+      active:
+        type: boolean
+      commonConfigs:
+        items:
+          type: string
+        type: array
+      createdAt:
+        type: string
+      data:
+        $ref: '#/definitions/entity.ConfigData'
+        type: object
+      description:
+        type: string
+      id:
+        type: string
+      moduleId:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+      valid:
+        type: boolean
+      version:
+        type: integer
+    required:
+    - moduleId
+    - name
+    type: object
+  domain.Connection:
+    properties:
+      address:
+        $ref: '#/definitions/structure.AddressConfiguration'
+        type: object
+      endpoints:
+        items:
+          $ref: '#/definitions/structure.EndpointDescriptor'
+        type: array
+      establishedAt:
+        type: string
+      libVersion:
+        type: string
+      version:
+        type: string
+    type: object
+  domain.CreateUpdateConfigRequest:
+    properties:
+      active:
+        type: boolean
+      commonConfigs:
+        items:
+          type: string
+        type: array
+      createdAt:
+        type: string
+      data:
+        $ref: '#/definitions/entity.ConfigData'
+        type: object
+      description:
+        type: string
+      id:
+        type: string
+      moduleId:
+        type: string
+      name:
+        type: string
+      unsafe:
+        type: boolean
+      updatedAt:
+        type: string
+      version:
+        type: integer
+    required:
+    - moduleId
+    - name
+    type: object
+  domain.DeleteCommonConfigResponse:
+    properties:
+      deleted:
+        type: boolean
+      links:
+        $ref: '#/definitions/domain.CommonConfigLinks'
+        type: object
+    type: object
+  domain.DeleteResponse:
+    properties:
+      deleted:
+        type: integer
+    type: object
+  domain.GetByModuleIdRequest:
+    properties:
+      moduleId:
+        type: string
+    required:
+    - moduleId
+    type: object
+  domain.GetByModuleNameRequest:
+    properties:
+      moduleName:
+        type: string
+    required:
+    - moduleName
+    type: object
+  domain.ModuleDependency:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      required:
+        type: boolean
+    type: object
+  domain.ModuleInfo:
+    properties:
+      active:
+        type: boolean
+      configSchema:
+        $ref: '#/definitions/schema.Schema'
+        type: object
+      configs:
+        items:
+          $ref: '#/definitions/domain.ConfigModuleInfo'
+        type: array
+      createdAt:
+        type: string
+      id:
+        type: string
+      lastConnectedAt:
+        type: string
+      lastDisconnectedAt:
+        type: string
+      name:
+        type: string
+      requiredModules:
+        items:
+          $ref: '#/definitions/domain.ModuleDependency'
+        type: array
+      status:
+        items:
+          $ref: '#/definitions/domain.Connection'
+        type: array
+    type: object
+  entity.CommonConfig:
+    properties:
+      createdAt:
+        type: string
+      data:
+        $ref: '#/definitions/entity.ConfigData'
+        type: object
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+    required:
+    - name
+    type: object
+  entity.Config:
+    properties:
+      active:
+        type: boolean
+      commonConfigs:
+        items:
+          type: string
+        type: array
+      createdAt:
+        type: string
+      data:
+        $ref: '#/definitions/entity.ConfigData'
+        type: object
+      description:
+        type: string
+      id:
+        type: string
+      moduleId:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+      version:
+        type: integer
+    required:
+    - moduleId
+    - name
+    type: object
+  entity.ConfigData:
+    additionalProperties: true
+    type: object
+  entity.ConfigSchema:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      moduleId:
+        type: string
+      schema:
+        $ref: '#/definitions/schema.Schema'
+        type: object
+      updatedAt:
+        type: string
+      version:
+        type: string
+    type: object
+  entity.Module:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      lastConnectedAt:
+        type: string
+      lastDisconnectedAt:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  entity.VersionConfig:
+    properties:
+      configId:
+        type: string
+      configVersion:
+        type: integer
+      createdAt:
+        type: string
+      data:
+        $ref: '#/definitions/entity.ConfigData'
+        type: object
+      id:
+        type: string
+    type: object
+  json.RawMessage:
+    $ref: '#/definitions/json.RawMessage'
+  jsonschema.Definitions:
+    additionalProperties:
+      $ref: '#/definitions/jsonschema.Type'
+    type: object
+  jsonschema.Schema:
+    properties:
+      $ref:
+        description: section 7
+        type: string
+      $schema:
+        description: RFC draft-wright-json-schema-00
+        type: string
+      additionalItems:
+        description: section 5.9
+        type: integer
+      additionalProperties:
+        $ref: '#/definitions/json.RawMessage'
+        description: section 5.18
+        type: object
+      allOf:
+        description: section 5.22
+        items:
+          type: integer
+        type: array
+      anyOf:
+        description: section 5.23
+        items:
+          type: integer
+        type: array
+      binaryEncoding:
+        description: section 4.3
+        type: string
+      default:
+        description: section 6.2
+        type: object
+      definitions:
+        $ref: '#/definitions/jsonschema.Definitions'
+        type: object
+      dependencies:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
+        description: section 5.19
+        type: object
+      description:
+        description: section 6.1
+        type: string
+      enum:
+        description: section 5.20
+        items:
+          type: object
+        type: array
+      exclusiveMaximum:
+        description: section 5.3
+        type: boolean
+      exclusiveMinimum:
+        description: section 5.5
+        type: boolean
+      format:
+        description: section 7
+        type: string
+      items:
+        description: section 5.9
+        type: integer
+      maxItems:
+        description: section 5.10
+        type: integer
+      maxLength:
+        description: section 5.6
+        type: integer
+      maxProperties:
+        description: section 5.13
+        type: integer
+      maximum:
+        description: section 5.2
+        type: integer
+      media:
+        description: RFC draft-wright-json-schema-hyperschema-00, section 4
+        type: integer
+      minItems:
+        description: section 5.11
+        type: integer
+      minLength:
+        description: section 5.7
+        type: integer
+      minProperties:
+        description: section 5.14
+        type: integer
+      minimum:
+        description: section 5.4
+        type: integer
+      multipleOf:
+        description: RFC draft-wright-json-schema-validation-00, section 5
+        type: integer
+      not:
+        description: section 5.25
+        type: integer
+      oneOf:
+        description: section 5.24
+        items:
+          type: integer
+        type: array
+      pattern:
+        description: section 5.8
+        type: string
+      patternProperties:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
+        description: section 5.17
+        type: object
+      properties:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
+        description: section 5.16
+        type: object
+      required:
+        description: section 5.15
+        items:
+          type: string
+        type: array
+      title:
+        description: RFC draft-wright-json-schema-validation-00, section 6, 7
+        type: string
+      type:
+        description: section 5.21
+        type: string
+      uniqueItems:
+        description: section 5.12
+        type: boolean
+    type: object
+  jsonschema.Type:
+    properties:
+      $ref:
+        description: section 7
+        type: string
+      $schema:
+        description: RFC draft-wright-json-schema-00
+        type: string
+      additionalItems:
+        description: section 5.9
+        type: integer
+      additionalProperties:
+        $ref: '#/definitions/json.RawMessage'
+        description: section 5.18
+        type: object
+      allOf:
+        description: section 5.22
+        items:
+          type: integer
+        type: array
+      anyOf:
+        description: section 5.23
+        items:
+          type: integer
+        type: array
+      binaryEncoding:
+        description: section 4.3
+        type: string
+      default:
+        description: section 6.2
+        type: object
+      definitions:
+        $ref: '#/definitions/jsonschema.Definitions'
+        description: section 5.26
+        type: object
+      dependencies:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
+        description: section 5.19
+        type: object
+      description:
+        description: section 6.1
+        type: string
+      enum:
+        description: section 5.20
+        items:
+          type: object
+        type: array
+      exclusiveMaximum:
+        description: section 5.3
+        type: boolean
+      exclusiveMinimum:
+        description: section 5.5
+        type: boolean
+      format:
+        description: section 7
+        type: string
+      items:
+        description: section 5.9
+        type: integer
+      maxItems:
+        description: section 5.10
+        type: integer
+      maxLength:
+        description: section 5.6
+        type: integer
+      maxProperties:
+        description: section 5.13
+        type: integer
+      maximum:
+        description: section 5.2
+        type: integer
+      media:
+        description: RFC draft-wright-json-schema-hyperschema-00, section 4
+        type: integer
+      minItems:
+        description: section 5.11
+        type: integer
+      minLength:
+        description: section 5.7
+        type: integer
+      minProperties:
+        description: section 5.14
+        type: integer
+      minimum:
+        description: section 5.4
+        type: integer
+      multipleOf:
+        description: RFC draft-wright-json-schema-validation-00, section 5
+        type: integer
+      not:
+        description: section 5.25
+        type: integer
+      oneOf:
+        description: section 5.24
+        items:
+          type: integer
+        type: array
+      pattern:
+        description: section 5.8
+        type: string
+      patternProperties:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
+        description: section 5.17
+        type: object
+      properties:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
+        description: section 5.16
+        type: object
+      required:
+        description: section 5.15
+        items:
+          type: string
+        type: array
+      title:
+        description: RFC draft-wright-json-schema-validation-00, section 6, 7
+        type: string
+      type:
+        description: section 5.21
+        type: string
+      uniqueItems:
+        description: section 5.12
+        type: boolean
+    type: object
+  schema.Schema:
+    $ref: '#/definitions/jsonschema.Schema'
+  structure.AddressConfiguration:
+    properties:
+      ip:
+        type: string
+      port:
+        type: string
+    type: object
+  structure.BackendDeclaration:
+    properties:
+      address:
+        $ref: '#/definitions/structure.AddressConfiguration'
+        type: object
+      endpoints:
+        items:
+          $ref: '#/definitions/structure.EndpointDescriptor'
+        type: array
+      libVersion:
+        type: string
+      moduleName:
+        type: string
+      requiredModules:
+        items:
+          $ref: '#/definitions/structure.ModuleDependency'
+        type: array
+      version:
+        type: string
+    type: object
+  structure.EndpointDescriptor:
+    properties:
+      extra:
+        additionalProperties: true
+        type: object
+      inner:
+        type: boolean
+      path:
+        type: string
+      userAuthRequired:
+        type: boolean
+    required:
+    - path
+    type: object
+  structure.GrpcError:
+    properties:
+      details:
+        items:
+          type: object
+        type: array
+      errorCode:
+        type: string
+      errorMessage:
+        type: string
+    type: object
+  structure.ModuleDependency:
+    properties:
+      name:
+        type: string
+      required:
+        type: boolean
+    type: object
+host: localhost:9003
+info:
+  contact: {}
+  description: Сервис управления конфигурацией модулей ISP кластера
+  license:
+    name: GNU GPL v3.0
+  title: ISP configuration service
+  version: 2.4.1
+paths:
+  /common_config/compile:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает скомпилированный объект конфигурации
+      parameters:
+      - description: перечисление идентификаторов общей конфигурации и исхдных конфиг
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CompileConfigsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.CompiledConfigResponse'
+      summary: Метод компиляции итоговой конфигурации для модулей
+      tags:
+      - Общие конфигурации
+  /common_config/create_update_config:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
+        В случае обновления рассылает всем подключенным модулям актуальную конфигурацию
+      parameters:
+      - description: объект для сохранения
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.CommonConfig'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.CommonConfig'
+        "404":
+          description: если конфигурация не найдена
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод обновления общей конфигурации
+      tags:
+      - Общие конфигурации
+  /common_config/delete_config:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает флаг удаления и набор связей с модулями и конфигурациями, в случае наличия связей deleted всегда false
+      parameters:
+      - description: id общей конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.DeleteCommonConfigResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод удаления объектов общей конфигурации по идентификаторам
+      tags:
+      - Общие конфигурации
+  /common_config/get_configs:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает массив конфигураций по запрошенным идентификаторам (все, если массив пустой)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.CommonConfig'
+            type: array
+      summary: Метод получения объектов конфигурации по идентификаторам
+      tags:
+      - Общие конфигурации
+  /common_config/get_links:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает ассоциативный массив, ключами которого являются название модулей, а значения - название конфигурации модуля
+      parameters:
+      - description: id общей конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.CommonConfigLinks'
+      summary: Метод получения связей общей конфигурациями с конфигурацией модулей
+      tags:
+      - Общие конфигурации
+  /config/create_update_config:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
+        В случае обновления рассылает всем подключенным модулям актуальную конфигурацию
+      parameters:
+      - description: объект для сохранения
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateUpdateConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ConfigModuleInfo'
+        "404":
+          description: если конфигурация не найдена
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод обновления конфигурации
+      tags:
+      - Конфигурация
+  /config/delete_config:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает количество удаленных модулей
+      parameters:
+      - description: массив идентификаторов конфигураций
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.DeleteResponse'
+        "400":
+          description: если не указан массив идентификаторов
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод удаления объектов конфигурации по идентификаторам
+      tags:
+      - Конфигурация
+  /config/delete_version:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает количество удаленных версий
+      parameters:
+      - description: id версии конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.DeleteResponse'
+        "400":
+          description: если не указан массив идентификаторов
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод удаления версии конфигурации
+      tags:
+      - Конфигурация
+  /config/get_active_config_by_module_name:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает активную конфиграцию по названию модуля
+      parameters:
+      - description: название модуля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.GetByModuleNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Config'
+        "404":
+          description: если конфигурация не найдена
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получения объекта конфигурации по названию модуля
+      tags:
+      - Конфигурация
+  /config/get_all_version:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает предыдущие версии конфигураций
+      parameters:
+      - description: id конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.VersionConfig'
+            type: array
+        "400":
+          description: если не указан массив идентификаторов
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получение старых версий конфигурации
+      tags:
+      - Конфигурация
+  /config/get_config_by_id:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает актуальную версию конфигурации без дополнительного содержимого (ConfigData)
+      parameters:
+      - description: id конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Config'
+        "400":
+          description: если не указан идентификатор конфигурации
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получение актуальной конфигурации конфигурации
+      tags:
+      - Конфигурация
+  /config/get_configs_by_module_id:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает список конфиграции по ID модуля
+      parameters:
+      - description: ID модуля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.GetByModuleIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.ConfigModuleInfo'
+            type: array
+        "400":
+          description: если идентификатор не указан
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "404":
+          description: если конфигурация не найдена
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получения списка конфигураций по ID модуля
+      tags:
+      - Конфигурация
+  /config/mark_config_as_active:
+    post:
+      consumes:
+      - application/json
+      description: Активирует указанную конфигурацию и деактивирует остальные, возвращает активированную конфигурацию
+      parameters:
+      - description: id конфигурации для изменения
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: активированная конфигурация
+          schema:
+            $ref: '#/definitions/entity.Config'
+        "404":
+          description: если конфигурация не найдена
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод активации конфигурации для модуля
+      tags:
+      - Конфигурация
+  /module/broadcast_event:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: событие
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.BroadcastEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод отправки события всем подключенным модулям
+      tags:
+      - Модули
+  /module/delete_module:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает количество удаленных модулей
+      parameters:
+      - description: массив идентификаторов модулей
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.DeleteResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод удаления объектов модулей по идентификаторам
+      tags:
+      - Модули
+  /module/get_by_name:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: название модуля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.GetByModuleNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Module'
+        "404":
+          description: модуль с указанным названием не найден
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получения модуля по имени
+      tags:
+      - Модули
+  /module/get_modules_info:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает полное состояние всех модулей в кластере (конфигурация, схема конфигурации, подключенные экземпляры)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.ModuleInfo'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получения полной информации о состоянии модуля
+      tags:
+      - Модули
+  /routing/get_routes:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает все доступные модули
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/structure.BackendDeclaration'
+            type: array
+      summary: Метод получения маршрутов
+      tags:
+      - Роуты
+  /schema/get_by_module_id:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает текущую json схему конфигурации модуля
+      parameters:
+      - description: идентификатор модуля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.GetByModuleIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ConfigSchema'
+        "404":
+          description: если схема для модуля не найдена
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/structure.GrpcError'
+      summary: Метод получения схемы конфигурации модуля
+      tags:
+      - Схема
+swagger: "2.0"

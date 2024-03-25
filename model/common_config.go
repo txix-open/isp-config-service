@@ -1,4 +1,4 @@
-//nolint:dupl
+//nolint: dupl
 package model
 
 import (
@@ -7,25 +7,25 @@ import (
 	"isp-config-service/entity"
 )
 
-type ConfigRepository interface {
-	Snapshot() ([]entity.Config, error)
-	Upsert(config entity.Config) (*entity.Config, error)
+type CommonConfigRepository interface {
+	Snapshot() ([]entity.CommonConfig, error)
+	Upsert(config entity.CommonConfig) (*entity.CommonConfig, error)
 	Delete(identities []string) (int, error)
 }
 
-type configRepPg struct {
+type commonConfigRepPg struct {
 	rxClient *database.RxDbClient
 }
 
-func (r *configRepPg) Snapshot() ([]entity.Config, error) {
-	configs := make([]entity.Config, 0)
+func (r *commonConfigRepPg) Snapshot() ([]entity.CommonConfig, error) {
+	configs := make([]entity.CommonConfig, 0)
 	err := r.rxClient.Visit(func(db *pg.DB) error {
 		return db.Model(&configs).Select()
 	})
 	return configs, err
 }
 
-func (r *configRepPg) Upsert(config entity.Config) (*entity.Config, error) {
+func (r *commonConfigRepPg) Upsert(config entity.CommonConfig) (*entity.CommonConfig, error) {
 	err := r.rxClient.Visit(func(db *pg.DB) error {
 		_, err := db.Model(&config).
 			OnConflict("(id) DO UPDATE").
@@ -39,11 +39,11 @@ func (r *configRepPg) Upsert(config entity.Config) (*entity.Config, error) {
 	return &config, err
 }
 
-func (r *configRepPg) Delete(identities []string) (int, error) {
+func (r *commonConfigRepPg) Delete(identities []string) (int, error) {
 	var err error
 	var res pg.Result
 	err = r.rxClient.Visit(func(db *pg.DB) error {
-		res, err = db.Model(&entity.Config{}).
+		res, err = db.Model(&entity.CommonConfig{}).
 			Where("id IN (?)", pg.In(identities)).
 			Delete()
 		return err
