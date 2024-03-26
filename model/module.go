@@ -2,11 +2,13 @@
 package model
 
 import (
+	"isp-config-service/entity"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/integration-system/isp-lib/v2/database"
-	"isp-config-service/entity"
 )
 
+// here
 type ModulesRepository interface {
 	Snapshot() ([]entity.Module, error)
 	Upsert(module entity.Module) (*entity.Module, error)
