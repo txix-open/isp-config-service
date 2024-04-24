@@ -9,11 +9,9 @@ definitions:
           type: string
         type: array
       payload:
-        $ref: '#/definitions/json.RawMessage'
-        type: object
-    required:
-    - event
-    - moduleNames
+        items:
+          type: integer
+        type: array
     type: object
   domain.CommonConfigLinks:
     additionalProperties:
@@ -38,8 +36,6 @@ definitions:
     properties:
       id:
         type: string
-    required:
-    - id
     type: object
   domain.ConfigModuleInfo:
     properties:
@@ -53,7 +49,6 @@ definitions:
         type: string
       data:
         $ref: '#/definitions/entity.ConfigData'
-        type: object
       description:
         type: string
       id:
@@ -68,15 +63,11 @@ definitions:
         type: boolean
       version:
         type: integer
-    required:
-    - moduleId
-    - name
     type: object
   domain.Connection:
     properties:
       address:
         $ref: '#/definitions/structure.AddressConfiguration'
-        type: object
       endpoints:
         items:
           $ref: '#/definitions/structure.EndpointDescriptor'
@@ -100,7 +91,6 @@ definitions:
         type: string
       data:
         $ref: '#/definitions/entity.ConfigData'
-        type: object
       description:
         type: string
       id:
@@ -115,9 +105,6 @@ definitions:
         type: string
       version:
         type: integer
-    required:
-    - moduleId
-    - name
     type: object
   domain.DeleteCommonConfigResponse:
     properties:
@@ -125,7 +112,6 @@ definitions:
         type: boolean
       links:
         $ref: '#/definitions/domain.CommonConfigLinks'
-        type: object
     type: object
   domain.DeleteResponse:
     properties:
@@ -136,15 +122,11 @@ definitions:
     properties:
       moduleId:
         type: string
-    required:
-    - moduleId
     type: object
   domain.GetByModuleNameRequest:
     properties:
       moduleName:
         type: string
-    required:
-    - moduleName
     type: object
   domain.ModuleDependency:
     properties:
@@ -161,7 +143,6 @@ definitions:
         type: boolean
       configSchema:
         $ref: '#/definitions/schema.Schema'
-        type: object
       configs:
         items:
           $ref: '#/definitions/domain.ConfigModuleInfo'
@@ -191,7 +172,6 @@ definitions:
         type: string
       data:
         $ref: '#/definitions/entity.ConfigData'
-        type: object
       description:
         type: string
       id:
@@ -200,8 +180,6 @@ definitions:
         type: string
       updatedAt:
         type: string
-    required:
-    - name
     type: object
   entity.Config:
     properties:
@@ -215,7 +193,6 @@ definitions:
         type: string
       data:
         $ref: '#/definitions/entity.ConfigData'
-        type: object
       description:
         type: string
       id:
@@ -228,9 +205,6 @@ definitions:
         type: string
       version:
         type: integer
-    required:
-    - moduleId
-    - name
     type: object
   entity.ConfigData:
     additionalProperties: true
@@ -245,7 +219,6 @@ definitions:
         type: string
       schema:
         $ref: '#/definitions/schema.Schema'
-        type: object
       updatedAt:
         type: string
       version:
@@ -263,8 +236,6 @@ definitions:
         type: string
       name:
         type: string
-    required:
-    - name
     type: object
   entity.VersionConfig:
     properties:
@@ -276,140 +247,12 @@ definitions:
         type: string
       data:
         $ref: '#/definitions/entity.ConfigData'
-        type: object
       id:
         type: string
     type: object
-  json.RawMessage:
-    $ref: '#/definitions/json.RawMessage'
   jsonschema.Definitions:
     additionalProperties:
       $ref: '#/definitions/jsonschema.Type'
-    type: object
-  jsonschema.Schema:
-    properties:
-      $ref:
-        description: section 7
-        type: string
-      $schema:
-        description: RFC draft-wright-json-schema-00
-        type: string
-      additionalItems:
-        description: section 5.9
-        type: integer
-      additionalProperties:
-        $ref: '#/definitions/json.RawMessage'
-        description: section 5.18
-        type: object
-      allOf:
-        description: section 5.22
-        items:
-          type: integer
-        type: array
-      anyOf:
-        description: section 5.23
-        items:
-          type: integer
-        type: array
-      binaryEncoding:
-        description: section 4.3
-        type: string
-      default:
-        description: section 6.2
-        type: object
-      definitions:
-        $ref: '#/definitions/jsonschema.Definitions'
-        type: object
-      dependencies:
-        additionalProperties:
-          $ref: '#/definitions/jsonschema.Type'
-        description: section 5.19
-        type: object
-      description:
-        description: section 6.1
-        type: string
-      enum:
-        description: section 5.20
-        items:
-          type: object
-        type: array
-      exclusiveMaximum:
-        description: section 5.3
-        type: boolean
-      exclusiveMinimum:
-        description: section 5.5
-        type: boolean
-      format:
-        description: section 7
-        type: string
-      items:
-        description: section 5.9
-        type: integer
-      maxItems:
-        description: section 5.10
-        type: integer
-      maxLength:
-        description: section 5.6
-        type: integer
-      maxProperties:
-        description: section 5.13
-        type: integer
-      maximum:
-        description: section 5.2
-        type: integer
-      media:
-        description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: integer
-      minItems:
-        description: section 5.11
-        type: integer
-      minLength:
-        description: section 5.7
-        type: integer
-      minProperties:
-        description: section 5.14
-        type: integer
-      minimum:
-        description: section 5.4
-        type: integer
-      multipleOf:
-        description: RFC draft-wright-json-schema-validation-00, section 5
-        type: integer
-      not:
-        description: section 5.25
-        type: integer
-      oneOf:
-        description: section 5.24
-        items:
-          type: integer
-        type: array
-      pattern:
-        description: section 5.8
-        type: string
-      patternProperties:
-        additionalProperties:
-          $ref: '#/definitions/jsonschema.Type'
-        description: section 5.17
-        type: object
-      properties:
-        additionalProperties:
-          $ref: '#/definitions/jsonschema.Type'
-        description: section 5.16
-        type: object
-      required:
-        description: section 5.15
-        items:
-          type: string
-        type: array
-      title:
-        description: RFC draft-wright-json-schema-validation-00, section 6, 7
-        type: string
-      type:
-        description: section 5.21
-        type: string
-      uniqueItems:
-        description: section 5.12
-        type: boolean
     type: object
   jsonschema.Type:
     properties:
@@ -420,32 +263,33 @@ definitions:
         description: RFC draft-wright-json-schema-00
         type: string
       additionalItems:
+        allOf:
+        - $ref: '#/definitions/jsonschema.Type'
         description: section 5.9
-        type: integer
       additionalProperties:
-        $ref: '#/definitions/json.RawMessage'
         description: section 5.18
-        type: object
+        items:
+          type: integer
+        type: array
       allOf:
         description: section 5.22
         items:
-          type: integer
+          $ref: '#/definitions/jsonschema.Type'
         type: array
       anyOf:
         description: section 5.23
         items:
-          type: integer
+          $ref: '#/definitions/jsonschema.Type'
         type: array
       binaryEncoding:
         description: section 4.3
         type: string
       default:
         description: section 6.2
-        type: object
       definitions:
-        $ref: '#/definitions/jsonschema.Definitions'
+        allOf:
+        - $ref: '#/definitions/jsonschema.Definitions'
         description: section 5.26
-        type: object
       dependencies:
         additionalProperties:
           $ref: '#/definitions/jsonschema.Type'
@@ -456,8 +300,7 @@ definitions:
         type: string
       enum:
         description: section 5.20
-        items:
-          type: object
+        items: {}
         type: array
       exclusiveMaximum:
         description: section 5.3
@@ -469,8 +312,9 @@ definitions:
         description: section 7
         type: string
       items:
+        allOf:
+        - $ref: '#/definitions/jsonschema.Type'
         description: section 5.9
-        type: integer
       maxItems:
         description: section 5.10
         type: integer
@@ -484,8 +328,9 @@ definitions:
         description: section 5.2
         type: integer
       media:
+        allOf:
+        - $ref: '#/definitions/jsonschema.Type'
         description: RFC draft-wright-json-schema-hyperschema-00, section 4
-        type: integer
       minItems:
         description: section 5.11
         type: integer
@@ -502,12 +347,13 @@ definitions:
         description: RFC draft-wright-json-schema-validation-00, section 5
         type: integer
       not:
+        allOf:
+        - $ref: '#/definitions/jsonschema.Type'
         description: section 5.25
-        type: integer
       oneOf:
         description: section 5.24
         items:
-          type: integer
+          $ref: '#/definitions/jsonschema.Type'
         type: array
       pattern:
         description: section 5.8
@@ -538,7 +384,132 @@ definitions:
         type: boolean
     type: object
   schema.Schema:
-    $ref: '#/definitions/jsonschema.Schema'
+    properties:
+      $ref:
+        description: section 7
+        type: string
+      $schema:
+        description: RFC draft-wright-json-schema-00
+        type: string
+      additionalItems:
+        allOf:
+        - $ref: '#/definitions/jsonschema.Type'
+        description: section 5.9
+      additionalProperties:
+        description: section 5.18
+        items:
+          type: integer
+        type: array
+      allOf:
+        description: section 5.22
+        items:
+          $ref: '#/definitions/jsonschema.Type'
+        type: array
+      anyOf:
+        description: section 5.23
+        items:
+          $ref: '#/definitions/jsonschema.Type'
+        type: array
+      binaryEncoding:
+        description: section 4.3
+        type: string
+      default:
+        description: section 6.2
+      definitions:
+        $ref: '#/definitions/jsonschema.Definitions'
+      dependencies:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
+        description: section 5.19
+        type: object
+      description:
+        description: section 6.1
+        type: string
+      enum:
+        description: section 5.20
+        items: {}
+        type: array
+      exclusiveMaximum:
+        description: section 5.3
+        type: boolean
+      exclusiveMinimum:
+        description: section 5.5
+        type: boolean
+      format:
+        description: section 7
+        type: string
+      items:
+        allOf:
+        - $ref: '#/definitions/jsonschema.Type'
+        description: section 5.9
+      maxItems:
+        description: section 5.10
+        type: integer
+      maxLength:
+        description: section 5.6
+        type: integer
+      maxProperties:
+        description: section 5.13
+        type: integer
+      maximum:
+        description: section 5.2
+        type: integer
+      media:
+        allOf:
+        - $ref: '#/definitions/jsonschema.Type'
+        description: RFC draft-wright-json-schema-hyperschema-00, section 4
+      minItems:
+        description: section 5.11
+        type: integer
+      minLength:
+        description: section 5.7
+        type: integer
+      minProperties:
+        description: section 5.14
+        type: integer
+      minimum:
+        description: section 5.4
+        type: integer
+      multipleOf:
+        description: RFC draft-wright-json-schema-validation-00, section 5
+        type: integer
+      not:
+        allOf:
+        - $ref: '#/definitions/jsonschema.Type'
+        description: section 5.25
+      oneOf:
+        description: section 5.24
+        items:
+          $ref: '#/definitions/jsonschema.Type'
+        type: array
+      pattern:
+        description: section 5.8
+        type: string
+      patternProperties:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
+        description: section 5.17
+        type: object
+      properties:
+        additionalProperties:
+          $ref: '#/definitions/jsonschema.Type'
+        description: section 5.16
+        type: object
+      required:
+        description: section 5.15
+        items:
+          type: string
+        type: array
+      title:
+        description: RFC draft-wright-json-schema-validation-00, section 6, 7
+        type: string
+      type:
+        description: section 5.21
+        type: string
+      uniqueItems:
+        description: section 5.12
+        type: boolean
+    type: object
   structure.AddressConfiguration:
     properties:
       ip:
@@ -550,7 +521,6 @@ definitions:
     properties:
       address:
         $ref: '#/definitions/structure.AddressConfiguration'
-        type: object
       endpoints:
         items:
           $ref: '#/definitions/structure.EndpointDescriptor'
@@ -577,14 +547,11 @@ definitions:
         type: string
       userAuthRequired:
         type: boolean
-    required:
-    - path
     type: object
   structure.GrpcError:
     properties:
       details:
-        items:
-          type: object
+        items: {}
         type: array
       errorCode:
         type: string
@@ -665,7 +632,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает флаг удаления и набор связей с модулями и конфигурациями, в случае наличия связей deleted всегда false
+      description: Возвращает флаг удаления и набор связей с модулями и конфигурациями,
+        в случае наличия связей deleted всегда false
       parameters:
       - description: id общей конфигурации
         in: body
@@ -691,7 +659,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает массив конфигураций по запрошенным идентификаторам (все, если массив пустой)
+      description: Возвращает массив конфигураций по запрошенным идентификаторам (все,
+        если массив пустой)
       produces:
       - application/json
       responses:
@@ -708,7 +677,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает ассоциативный массив, ключами которого являются название модулей, а значения - название конфигурации модуля
+      description: Возвращает ассоциативный массив, ключами которого являются название
+        модулей, а значения - название конфигурации модуля
       parameters:
       - description: id общей конфигурации
         in: body
@@ -886,7 +856,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает актуальную версию конфигурации без дополнительного содержимого (ConfigData)
+      description: Возвращает актуальную версию конфигурации без дополнительного содержимого
+        (ConfigData)
       parameters:
       - description: id конфигурации
         in: body
@@ -952,7 +923,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Активирует указанную конфигурацию и деактивирует остальные, возвращает активированную конфигурацию
+      description: Активирует указанную конфигурацию и деактивирует остальные, возвращает
+        активированную конфигурацию
       parameters:
       - description: id конфигурации для изменения
         in: body
@@ -1062,7 +1034,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает полное состояние всех модулей в кластере (конфигурация, схема конфигурации, подключенные экземпляры)
+      description: Возвращает полное состояние всех модулей в кластере (конфигурация,
+        схема конфигурации, подключенные экземпляры)
       produces:
       - application/json
       responses:
