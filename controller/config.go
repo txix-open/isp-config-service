@@ -223,7 +223,6 @@ func (c *config) GetConfigById(req domain.ConfigIdRequest) (entity.Config, error
 	})
 
 	if len(response) > 0 {
-		response[0].Data = nil
 		return response[0], nil
 	}
 
