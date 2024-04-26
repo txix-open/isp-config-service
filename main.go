@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc"
 	"net"
 	"net/http"
 	"os"
@@ -63,6 +64,7 @@ func init() {
 //go:generate swag init --parseDependency
 //go:generate rm -f docs/swagger.json
 func main() {
+
 	cfg := config.Get().(*conf.Configuration)
 	handlers := helper.GetHandlers()
 	endpoints := backend.GetEndpoints(cfg.ModuleName, handlers)
@@ -196,7 +198,10 @@ func initGrpc(bindAddress structure.AddressConfiguration, raftStore *store.Store
 	controller.Config = controller.NewConfig(raftStore)
 	controller.CommonConfig = controller.NewCommonConfig(raftStore)
 	defaultService := backend.GetDefaultService(moduleName, helper.GetHandlers())
-	backend.StartBackendGrpcServer(bindAddress, defaultService)
+	backend.StartBackendGrpcServer(bindAddress, defaultService,
+		grpc.MaxSendMsgSize(1024*1024*16),
+		grpc.MaxRecvMsgSize(1024*1024*16),
+	)
 }
 
 func gracefulShutdown() {

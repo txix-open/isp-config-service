@@ -13,7 +13,7 @@ const (
 	routesSubscribersRoom    = "__routesSubscribers"
 )
 
-const wsWriteTimeout = time.Second
+const wsWriteTimeout = time.Second * 5
 
 var (
 	Room = roomService{}
