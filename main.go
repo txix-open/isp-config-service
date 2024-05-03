@@ -31,7 +31,7 @@ func main() {
 
 	startup := startup.New(boot)
 	app.AddRunners(startup)
-	app.AddClosers(startup)
+	app.AddClosers(startup.Closers()...)
 
 	shutdown.On(func() {
 		logger.Info(app.Context(), "starting shutdown")

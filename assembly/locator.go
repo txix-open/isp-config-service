@@ -28,9 +28,9 @@ func NewLocator(logger log.Logger, db db.DB) Locator {
 }
 
 type Config struct {
-	grpcMux *grpc.Mux
-	httpMux http.Handler
-	etpSrv  *etp.Server
+	GrpcMux *grpc.Mux
+	HttpMux http.Handler
+	EtpSrv  *etp.Server
 }
 
 func (l Locator) Config() Config {
@@ -49,8 +49,8 @@ func (l Locator) Config() Config {
 	httpMux := routes.HttpHandler(etpSrv)
 
 	return Config{
-		grpcMux: grpcMux,
-		etpSrv:  etpSrv,
-		httpMux: httpMux,
+		GrpcMux: grpcMux,
+		EtpSrv:  etpSrv,
+		HttpMux: httpMux,
 	}
 }

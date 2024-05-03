@@ -53,3 +53,6 @@ create index IX_isp_config_service__config_schema__module_id on isp_config_servi
 
 -- +goose Down
 drop table isp_config_service__module;
+drop table isp_config_service__config;
+drop table isp_config_service__config_history;
+drop table isp_config_service__config_schema;
