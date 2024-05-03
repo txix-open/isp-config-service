@@ -1,41 +1,21 @@
-database:
-  address: "127.0.0.1"
-  schema: "config_service"
-  database: "test"
-  port: "5432"
-  username: "test"
-  password: "password"
-  createSchema: true
-
-moduleName: "config"
+configServiceAddress:
+  ip: 127.0.0.1
+  port: 9001
 grpcOuterAddress:
-  ip: ""
-  port: 9002
+  ip: 127.0.0.1
+  port: 9001
+grpcInnerAddress:
+  ip: 0.0.0.0
+  port: 9001
+moduleName: isp-config-service
 
-ws:
-  rest:
-    port: "9001"
-    ip: "0.0.0.0"
-  grpc:
-    port: "9002"
-    ip: "0.0.0.0"
+infraServerPort: 9006
 
-metrics:
-  gc: true
-  memory: true
-  address:
-    addressConfiguration:
-      ip: "0.0.0.0"
-      port: "9551"
-    path: "/metrics"
+rqlite:
+  DataPath: "data"
+  NodeID: 1
+  BootstrapExpect: 1
+  RaftAddr: "127.0.0.1:9003"
+  JoinAddrs: "127.0.0.1:9003"
+  FKConstraints: true
 
-cluster:
-  dataDir: ./data
-  inMemory: true
-  outerAddress: 127.0.0.1:9001
-  connectTimeoutSeconds: 5
-  bootstrapCluster: true
-  peers:
-    - 127.0.0.1:9001
-
-versionConfigCount: 15
