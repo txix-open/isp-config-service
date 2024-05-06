@@ -5,9 +5,9 @@ import (
 )
 
 type Module struct {
-	Id                 string
-	Name               string
-	LastConnectedAt    time.Time
-	LastDisconnectedAt time.Time
-	Created            time.Time
+	Id                 string     `json:"id"`
+	Name               string     `json:"name"`
+	LastConnectedAt    *time.Time `json:"last_connected_at"`
+	LastDisconnectedAt *time.Time `json:"last_disconnected_at"`
+	CreatedAt          time.Time  `json:"created_at"`
 }

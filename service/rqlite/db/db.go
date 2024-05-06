@@ -4,12 +4,17 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/iancoleman/strcase"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/txix-open/isp-kit/http/httpcli"
 	"github.com/txix-open/isp-kit/json"
 )
+
+func init() {
+	sqlx.NameMapper = strcase.ToSnake
+}
 
 type DB struct {
 	cli *httpcli.Client
@@ -37,11 +42,14 @@ func (d DB) Select(ctx context.Context, ptr any, query string, args ...any) erro
 	resp := Response{
 		Results: []*Result{result},
 	}
+	params := map[string]any{
+		"timings":     true,
+		"associative": true,
+	}
+	ConsistencyFromContext(ctx).appendParams(params)
 	err := d.cli.Post("/db/query").
-		QueryParams(map[string]any{
-			"timings":     true,
-			"associative": true,
-		}).JsonRequestBody(Request(query, args...)).
+		QueryParams(params).
+		JsonRequestBody(request(query, args...)).
 		JsonResponseBody(&resp).
 		StatusCodeToError().
 		DoWithoutResponse(ctx)
@@ -59,11 +67,14 @@ func (d DB) SelectRow(ctx context.Context, ptr any, query string, args ...any) e
 	resp := Response{
 		Results: []*Result{result},
 	}
-	httpResp, err := d.cli.Post("/db/query").
-		QueryParams(map[string]any{
-			"timings":     true,
-			"associative": true,
-		}).JsonRequestBody(Request(query, args...)).
+	params := map[string]any{
+		"timings":     true,
+		"associative": true,
+	}
+	ConsistencyFromContext(ctx).appendParams(params)
+	httpResp, err := d.cli.Post("/db/request").
+		QueryParams(params).
+		JsonRequestBody(requests(request(query, args...))).
 		JsonResponseBody(&resp).
 		StatusCodeToError().
 		Do(ctx)
@@ -98,7 +109,7 @@ func (d DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, er
 	err := d.cli.Post("/db/execute").
 		QueryParams(map[string]any{
 			"timings": true,
-		}).JsonRequestBody(Request(query, args...)).
+		}).JsonRequestBody(requests(request(query, args...))).
 		JsonResponseBody(&resp).
 		StatusCodeToError().
 		DoWithoutResponse(ctx)

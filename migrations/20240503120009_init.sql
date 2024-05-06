@@ -39,20 +39,32 @@ create index IX_isp_config_service__config_history__config_id on isp_config_serv
 
 create table isp_config_service__config_schema
 (
-    id         text not null primary key,
-    name       text not null,
-    module_id  text not null,
-    data       blob not null,
-    version    text not null default 1,
-    created_at text not null default (datetime('now')),
-    updated_at text not null default (datetime('now')),
+    id             text not null primary key,
+    module_id      text not null unique,
+    data           blob not null,
+    module_version text not null default 1,
+    created_at     text not null default (datetime('now')),
+    updated_at     text not null default (datetime('now')),
     foreign key (module_id) references isp_config_service__module (id) on delete cascade on update cascade
 );
 
-create index IX_isp_config_service__config_schema__module_id on isp_config_service__config_schema (module_id);
+create table isp_config_service__backend
+(
+    module_id        text not null,
+    address          text not null,
+    version          text not null,
+    lib_version      text not null,
+    endpoints        blob not null,
+    required_modules blob not null,
+    created_at       text not null default (datetime('now')),
+    updated_at       text not null default (datetime('now')),
+    primary key (module_id, address),
+    foreign key (module_id) references isp_config_service__module (id) on delete cascade on update cascade
+);
 
 -- +goose Down
 drop table isp_config_service__module;
 drop table isp_config_service__config;
 drop table isp_config_service__config_history;
 drop table isp_config_service__config_schema;
+drop table isp_config_service__backend;

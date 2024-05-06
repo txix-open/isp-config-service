@@ -13,6 +13,7 @@ import (
 	"github.com/txix-open/isp-kit/dbx/migration"
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/http"
+	"github.com/txix-open/isp-kit/http/httpcli"
 	"github.com/txix-open/isp-kit/http/httpclix"
 	"github.com/txix-open/isp-kit/log"
 	"isp-config-service/assembly"
@@ -80,7 +81,7 @@ func (s Service) Run(ctx context.Context) error {
 		s.logger.Debug(ctx, "is not a leader")
 	}
 
-	db, err := db.Open(ctx, s.rqlite.Dsn(), httpclix.Default())
+	db, err := db.Open(ctx, s.rqlite.Dsn(), httpclix.Default(httpcli.WithMiddlewares(httpclix.Log(s.logger))))
 	if err != nil {
 		return errors.WithMessage(err, "dial to embedded rqlite")
 	}
