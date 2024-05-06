@@ -11,7 +11,7 @@ var (
 	consistencyCtxValue = consistencyCtxKey{}
 )
 
-func ConsistencyFromContext(ctx context.Context) Consistency {
+func consistencyFromContext(ctx context.Context) Consistency {
 	c, ok := ctx.Value(consistencyCtxValue).(Consistency)
 	if !ok {
 		return Consistency{}

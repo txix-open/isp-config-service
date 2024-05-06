@@ -9,6 +9,7 @@ import (
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/json"
 	"github.com/txix-open/isp-kit/log"
+	"isp-config-service/helpers"
 )
 
 var (
@@ -16,9 +17,9 @@ var (
 )
 
 type ModuleService interface {
-	OnConnect(conn *etp.Conn, moduleName string) error
-	OnDisconnect(conn *etp.Conn, moduleName string, isNormalClose bool, err error) error
-	OnError(conn *etp.Conn, moduleName string, err error)
+	OnConnect(ctx context.Context, conn *etp.Conn, moduleName string) error
+	OnDisconnect(ctx context.Context, conn *etp.Conn, moduleName string, isNormalClose bool, err error) error
+	OnError(ctx context.Context, conn *etp.Conn, moduleName string, err error)
 	OnModuleReady(
 		ctx context.Context,
 		conn *etp.Conn,
@@ -49,26 +50,29 @@ func NewModule(service ModuleService, logger log.Logger) Module {
 }
 
 func (m Module) OnConnect(conn *etp.Conn) {
-	err := m.service.OnConnect(conn, moduleName(conn))
+	ctx := conn.HttpRequest().Context()
+	err := m.service.OnConnect(ctx, conn, helpers.ModuleName(conn))
 	if err != nil {
-		m.handleError(context.Background(), err)
+		m.handleError(ctx, errors.WithMessage(err, "handle onConnect"))
 	}
 }
 
 func (m Module) OnDisconnect(conn *etp.Conn, err error) {
+	ctx := conn.HttpRequest().Context()
 	handleDisconnectErr := m.service.OnDisconnect(
+		ctx,
 		conn,
-		moduleName(conn),
+		helpers.ModuleName(conn),
 		etp.IsNormalClose(err),
 		err,
 	)
 	if handleDisconnectErr != nil {
-		m.handleError(context.Background(), handleDisconnectErr)
+		m.handleError(ctx, errors.WithMessage(handleDisconnectErr, "handle onDisconnect"))
 	}
 }
 
 func (m Module) OnError(conn *etp.Conn, err error) {
-	m.service.OnError(conn, moduleName(conn), err)
+	m.service.OnError(conn.HttpRequest().Context(), conn, helpers.ModuleName(conn), err)
 }
 
 func (m Module) OnModuleReady(ctx context.Context, conn *etp.Conn, event msg.Event) []byte {
@@ -80,7 +84,7 @@ func (m Module) OnModuleReady(ctx context.Context, conn *etp.Conn, event msg.Eve
 
 	err = m.service.OnModuleReady(ctx, conn, backend)
 	if err != nil {
-		return m.handleError(ctx, err)
+		return m.handleError(ctx, errors.WithMessage(err, "handle onModuleReady"))
 	}
 
 	return ok
@@ -95,7 +99,7 @@ func (m Module) OnModuleRequirements(ctx context.Context, conn *etp.Conn, event 
 
 	err = m.service.OnModuleRequirements(ctx, conn, requirements)
 	if err != nil {
-		return m.handleError(ctx, err)
+		return m.handleError(ctx, errors.WithMessage(err, "handle onModuleRequirements"))
 	}
 
 	return ok
@@ -110,7 +114,7 @@ func (m Module) OnModuleConfigSchema(ctx context.Context, conn *etp.Conn, event 
 
 	err = m.service.OnModuleConfigSchema(ctx, conn, configData)
 	if err != nil {
-		return m.handleError(ctx, err)
+		return m.handleError(ctx, errors.WithMessage(err, "handle onModuleConfigSchema"))
 	}
 
 	return ok
@@ -122,8 +126,4 @@ func (m Module) handleError(
 ) []byte {
 	m.logger.Error(ctx, err)
 	return []byte(err.Error())
-}
-
-func moduleName(conn *etp.Conn) string {
-	return conn.HttpRequest().Form.Get("module_name")
 }

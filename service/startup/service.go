@@ -10,6 +10,7 @@ import (
 	"github.com/txix-open/etp/v3"
 	"github.com/txix-open/isp-kit/app"
 	"github.com/txix-open/isp-kit/bootstrap"
+	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/dbx/migration"
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/http"
@@ -28,11 +29,12 @@ const (
 )
 
 type Service struct {
-	boot    *bootstrap.Bootstrap
-	rqlite  *rqlite.Rqlite
-	grpcSrv *grpc.Server
-	httpSrv *http.Server
-	logger  log.Logger
+	boot       *bootstrap.Bootstrap
+	rqlite     *rqlite.Rqlite
+	grpcSrv    *grpc.Server
+	httpSrv    *http.Server
+	clusterCli *cluster.Client
+	logger     log.Logger
 
 	//initialized in Run
 	etpSrv *etp.Server
@@ -41,11 +43,12 @@ type Service struct {
 func New(boot *bootstrap.Bootstrap) Service {
 	rqlite := rqlite.New(boot.App.Config())
 	return Service{
-		boot:    boot,
-		rqlite:  rqlite,
-		logger:  boot.App.Logger(),
-		httpSrv: http.NewServer(boot.App.Logger()),
-		grpcSrv: grpc.DefaultServer(),
+		boot:       boot,
+		rqlite:     rqlite,
+		grpcSrv:    grpc.DefaultServer(),
+		httpSrv:    http.NewServer(boot.App.Logger()),
+		clusterCli: boot.ClusterCli,
+		logger:     boot.App.Logger(),
 	}
 }
 
@@ -107,7 +110,14 @@ func (s Service) Run(ctx context.Context) error {
 			s.boot.Fatal(errors.WithMessage(err, "start http server"))
 		}
 	}()
-	time.Sleep(1 * time.Second)
+	time.Sleep(1 * time.Second) //wait for http start
+
+	go func() {
+		err = s.clusterCli.Run(ctx, cluster.NewEventHandler())
+		if err != nil {
+			s.boot.Fatal(errors.WithMessage(err, "connect to it's self"))
+		}
+	}()
 
 	return nil
 }

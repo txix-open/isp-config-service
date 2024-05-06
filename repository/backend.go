@@ -30,7 +30,7 @@ func (r Backend) Upsert(ctx context.Context, backend entity.Backend) error {
 		).Suffix(`on conflict (module_id, address)  do update
 	set version = excluded.version, lib_version = excluded.lib_version,
 		endpoints = excluded.endpoints, required_modules = excluded.required_modules,
-		updated_at = datetime('now')
+		updated_at = unixepoch()
 		`).
 		ToSql()
 	if err != nil {

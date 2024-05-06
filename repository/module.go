@@ -3,12 +3,12 @@ package repository
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"github.com/txix-open/isp-kit/db"
 	"isp-config-service/entity"
+	"isp-config-service/entity/xtypes"
 )
 
 type Module struct {
@@ -25,7 +25,8 @@ func (r Module) Upsert(ctx context.Context, module entity.Module) (string, error
 	query, args, err := squirrel.Insert(Table("module")).
 		Columns("id", "name", "last_connected_at").
 		Values(module.Id, module.Name, module.LastConnectedAt).
-		Suffix("on conflict (name) do update set last_connected_at = excluded.last_connected_at").
+		Suffix(`on conflict (name) do update 
+	set last_connected_at = excluded.last_connected_at`).
 		Suffix("returning id").
 		ToSql()
 	if err != nil {
@@ -43,7 +44,7 @@ func (r Module) Upsert(ctx context.Context, module entity.Module) (string, error
 func (r Module) SetDisconnectedAt(
 	ctx context.Context,
 	moduleId string,
-	disconnected time.Time,
+	disconnected xtypes.Time,
 ) error {
 	query, args, err := squirrel.Update(Table("module")).
 		Set("last_disconnected_at", disconnected).

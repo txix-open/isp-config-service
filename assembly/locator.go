@@ -8,7 +8,10 @@ import (
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/grpc/endpoint"
 	"github.com/txix-open/isp-kit/log"
+	"isp-config-service/controller"
+	"isp-config-service/repository"
 	"isp-config-service/routes"
+	"isp-config-service/service"
 )
 
 const (
@@ -34,7 +37,23 @@ type Config struct {
 }
 
 func (l Locator) Config() Config {
-	controllers := routes.Controllers{}
+	moduleRepo := repository.NewModule(l.db)
+	backendRepo := repository.NewBackend(l.db)
+	eventRepo := repository.NewEvent(l.db)
+	configRepo := repository.NewConfig(l.db)
+	configSchemaRepo := repository.NewConfigSchema(l.db)
+	moduleService := service.NewModule(
+		moduleRepo,
+		backendRepo,
+		eventRepo,
+		configRepo,
+		configSchemaRepo,
+		l.logger,
+	)
+	moduleController := controller.NewModule(moduleService, l.logger)
+	controllers := routes.Controllers{
+		Module: moduleController,
+	}
 	mapper := endpoint.DefaultWrapper(l.logger)
 	grpcMux := routes.GrpcHandler(mapper, controllers)
 

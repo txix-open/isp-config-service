@@ -46,7 +46,7 @@ func (d DB) Select(ctx context.Context, ptr any, query string, args ...any) erro
 		"timings":     true,
 		"associative": true,
 	}
-	ConsistencyFromContext(ctx).appendParams(params)
+	consistencyFromContext(ctx).appendParams(params)
 	err := d.cli.Post("/db/query").
 		QueryParams(params).
 		JsonRequestBody(request(query, args...)).
@@ -71,7 +71,7 @@ func (d DB) SelectRow(ctx context.Context, ptr any, query string, args ...any) e
 		"timings":     true,
 		"associative": true,
 	}
-	ConsistencyFromContext(ctx).appendParams(params)
+	consistencyFromContext(ctx).appendParams(params)
 	httpResp, err := d.cli.Post("/db/request").
 		QueryParams(params).
 		JsonRequestBody(requests(request(query, args...))).
