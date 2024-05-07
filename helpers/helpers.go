@@ -5,6 +5,5 @@ import (
 )
 
 func ModuleName(conn *etp.Conn) string {
-	_ = conn.HttpRequest().ParseForm()
 	return conn.HttpRequest().Form.Get("module_name")
 }

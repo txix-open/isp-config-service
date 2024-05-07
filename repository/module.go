@@ -6,9 +6,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
-	"github.com/txix-open/isp-kit/db"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
+	"isp-config-service/service/rqlite/db"
 )
 
 type Module struct {
@@ -36,7 +36,7 @@ func (r Module) Upsert(ctx context.Context, module entity.Module) (string, error
 	result := make(map[string]string)
 	err = r.db.SelectRow(ctx, &result, query, args...)
 	if err != nil {
-		return "", errors.WithMessagef(err, "select : %s", query)
+		return "", errors.WithMessagef(err, "select: %s", query)
 	}
 	return result["id"], nil
 }
@@ -60,6 +60,36 @@ func (r Module) SetDisconnectedAt(
 	}
 
 	return nil
+}
+
+func (r Module) GetByNames(ctx context.Context, names []string) ([]entity.Module, error) {
+	query, args, err := squirrel.Select("*").
+		From(Table("module")).
+		Where(squirrel.Eq{
+			"name": names,
+		}).OrderBy("created_at desc").
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
+	result := make([]entity.Module, 0)
+	err = r.db.Select(ctx, &result, query, args...)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+
+	return result, nil
+}
+
+func (r Module) GetById(ctx context.Context, id string) (*entity.Module, error) {
+	result := entity.Module{}
+	query := fmt.Sprintf("select * from %s where id = ?", Table("module"))
+	err := r.db.SelectRow(ctx, &result, query, id)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select row: %s", query)
+	}
+	return &result, nil
 }
 
 func Table(table string) string {

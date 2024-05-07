@@ -51,7 +51,14 @@ func NewModule(service ModuleService, logger log.Logger) Module {
 
 func (m Module) OnConnect(conn *etp.Conn) {
 	ctx := conn.HttpRequest().Context()
-	err := m.service.OnConnect(ctx, conn, helpers.ModuleName(conn))
+	err := conn.HttpRequest().ParseForm()
+	if err != nil {
+		m.handleError(ctx, errors.WithMessage(err, "parse form"))
+		_ = conn.Close()
+		return
+	}
+
+	err = m.service.OnConnect(ctx, conn, helpers.ModuleName(conn))
 	if err != nil {
 		m.handleError(ctx, errors.WithMessage(err, "handle onConnect"))
 	}

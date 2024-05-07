@@ -5,8 +5,9 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/txix-open/isp-kit/db"
 	"isp-config-service/entity"
+	"isp-config-service/entity/xtypes"
+	"isp-config-service/service/rqlite/db"
 )
 
 type Event struct {
@@ -20,8 +21,8 @@ func NewEvent(db db.DB) Event {
 }
 
 func (r Event) Insert(ctx context.Context, event entity.Event) error {
-	query := fmt.Sprintf("insert into %s (type, payload) values (?, ?)", Table("event"))
-	_, err := r.db.Exec(ctx, query, event.Type, event.Payload)
+	query := fmt.Sprintf("insert into %s (payload) values (?)", Table("event"))
+	_, err := r.db.Exec(ctx, query, event.Payload)
 	if err != nil {
 		return errors.WithMessagef(err, "exec: %s", query)
 	}
@@ -38,7 +39,7 @@ func (r Event) Get(ctx context.Context, lastRowId int, limit int) ([]entity.Even
 	return result, nil
 }
 
-func (r Event) DeleteByCreatedAt(ctx context.Context, before int) (int, error) {
+func (r Event) DeleteByCreatedAt(ctx context.Context, before xtypes.Time) (int, error) {
 	query := fmt.Sprintf("delete from %s where created_at < ?", Table("event"))
 	result, err := r.db.Exec(ctx, query, before)
 	if err != nil {

@@ -6,8 +6,8 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
-	"github.com/txix-open/isp-kit/db"
 	"isp-config-service/entity"
+	"isp-config-service/service/rqlite/db"
 )
 
 type Config struct {

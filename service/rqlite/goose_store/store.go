@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3/database"
+	"isp-config-service/repository"
 )
 
 type Store struct {
@@ -18,7 +19,7 @@ type Store struct {
 func NewStore(db *sql.DB) Store {
 	return Store{
 		db:        db,
-		tablename: "isp_config_service__goose_db_version",
+		tablename: repository.Table("goose_db_version"),
 		querier:   &Rqlite{},
 	}
 }

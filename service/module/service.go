@@ -1,4 +1,4 @@
-package service
+package module
 
 import (
 	"context"
@@ -23,7 +23,7 @@ const (
 	backendKey  = "backend"
 )
 
-type ModuleRepo interface {
+type Repo interface {
 	Upsert(ctx context.Context, module entity.Module) (string, error)
 	SetDisconnectedAt(
 		ctx context.Context,
@@ -50,34 +50,43 @@ type ConfigRepo interface {
 	GetActive(ctx context.Context, moduleId string) (*entity.Config, error)
 }
 
-type Module struct {
-	moduleRepo       ModuleRepo
-	backendRepo      BackendRepo
-	eventRepo        EventRepo
-	configRepo       ConfigRepo
-	configSchemaRepo ConfigSchemaRepo
-	logger           log.Logger
+type SubscriptionService interface {
+	SubscribeToConfigChanges(conn *etp.Conn, moduleId string)
+	SubscribeToBackendsChanges(ctx context.Context, conn *etp.Conn, requiredModuleNames []string) error
+	SubscribeToRoutingChanges(ctx context.Context, conn *etp.Conn) error
 }
 
-func NewModule(
-	moduleRepo ModuleRepo,
+type Service struct {
+	moduleRepo          Repo
+	backendRepo         BackendRepo
+	eventRepo           EventRepo
+	configRepo          ConfigRepo
+	configSchemaRepo    ConfigSchemaRepo
+	subscriptionService SubscriptionService
+	logger              log.Logger
+}
+
+func NewService(
+	moduleRepo Repo,
 	backendRepo BackendRepo,
 	eventRepo EventRepo,
 	configRepo ConfigRepo,
 	configSchemaRepo ConfigSchemaRepo,
+	subscriptionService SubscriptionService,
 	logger log.Logger,
-) Module {
-	return Module{
-		moduleRepo:       moduleRepo,
-		backendRepo:      backendRepo,
-		eventRepo:        eventRepo,
-		configRepo:       configRepo,
-		configSchemaRepo: configSchemaRepo,
-		logger:           logger,
+) Service {
+	return Service{
+		moduleRepo:          moduleRepo,
+		backendRepo:         backendRepo,
+		eventRepo:           eventRepo,
+		configRepo:          configRepo,
+		configSchemaRepo:    configSchemaRepo,
+		subscriptionService: subscriptionService,
+		logger:              logger,
 	}
 }
 
-func (s Module) OnConnect(ctx context.Context, conn *etp.Conn, moduleName string) error {
+func (s Service) OnConnect(ctx context.Context, conn *etp.Conn, moduleName string) error {
 	now := now()
 	module := entity.Module{
 		Id:              uuid.NewString(),
@@ -94,7 +103,7 @@ func (s Module) OnConnect(ctx context.Context, conn *etp.Conn, moduleName string
 	return nil
 }
 
-func (s Module) OnDisconnect(
+func (s Service) OnDisconnect(
 	ctx context.Context,
 	conn *etp.Conn,
 	moduleName string,
@@ -128,7 +137,7 @@ func (s Module) OnDisconnect(
 			return errors.WithMessage(err, "delete backend in store")
 		}
 
-		event := entity.NewEvent(entity.ModuleDisconnected, entity.EventPayload{
+		event := entity.NewEvent(entity.EventPayload{
 			ModuleDisconnected: &entity.PayloadModuleDisconnected{
 				ModuleId: moduleId,
 			},
@@ -142,7 +151,7 @@ func (s Module) OnDisconnect(
 	return nil
 }
 
-func (s Module) OnError(ctx context.Context, conn *etp.Conn, moduleName string, err error) {
+func (s Service) OnError(ctx context.Context, conn *etp.Conn, moduleName string, err error) {
 	err = errors.WithMessagef(
 		err,
 		"unexpected error in communication, module: '%s'",
@@ -151,7 +160,7 @@ func (s Module) OnError(ctx context.Context, conn *etp.Conn, moduleName string, 
 	s.logger.Error(ctx, err)
 }
 
-func (s Module) OnModuleReady(
+func (s Service) OnModuleReady(
 	ctx context.Context,
 	conn *etp.Conn,
 	declaration cluster.BackendDeclaration,
@@ -166,6 +175,7 @@ func (s Module) OnModuleReady(
 		Address:         fmt.Sprintf("%s:%s", declaration.Address.IP, declaration.Address.Port),
 		Version:         declaration.Version,
 		LibVersion:      declaration.LibVersion,
+		ModuleName:      declaration.ModuleName,
 		Endpoints:       xtypes.Json[[]cluster.EndpointDescriptor]{Value: declaration.Endpoints},
 		RequiredModules: xtypes.Json[[]cluster.ModuleDependency]{Value: declaration.RequiredModules},
 	}
@@ -176,7 +186,7 @@ func (s Module) OnModuleReady(
 
 	conn.Data().Set(backendKey, backend)
 
-	event := entity.NewEvent(entity.ModuleReady, entity.EventPayload{
+	event := entity.NewEvent(entity.EventPayload{
 		ModuleReady: &entity.PayloadModuleReady{
 			ModuleId: moduleId,
 		},
@@ -189,15 +199,29 @@ func (s Module) OnModuleReady(
 	return nil
 }
 
-func (s Module) OnModuleRequirements(
+func (s Service) OnModuleRequirements(
 	ctx context.Context,
 	conn *etp.Conn,
 	requirements cluster.ModuleRequirements,
 ) error {
+	if len(requirements.RequiredModules) > 0 {
+		err := s.subscriptionService.SubscribeToBackendsChanges(ctx, conn, requirements.RequiredModules)
+		if err != nil {
+			return errors.WithMessage(err, "subscribe to required modules")
+		}
+	}
+
+	if requirements.RequireRoutes {
+		err := s.subscriptionService.SubscribeToRoutingChanges(ctx, conn)
+		if err != nil {
+			return errors.WithMessage(err, "subscribe to routing changes")
+		}
+	}
+
 	return nil
 }
 
-func (s Module) OnModuleConfigSchema(
+func (s Service) OnModuleConfigSchema(
 	ctx context.Context,
 	conn *etp.Conn,
 	data cluster.ConfigData,
@@ -233,6 +257,8 @@ func (s Module) OnModuleConfigSchema(
 	if err != nil {
 		return errors.WithMessage(err, "send event with config")
 	}
+
+	s.subscriptionService.SubscribeToConfigChanges(conn, moduleId)
 
 	configSchema := entity.ConfigSchema{
 		Id:            uuid.NewString(),

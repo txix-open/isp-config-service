@@ -17,6 +17,7 @@ import (
 	"github.com/txix-open/isp-kit/http/httpcli"
 	"github.com/txix-open/isp-kit/http/httpclix"
 	"github.com/txix-open/isp-kit/log"
+	"github.com/txix-open/isp-kit/worker"
 	"isp-config-service/assembly"
 	"isp-config-service/conf"
 	"isp-config-service/service/rqlite"
@@ -37,12 +38,14 @@ type Service struct {
 	logger     log.Logger
 
 	//initialized in Run
-	etpSrv *etp.Server
+	etpSrv            *etp.Server
+	handleEventWorker *worker.Worker
+	cleanEventWorker  *worker.Worker
 }
 
-func New(boot *bootstrap.Bootstrap) Service {
+func New(boot *bootstrap.Bootstrap) *Service {
 	rqlite := rqlite.New(boot.App.Config())
-	return Service{
+	return &Service{
 		boot:       boot,
 		rqlite:     rqlite,
 		grpcSrv:    grpc.DefaultServer(),
@@ -52,7 +55,7 @@ func New(boot *bootstrap.Bootstrap) Service {
 	}
 }
 
-func (s Service) Run(ctx context.Context) error {
+func (s *Service) Run(ctx context.Context) error {
 	localConfig := conf.Local{}
 	err := s.boot.App.Config().Read(&localConfig)
 	if err != nil {
@@ -91,8 +94,13 @@ func (s Service) Run(ctx context.Context) error {
 
 	config := assembly.NewLocator(s.logger, db).Config()
 	s.etpSrv = config.EtpSrv
+	s.handleEventWorker = config.HandleEventWorker
+	s.cleanEventWorker = config.CleanEventWorker
 	s.grpcSrv.Upgrade(config.GrpcMux)
 	s.httpSrv.Upgrade(config.HttpMux)
+
+	s.handleEventWorker.Run(ctx)
+	s.cleanEventWorker.Run(ctx)
 
 	go func() {
 		s.logger.Debug(ctx, fmt.Sprintf("starting grpc server on %s", s.boot.BindingAddress))
@@ -122,7 +130,7 @@ func (s Service) Run(ctx context.Context) error {
 	return nil
 }
 
-func (s Service) Closers() []app.Closer {
+func (s *Service) Closers() []app.Closer {
 	return []app.Closer{
 		app.CloserFunc(func() error {
 			s.grpcSrv.Shutdown()
@@ -132,6 +140,15 @@ func (s Service) Closers() []app.Closer {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			return s.httpSrv.Shutdown(ctx)
+		}),
+		app.CloserFunc(func() error {
+			if s.handleEventWorker != nil {
+				s.handleEventWorker.Shutdown()
+			}
+			if s.cleanEventWorker != nil {
+				s.cleanEventWorker.Shutdown()
+			}
+			return nil
 		}),
 		app.CloserFunc(func() error {
 			if s.etpSrv == nil {
@@ -145,7 +162,7 @@ func (s Service) Closers() []app.Closer {
 	}
 }
 
-func (s Service) leaderStartup(ctx context.Context) error {
+func (s *Service) leaderStartup(ctx context.Context) error {
 	db, err := s.rqlite.SqlDB()
 	if err != nil {
 		return errors.WithMessage(err, "open sql db")

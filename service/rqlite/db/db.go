@@ -4,25 +4,19 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/iancoleman/strcase"
-	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/txix-open/isp-kit/http/httpcli"
 	"github.com/txix-open/isp-kit/json"
 )
 
-func init() {
-	sqlx.NameMapper = strcase.ToSnake
-}
-
-type DB struct {
+type Adapter struct {
 	cli *httpcli.Client
 }
 
-func Open(ctx context.Context, dsn string, client *httpcli.Client) (*DB, error) {
+func Open(ctx context.Context, dsn string, client *httpcli.Client) (*Adapter, error) {
 	client.GlobalRequestConfig().BaseUrl = dsn
-	db := &DB{
+	db := &Adapter{
 		cli: client,
 	}
 
@@ -35,7 +29,7 @@ func Open(ctx context.Context, dsn string, client *httpcli.Client) (*DB, error) 
 	return db, nil
 }
 
-func (d DB) Select(ctx context.Context, ptr any, query string, args ...any) error {
+func (d Adapter) Select(ctx context.Context, ptr any, query string, args ...any) error {
 	result := &Result{
 		Rows: ptr,
 	}
@@ -62,7 +56,7 @@ func (d DB) Select(ctx context.Context, ptr any, query string, args ...any) erro
 	return nil
 }
 
-func (d DB) SelectRow(ctx context.Context, ptr any, query string, args ...any) error {
+func (d Adapter) SelectRow(ctx context.Context, ptr any, query string, args ...any) error {
 	result := &Result{}
 	resp := Response{
 		Results: []*Result{result},
@@ -101,7 +95,7 @@ func (d DB) SelectRow(ctx context.Context, ptr any, query string, args ...any) e
 	return nil
 }
 
-func (d DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
+func (d Adapter) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	result := &Result{}
 	resp := Response{
 		Results: []*Result{result},
@@ -122,10 +116,6 @@ func (d DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, er
 	return result, nil
 }
 
-func (d DB) ExecNamed(ctx context.Context, query string, arg any) (sql.Result, error) {
-	query, args, err := sqlx.Named(query, arg)
-	if err != nil {
-		return nil, errors.WithMessage(err, "map to unnamed query")
-	}
-	return d.Exec(ctx, query, args...)
+func (d Adapter) ExecNamed(ctx context.Context, query string, arg any) (sql.Result, error) {
+	return d.Exec(ctx, query, arg)
 }

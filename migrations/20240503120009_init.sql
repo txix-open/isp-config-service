@@ -54,6 +54,7 @@ create table isp_config_service__backend
     address          text    not null,
     version          text    not null,
     lib_version      text    not null,
+    module_name      text    not null,
     endpoints        blob    not null,
     required_modules blob    not null,
     created_at       integer not null default (unixepoch()),
@@ -64,7 +65,6 @@ create table isp_config_service__backend
 
 create table isp_config_service__event
 (
-    type       integer not null,
     payload    blob    not null,
     created_at integer not null default (unixepoch())
 );
