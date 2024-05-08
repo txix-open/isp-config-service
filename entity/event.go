@@ -6,17 +6,8 @@ import (
 	"isp-config-service/entity/xtypes"
 )
 
-type EventType int
-
-const (
-	Unknown EventType = iota
-	ConfigUpdated
-	ModuleReady
-	ModuleDisconnected
-)
-
 type Event struct {
-	RowId   int                       `json:"rowid"`
+	Id      int                       `json:"id"`
 	Payload xtypes.Json[EventPayload] `json:"payload"`
 }
 

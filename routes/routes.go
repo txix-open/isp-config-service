@@ -8,10 +8,15 @@ import (
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/grpc/endpoint"
 	"isp-config-service/controller"
+	"isp-config-service/controller/api"
 )
 
 type Controllers struct {
-	Module controller.Module
+	Module           controller.Module
+	ModuleApi        api.Module
+	ConfigApi        api.Config
+	ConfigHistoryApi api.ConfigHistory
+	ConfigSchemaApi  api.ConfigSchema
 }
 
 func EndpointDescriptors() []cluster.EndpointDescriptor {
@@ -42,5 +47,49 @@ func HttpHandler(etpSrv *etp.Server) http.Handler {
 }
 
 func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
-	return []cluster.EndpointDescriptor{}
+	return []cluster.EndpointDescriptor{{
+		Path:    "module/get_modules_info",
+		Inner:   true,
+		Handler: c.ModuleApi.GetModulesAggregatedInfo,
+	}, {
+		Path:    "module/delete_module",
+		Inner:   true,
+		Handler: c.ModuleApi.DeleteModules,
+	}, {
+		Path:    "config/get_active_config_by_module_name",
+		Inner:   true,
+		Handler: c.ConfigApi.GetActiveConfigByModuleName,
+	}, {
+		Path:    "config/get_configs_by_module_id",
+		Inner:   true,
+		Handler: c.ConfigApi.GetConfigsByModuleId,
+	}, {
+		Path:    "config/create_update_config",
+		Inner:   true,
+		Handler: c.ConfigApi.CreateUpdateConfig,
+	}, {
+		Path:    "config/get_config_by_id",
+		Inner:   true,
+		Handler: c.ConfigApi.GetConfigById,
+	}, {
+		Path:    "config/mark_config_as_active",
+		Inner:   true,
+		Handler: c.ConfigApi.MarkConfigAsActive,
+	}, {
+		Path:    "config/delete_config",
+		Inner:   true,
+		Handler: c.ConfigApi.DeleteConfigs,
+	}, {
+		Path:    "config/get_all_version",
+		Inner:   true,
+		Handler: c.ConfigHistoryApi.GetAllVersion,
+	}, {
+		Path:    "config/delete_version",
+		Inner:   true,
+		Handler: c.ConfigHistoryApi.DeleteConfigVersion,
+	}, {
+		Path:    "schema/get_by_module_id",
+		Inner:   true,
+		Handler: c.ConfigSchemaApi.SchemaByModuleId,
+	}}
 }

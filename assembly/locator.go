@@ -10,8 +10,10 @@ import (
 	"github.com/txix-open/isp-kit/log"
 	"github.com/txix-open/isp-kit/worker"
 	"isp-config-service/controller"
+	"isp-config-service/controller/api"
 	"isp-config-service/repository"
 	"isp-config-service/routes"
+	apisvs "isp-config-service/service/api"
 	"isp-config-service/service/event"
 	"isp-config-service/service/module"
 	"isp-config-service/service/rqlite/db"
@@ -76,8 +78,20 @@ func (l Locator) Config() Config {
 		l.logger,
 	)
 	moduleController := controller.NewModule(moduleService, l.logger)
+
+	moduleApiService := apisvs.NewModule(moduleRepo, backendRepo, configSchemaRepo)
+	moduleApiController := api.NewModule(moduleApiService)
+
+	configApiController := api.NewConfig(nil)
+	configHistoryController := api.NewConfigHistory(nil)
+	configSchemaController := api.NewConfigSchema(nil)
+
 	controllers := routes.Controllers{
-		Module: moduleController,
+		Module:           moduleController,
+		ModuleApi:        moduleApiController,
+		ConfigApi:        configApiController,
+		ConfigHistoryApi: configHistoryController,
+		ConfigSchemaApi:  configSchemaController,
 	}
 	mapper := endpoint.DefaultWrapper(l.logger)
 	grpcMux := routes.GrpcHandler(mapper, controllers)

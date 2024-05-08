@@ -1,6 +1,8 @@
 package event
 
 import (
+	"slices"
+
 	"isp-config-service/entity"
 )
 
@@ -23,5 +25,6 @@ func (c Compactor) Compact(events []entity.Event) []entity.Event {
 		uniqueEvents = append(uniqueEvents, event)
 		uniqueEventKeys[key] = true
 	}
+	slices.Reverse(uniqueEvents)
 	return uniqueEvents
 }

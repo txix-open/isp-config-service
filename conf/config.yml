@@ -18,4 +18,5 @@ rqlite:
   RaftAddr: "127.0.0.1:9003"
   JoinAddrs: "127.0.0.1:9003"
   FKConstraints: true
+  AutoVacInterval: 12h
 

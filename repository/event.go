@@ -29,10 +29,10 @@ func (r Event) Insert(ctx context.Context, event entity.Event) error {
 	return nil
 }
 
-func (r Event) Get(ctx context.Context, lastRowId int, limit int) ([]entity.Event, error) {
-	query := fmt.Sprintf("select * from %s where rowid > ? order by rowid desc limit ?", Table("event"))
+func (r Event) Get(ctx context.Context, lastEventId int, limit int) ([]entity.Event, error) {
+	query := fmt.Sprintf("select * from %s where id > ? order by id desc limit ?", Table("event"))
 	result := make([]entity.Event, 0)
-	err := r.db.Select(ctx, &result, query, lastRowId, limit)
+	err := r.db.Select(ctx, &result, query, lastEventId, limit)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "select: %s", query)
 	}

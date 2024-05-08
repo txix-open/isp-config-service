@@ -58,7 +58,14 @@ func (m Module) OnConnect(conn *etp.Conn) {
 		return
 	}
 
-	err = m.service.OnConnect(ctx, conn, helpers.ModuleName(conn))
+	moduleName := helpers.ModuleName(conn)
+	if moduleName == "" {
+		m.handleError(ctx, errors.New("module_name is required query param"))
+		_ = conn.Close()
+		return
+	}
+
+	err = m.service.OnConnect(ctx, conn, moduleName)
 	if err != nil {
 		m.handleError(ctx, errors.WithMessage(err, "handle onConnect"))
 	}

@@ -26,7 +26,7 @@ func NewCleaner(repo Repo, eventTtl time.Duration, logger log.Logger) Cleaner {
 
 func (c Cleaner) Do(ctx context.Context) {
 	deleteBefore := time.Now().Add(-c.eventTtl)
-	deleted, err := c.repo.DeleteByCreatedAt(ctx, xtypes.Time{Value: deleteBefore})
+	deleted, err := c.repo.DeleteByCreatedAt(ctx, xtypes.Time(deleteBefore))
 	if err != nil {
 		c.logger.Error(ctx, errors.WithMessage(err, "delete old events"))
 		return

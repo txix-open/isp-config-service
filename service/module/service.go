@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -25,10 +24,9 @@ const (
 
 type Repo interface {
 	Upsert(ctx context.Context, module entity.Module) (string, error)
-	SetDisconnectedAt(
+	SetDisconnectedAtNow(
 		ctx context.Context,
 		moduleId string,
-		disconnected xtypes.Time,
 	) error
 }
 
@@ -87,11 +85,9 @@ func NewService(
 }
 
 func (s Service) OnConnect(ctx context.Context, conn *etp.Conn, moduleName string) error {
-	now := now()
 	module := entity.Module{
-		Id:              uuid.NewString(),
-		Name:            moduleName,
-		LastConnectedAt: &xtypes.Time{Value: now},
+		Id:   uuid.NewString(),
+		Name: moduleName,
 	}
 	moduleId, err := s.moduleRepo.Upsert(ctx, module)
 	if err != nil {
@@ -121,10 +117,9 @@ func (s Service) OnDisconnect(
 		s.logger.Error(ctx, message)
 	}
 
-	now := now()
 	moduleId, _ := store.Get[string](conn.Data(), moduleIdKey)
 	if moduleId != "" {
-		err = s.moduleRepo.SetDisconnectedAt(ctx, moduleName, xtypes.Time{Value: now})
+		err = s.moduleRepo.SetDisconnectedAtNow(ctx, moduleName)
 		if err != nil {
 			return errors.WithMessage(err, "update disconnected time in store")
 		}
@@ -241,7 +236,7 @@ func (s Service) OnModuleConfigSchema(
 			ModuleId: moduleId,
 			Data:     data.Config,
 			Version:  1,
-			Active:   xtypes.Bool{Value: true},
+			Active:   xtypes.Bool(true),
 		}
 		err := s.configRepo.Insert(ctx, initialConfig)
 		if err != nil {
@@ -272,8 +267,4 @@ func (s Service) OnModuleConfigSchema(
 	}
 
 	return nil
-}
-
-func now() time.Time {
-	return time.Now().UTC()
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
@@ -36,4 +37,14 @@ func (r ConfigSchema) Upsert(ctx context.Context, schema entity.ConfigSchema) er
 	}
 
 	return nil
+}
+
+func (r ConfigSchema) All(ctx context.Context) ([]entity.ConfigSchema, error) {
+	result := make([]entity.ConfigSchema, 0)
+	query := fmt.Sprintf("select * from %s order by created_at", Table("config_schema"))
+	err := r.db.Select(ctx, &result, query)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+	return result, nil
 }

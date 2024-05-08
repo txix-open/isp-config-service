@@ -1,8 +1,6 @@
 package xtypes
 
-type Bool struct {
-	Value bool
-}
+type Bool bool
 
 func (l Bool) MarshalJSON() ([]byte, error) {
 	return l.MarshalText()
@@ -13,13 +11,13 @@ func (l *Bool) UnmarshalJSON(data []byte) error {
 }
 
 func (l Bool) MarshalText() ([]byte, error) {
-	if l.Value {
+	if l {
 		return []byte("1"), nil
 	}
 	return []byte("0"), nil
 }
 
 func (l *Bool) UnmarshalText(data []byte) error {
-	l.Value = string(data) == "1"
+	*l = string(data) == "1"
 	return nil
 }

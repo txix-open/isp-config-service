@@ -19,11 +19,10 @@ var (
 // @license.name GNU GPL v3.0
 
 // @host localhost:9000
-// @BasePath /api/isp-config-service
+// @BasePath /api/config
 
 //go:generate swag init --parseDependency
 //go:generate rm -f docs/swagger.json docs/docs.go
-
 func main() {
 	boot := bootstrap.New(version, conf.Remote{}, routes.EndpointDescriptors())
 	app := boot.App

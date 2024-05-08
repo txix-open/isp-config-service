@@ -2,7 +2,6 @@ package subscription
 
 import (
 	"context"
-	"net"
 	"time"
 
 	"github.com/pkg/errors"
@@ -126,7 +125,7 @@ func (s Service) notifyBackendsChanged(
 
 	addresses := make([]cluster.AddressConfiguration, 0)
 	for _, backend := range backends {
-		addr, err := splitAddress(backend)
+		addr, err := helpers.SplitAddress(backend)
 		if err != nil {
 			return errors.WithMessage(err, "split address")
 		}
@@ -173,7 +172,7 @@ func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns [
 
 	routingConfig := cluster.RoutingConfig{}
 	for _, backend := range backends {
-		addr, err := splitAddress(backend)
+		addr, err := helpers.SplitAddress(backend)
 		if err != nil {
 			return errors.WithMessage(err, "split address")
 		}
@@ -217,20 +216,9 @@ func (s Service) emitEvent(
 	if err != nil {
 		err := errors.WithMessagef(
 			err,
-			"emit event %s, to %s module, connId: %d",
+			"emit event '%s', to %s module, connId: %d",
 			event, helpers.ModuleName(conn), conn.Id(),
 		)
 		s.logger.Error(ctx, err)
 	}
-}
-
-func splitAddress(backend entity.Backend) (cluster.AddressConfiguration, error) {
-	host, port, err := net.SplitHostPort(backend.Address)
-	if err != nil {
-		return cluster.AddressConfiguration{}, errors.WithMessagef(err, "split backend %s address: %s", backend.ModuleId, backend.Address)
-	}
-	return cluster.AddressConfiguration{
-		IP:   host,
-		Port: port,
-	}, nil
 }

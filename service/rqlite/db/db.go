@@ -43,7 +43,7 @@ func (d Adapter) Select(ctx context.Context, ptr any, query string, args ...any)
 	consistencyFromContext(ctx).appendParams(params)
 	err := d.cli.Post("/db/query").
 		QueryParams(params).
-		JsonRequestBody(request(query, args...)).
+		JsonRequestBody(requests(request(query, args...))).
 		JsonResponseBody(&resp).
 		StatusCodeToError().
 		DoWithoutResponse(ctx)

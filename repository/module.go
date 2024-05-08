@@ -7,7 +7,6 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"isp-config-service/entity"
-	"isp-config-service/entity/xtypes"
 	"isp-config-service/service/rqlite/db"
 )
 
@@ -24,9 +23,8 @@ func NewModule(db db.DB) Module {
 func (r Module) Upsert(ctx context.Context, module entity.Module) (string, error) {
 	query, args, err := squirrel.Insert(Table("module")).
 		Columns("id", "name", "last_connected_at").
-		Values(module.Id, module.Name, module.LastConnectedAt).
-		Suffix(`on conflict (name) do update 
-	set last_connected_at = excluded.last_connected_at`).
+		Values(module.Id, module.Name, squirrel.Expr("unixepoch()")).
+		Suffix(`on conflict (name) do update set last_connected_at = unixepoch()`).
 		Suffix("returning id").
 		ToSql()
 	if err != nil {
@@ -41,13 +39,12 @@ func (r Module) Upsert(ctx context.Context, module entity.Module) (string, error
 	return result["id"], nil
 }
 
-func (r Module) SetDisconnectedAt(
+func (r Module) SetDisconnectedAtNow(
 	ctx context.Context,
 	moduleId string,
-	disconnected xtypes.Time,
 ) error {
 	query, args, err := squirrel.Update(Table("module")).
-		Set("last_disconnected_at", disconnected).
+		Set("last_disconnected_at", squirrel.Expr("unixepoch()")).
 		Where(squirrel.Eq{"id": moduleId}).
 		ToSql()
 	if err != nil {
@@ -90,6 +87,31 @@ func (r Module) GetById(ctx context.Context, id string) (*entity.Module, error) 
 		return nil, errors.WithMessagef(err, "select row: %s", query)
 	}
 	return &result, nil
+}
+
+func (r Module) All(ctx context.Context) ([]entity.Module, error) {
+	result := make([]entity.Module, 0)
+	query := fmt.Sprintf("select * from %s order by name", Table("module"))
+	err := r.db.Select(ctx, &result, query)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+	return result, nil
+}
+
+func (r Module) Delete(ctx context.Context, idList []string) error {
+	query, args, err := squirrel.Delete(Table("module")).
+		Where(squirrel.Eq{"id": idList}).
+		ToSql()
+	if err != nil {
+		return errors.WithMessage(err, "build query")
+	}
+
+	_, err = r.db.Exec(ctx, query, args...)
+	if err != nil {
+		return errors.WithMessagef(err, "exec: %s", query)
+	}
+	return nil
 }
 
 func Table(table string) string {

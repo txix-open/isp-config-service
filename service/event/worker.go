@@ -60,7 +60,7 @@ func (w *Worker) do(ctx context.Context) error {
 
 	events = w.compactor.Compact(events)
 	w.handler.Handle(ctx, events)
-	w.lastEventId = events[len(events)-1].RowId
+	w.lastEventId = events[len(events)-1].Id
 
 	return nil
 }
