@@ -7,8 +7,8 @@ import (
 )
 
 type ConfigHistoryService interface {
-	GetAllVersion(ctx context.Context, configId string) ([]domain.ConfigVersion, error)
-	DeleteConfigVersion(ctx context.Context, id string) error
+	GetAllVersions(ctx context.Context, configId string) ([]domain.ConfigVersion, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type ConfigHistory struct {

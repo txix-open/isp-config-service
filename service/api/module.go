@@ -14,7 +14,8 @@ import (
 
 type ModuleRepo interface {
 	All(ctx context.Context) ([]entity.Module, error)
-	Delete(ctx context.Context, idList []string) error
+	Delete(ctx context.Context, id string) error
+	GetByNames(ctx context.Context, names []string) ([]entity.Module, error)
 }
 
 type BackendsRepo interface {
@@ -23,6 +24,7 @@ type BackendsRepo interface {
 
 type SchemaRepo interface {
 	All(ctx context.Context) ([]entity.ConfigSchema, error)
+	GetByModuleId(ctx context.Context, moduleId string) (*entity.ConfigSchema, error)
 }
 
 type Module struct {
@@ -107,8 +109,8 @@ func (s Module) Status(ctx context.Context) ([]domain.ModuleInfo, error) {
 	return moduleInfos, nil
 }
 
-func (s Module) Delete(ctx context.Context, idList []string) error {
-	err := s.moduleRepo.Delete(ctx, idList)
+func (s Module) Delete(ctx context.Context, id string) error {
+	err := s.moduleRepo.Delete(ctx, id)
 	if err != nil {
 		return errors.WithMessage(err, "delete modules")
 	}

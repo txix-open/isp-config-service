@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
@@ -51,14 +50,60 @@ func (r Config) GetActive(ctx context.Context, moduleId string) (*entity.Config,
 		return nil, errors.WithMessage(err, "build query")
 	}
 
-	result := entity.Config{}
-	err = r.db.SelectRow(ctx, &result, query, args...)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, entity.ErrNoActiveConfig
-	}
+	return selectRow[entity.Config](ctx, r.db, query, args...)
+}
+
+func (r Config) GetByModuleId(ctx context.Context, moduleId string) ([]entity.Config, error) {
+	query, args, err := squirrel.Select("*").
+		From(Table("config")).
+		Where(squirrel.Eq{
+			"module_id": moduleId,
+		}).OrderBy("created_at desc").
+		ToSql()
 	if err != nil {
-		return nil, errors.WithMessagef(err, "select row: %s", query)
+		return nil, errors.WithMessage(err, "build query")
 	}
 
-	return &result, nil
+	result := make([]entity.Config, 0)
+	err = r.db.Select(ctx, &result, query, args...)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+
+	return result, nil
+}
+
+func (r Config) GetById(ctx context.Context, id string) (*entity.Config, error) {
+	query, args, err := squirrel.Select("*").
+		From(Table("config")).
+		Where(squirrel.Eq{
+			"id": id,
+		}).ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
+	return selectRow[entity.Config](ctx, r.db, query, args...)
+}
+
+func (r Config) DeleteNonActiveById(ctx context.Context, id string) (bool, error) {
+	query, args, err := squirrel.Delete(Table("config")).
+		Where(squirrel.Eq{
+			"id":     id,
+			"active": "0",
+		}).ToSql()
+	if err != nil {
+		return false, errors.WithMessage(err, "build query")
+	}
+
+	result, err := r.db.Exec(ctx, query, args...)
+	if err != nil {
+		return false, errors.WithMessagef(err, "exec: %s", query)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, errors.WithMessage(err, "get rows affected")
+	}
+	return affected > 0, nil
 }

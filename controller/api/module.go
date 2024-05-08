@@ -9,7 +9,7 @@ import (
 
 type ModuleService interface {
 	Status(ctx context.Context) ([]domain.ModuleInfo, error)
-	Delete(ctx context.Context, idList []string) error
+	Delete(ctx context.Context, id string) error
 }
 
 type Module struct {
@@ -39,7 +39,7 @@ func (c Module) GetModulesAggregatedInfo(ctx context.Context) ([]domain.ModuleIn
 	return modulesInfo, nil
 }
 
-// DeleteModules
+// DeleteModule
 // @Summary Метод удаления объектов модулей по идентификаторам
 // @Description Возвращает количество удаленных модулей
 // @Tags Модули
@@ -49,12 +49,12 @@ func (c Module) GetModulesAggregatedInfo(ctx context.Context) ([]domain.ModuleIn
 // @Success 200 {object} domain.DeleteResponse
 // @Failure 500 {object} apierrors.Error
 // @Router /module/delete_module [POST]
-func (c Module) DeleteModules(ctx context.Context, identities []string) (*domain.DeleteResponse, error) {
-	if len(identities) == 0 {
-		return nil, apierrors.NewBusinessError(domain.ErrorCodeBadRequest, "at least one id is required", nil)
+func (c Module) DeleteModule(ctx context.Context, identities []string) (*domain.DeleteResponse, error) {
+	id, err := getSingleId(identities)
+	if err != nil {
+		return nil, err
 	}
-
-	err := c.service.Delete(ctx, identities)
+	err = c.service.Delete(ctx, id)
 	if err != nil {
 		return nil, apierrors.NewInternalServiceError(err)
 	}
@@ -62,4 +62,14 @@ func (c Module) DeleteModules(ctx context.Context, identities []string) (*domain
 	return &domain.DeleteResponse{
 		Deleted: len(identities),
 	}, nil
+}
+
+func getSingleId(identities []string) (string, error) {
+	if len(identities) == 0 {
+		return "", apierrors.NewBusinessError(domain.ErrorCodeBadRequest, "at least one id is required", nil)
+	}
+	if len(identities) > 1 {
+		return "", apierrors.NewBusinessError(domain.ErrorCodeBadRequest, "accept only single identity", nil)
+	}
+	return identities[0], nil
 }

@@ -80,13 +80,8 @@ func (r Module) GetByNames(ctx context.Context, names []string) ([]entity.Module
 }
 
 func (r Module) GetById(ctx context.Context, id string) (*entity.Module, error) {
-	result := entity.Module{}
 	query := fmt.Sprintf("select * from %s where id = ?", Table("module"))
-	err := r.db.SelectRow(ctx, &result, query, id)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "select row: %s", query)
-	}
-	return &result, nil
+	return selectRow[entity.Module](ctx, r.db, query, id)
 }
 
 func (r Module) All(ctx context.Context) ([]entity.Module, error) {
@@ -99,9 +94,9 @@ func (r Module) All(ctx context.Context) ([]entity.Module, error) {
 	return result, nil
 }
 
-func (r Module) Delete(ctx context.Context, idList []string) error {
+func (r Module) Delete(ctx context.Context, id string) error {
 	query, args, err := squirrel.Delete(Table("module")).
-		Where(squirrel.Eq{"id": idList}).
+		Where(squirrel.Eq{"id": id}).
 		ToSql()
 	if err != nil {
 		return errors.WithMessage(err, "build query")

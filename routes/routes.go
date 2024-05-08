@@ -54,7 +54,7 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 	}, {
 		Path:    "module/delete_module",
 		Inner:   true,
-		Handler: c.ModuleApi.DeleteModules,
+		Handler: c.ModuleApi.DeleteModule,
 	}, {
 		Path:    "config/get_active_config_by_module_name",
 		Inner:   true,

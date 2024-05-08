@@ -227,7 +227,7 @@ func (s Service) OnModuleConfigSchema(
 	}
 
 	config, err := s.configRepo.GetActive(ctx, moduleId)
-	if errors.Is(err, entity.ErrNoActiveConfig) {
+	if config == nil {
 		md5Sum := md5.Sum([]byte(moduleId))
 		initialConfigId := hex.EncodeToString(md5Sum[:])
 		initialConfig := entity.Config{

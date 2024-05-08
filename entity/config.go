@@ -1,12 +1,7 @@
 package entity
 
 import (
-	"github.com/pkg/errors"
 	"isp-config-service/entity/xtypes"
-)
-
-var (
-	ErrNoActiveConfig = errors.New("no active config")
 )
 
 type Config struct {

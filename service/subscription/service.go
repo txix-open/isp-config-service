@@ -118,6 +118,9 @@ func (s Service) notifyBackendsChanged(
 	if err != nil {
 		return errors.WithMessage(err, "get module by id")
 	}
+	if module == nil {
+		return errors.Errorf("unknown module: %s", moduleId)
+	}
 	backends, err := s.backendRepo.GetByModuleId(ctx, moduleId)
 	if err != nil {
 		return errors.WithMessage(err, "get backends by module id")

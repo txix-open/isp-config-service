@@ -5,7 +5,6 @@ import (
 
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/json"
-	"github.com/txix-open/isp-kit/rc/schema"
 )
 
 type DeleteResponse struct {
@@ -46,7 +45,7 @@ type Config struct {
 type ConfigVersion struct {
 	Id            string
 	ConfigId      string
-	ConfigVersion int32
+	ConfigVersion int
 	Data          json.RawMessage
 	CreatedAt     time.Time
 }
@@ -55,7 +54,7 @@ type ConfigSchema struct {
 	Id        string
 	Version   string
 	ModuleId  string
-	Schema    schema.Schema
+	Schema    json.RawMessage
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
