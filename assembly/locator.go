@@ -53,6 +53,7 @@ func (l Locator) Config() Config {
 	eventRepo := repository.NewEvent(l.db)
 	configRepo := repository.NewConfig(l.db)
 	configSchemaRepo := repository.NewConfigSchema(l.db)
+	configHistoryRepo := repository.NewConfigHistory(l.db)
 
 	etpSrv := etp.NewServer(
 		etp.WithServerReadLimit(wsReadLimit),
@@ -82,9 +83,20 @@ func (l Locator) Config() Config {
 	moduleApiService := apisvs.NewModule(moduleRepo, backendRepo, configSchemaRepo)
 	moduleApiController := api.NewModule(moduleApiService)
 
-	configApiController := api.NewConfig(nil)
-	configHistoryController := api.NewConfigHistory(nil)
-	configSchemaController := api.NewConfigSchema(nil)
+	configApiService := apisvs.NewConfig(
+		configRepo,
+		moduleRepo,
+		configSchemaRepo,
+		eventRepo,
+		configHistoryRepo,
+	)
+	configApiController := api.NewConfig(configApiService)
+
+	configHistoryApiService := apisvs.NewConfigHistory(configHistoryRepo)
+	configHistoryController := api.NewConfigHistory(configHistoryApiService)
+
+	configSchemaApiService := apisvs.NewConfigSchema(configSchemaRepo)
+	configSchemaController := api.NewConfigSchema(configSchemaApiService)
 
 	controllers := routes.Controllers{
 		Module:           moduleController,

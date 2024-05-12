@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"isp-config-service/entity"
 	"isp-config-service/service/rqlite/db"
@@ -35,5 +36,22 @@ func (r ConfigHistory) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return errors.WithMessagef(err, "exec: %s", query)
 	}
+	return nil
+}
+
+func (r ConfigHistory) Insert(ctx context.Context, history entity.ConfigHistory) error {
+	query, args, err := squirrel.Insert(Table("config_history")).
+		Columns("id", "config_id", "data", "version", "admin_id").
+		Values(history.Id, history.ConfigId, history.Data, history.Version, history.AdminId).
+		ToSql()
+	if err != nil {
+		return errors.WithMessage(err, "build query")
+	}
+
+	_, err = r.db.Exec(ctx, query, args...)
+	if err != nil {
+		return errors.WithMessagef(err, "exec: %s", query)
+	}
+
 	return nil
 }

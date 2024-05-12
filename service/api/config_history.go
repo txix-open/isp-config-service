@@ -12,6 +12,7 @@ import (
 type ConfigHistoryRepo interface {
 	Delete(ctx context.Context, id string) error
 	GetByConfigId(ctx context.Context, configId string) ([]entity.ConfigHistory, error)
+	Insert(ctx context.Context, history entity.ConfigHistory) error
 }
 
 type ConfigHistory struct {

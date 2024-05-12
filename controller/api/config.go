@@ -3,16 +3,19 @@ package api
 import (
 	"context"
 
+	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/grpc/apierrors"
 	"isp-config-service/domain"
+	"isp-config-service/entity"
 )
 
 type ConfigService interface {
 	GetActiveConfigByModuleName(ctx context.Context, moduleName string) (*domain.Config, error)
 	GetConfigsByModuleId(ctx context.Context, moduleId string) ([]domain.Config, error)
-	CreateUpdateConfig(ctx context.Context, moduleId string) (*domain.Config, error)
+	CreateUpdateConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (*domain.Config, error)
 	GetConfigById(ctx context.Context, configId string) (*domain.Config, error)
 	MarkConfigAsActive(ctx context.Context, configId string) error
-	DeleteConfigs(ctx context.Context, idList []string) error
+	DeleteConfig(ctx context.Context, id string) error
 }
 
 type Config struct {
@@ -33,11 +36,29 @@ func NewConfig(service ConfigService) Config {
 // @Produce json
 // @Param body body domain.GetByModuleNameRequest true "название модуля"
 // @Success 200 {object} domain.Config
-// @Failure 404 {object} apierrors.Error "если конфигурация не найдена"
+// @Failure 400 {object} apierrors.Error "если конфигурация не найдена"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/get_active_config_by_module_name [POST]
-func (c Config) GetActiveConfigByModuleName(ctx context.Context, request domain.GetByModuleNameRequest) (*domain.Config, error) {
-
+func (c Config) GetActiveConfigByModuleName(ctx context.Context, req domain.GetByModuleNameRequest) (*domain.Config, error) {
+	config, err := c.service.GetActiveConfigByModuleName(ctx, req.ModuleName)
+	switch {
+	case errors.Is(err, entity.ErrModuleNotFound):
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeModuleNotFound,
+			"module not found",
+			err,
+		)
+	case errors.Is(err, entity.ErrConfigNotFound):
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeModuleNotFound,
+			"active config not found",
+			err,
+		)
+	case err != nil:
+		return nil, apierrors.NewInternalServiceError(err)
+	default:
+		return config, nil
+	}
 }
 
 // GetConfigsByModuleId
@@ -52,8 +73,8 @@ func (c Config) GetActiveConfigByModuleName(ctx context.Context, request domain.
 // @Failure 404 {object} apierrors.Error "если конфигурация не найдена"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/get_configs_by_module_id [POST]
-func (c Config) GetConfigsByModuleId(ctx context.Context, request domain.GetByModuleIdRequest) ([]domain.Config, error) {
-
+func (c Config) GetConfigsByModuleId(ctx context.Context, req domain.GetByModuleIdRequest) ([]domain.Config, error) {
+	c.service.GetConfigsByModuleId(, re)
 }
 
 // CreateUpdateConfig
