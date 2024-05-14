@@ -7,8 +7,10 @@ import (
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/grpc/endpoint"
+	"github.com/txix-open/isp-kit/log"
 	"isp-config-service/controller"
 	"isp-config-service/controller/api"
+	mws "isp-config-service/middlewares"
 )
 
 type Controllers struct {
@@ -31,13 +33,22 @@ func GrpcHandler(wrapper endpoint.Wrapper, c Controllers) *grpc.Mux {
 	return muxer
 }
 
-func BindEtp(etpSrv *etp.Server, c Controllers) {
+func BindEtp(etpSrv *etp.Server, c Controllers, logger log.Logger) {
+	middlewares := []mws.EtpMiddleware{
+		mws.EtpLogger(logger),
+	}
 	etpSrv.OnConnect(c.Module.OnConnect)
 	etpSrv.OnDisconnect(c.Module.OnDisconnect)
 	etpSrv.OnError(c.Module.OnError)
-	etpSrv.On(cluster.ModuleSendConfigSchema, etp.HandlerFunc(c.Module.OnModuleConfigSchema))
-	etpSrv.On(cluster.ModuleSendRequirements, etp.HandlerFunc(c.Module.OnModuleRequirements))
-	etpSrv.On(cluster.ModuleReady, etp.HandlerFunc(c.Module.OnModuleReady))
+
+	onConfigSchema := mws.EtpChain(etp.HandlerFunc(c.Module.OnModuleConfigSchema), middlewares...)
+	etpSrv.On(cluster.ModuleSendConfigSchema, onConfigSchema)
+
+	onRequirements := mws.EtpChain(etp.HandlerFunc(c.Module.OnModuleRequirements), middlewares...)
+	etpSrv.On(cluster.ModuleSendRequirements, onRequirements)
+
+	onModuleReady := mws.EtpChain(etp.HandlerFunc(c.Module.OnModuleReady), middlewares...)
+	etpSrv.On(cluster.ModuleReady, onModuleReady)
 }
 
 func HttpHandler(etpSrv *etp.Server) http.Handler {

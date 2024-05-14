@@ -61,6 +61,7 @@ type Service struct {
 	configRepo          ConfigRepo
 	configSchemaRepo    ConfigSchemaRepo
 	subscriptionService SubscriptionService
+	emitter             Emitter
 	logger              log.Logger
 }
 
@@ -71,6 +72,7 @@ func NewService(
 	configRepo ConfigRepo,
 	configSchemaRepo ConfigSchemaRepo,
 	subscriptionService SubscriptionService,
+	emitter Emitter,
 	logger log.Logger,
 ) Service {
 	return Service{
@@ -80,11 +82,14 @@ func NewService(
 		configRepo:          configRepo,
 		configSchemaRepo:    configSchemaRepo,
 		subscriptionService: subscriptionService,
+		emitter:             emitter,
 		logger:              logger,
 	}
 }
 
 func (s Service) OnConnect(ctx context.Context, conn *etp.Conn, moduleName string) error {
+	s.logger.Info(ctx, "module connected", helpers.LogFields(conn)...)
+
 	module := entity.Module{
 		Id:   uuid.NewString(),
 		Name: moduleName,
@@ -107,14 +112,17 @@ func (s Service) OnDisconnect(
 	err error,
 ) error {
 	if isNormalClose {
-		s.logger.Info(ctx, fmt.Sprintf("module '%s' disconnected", moduleName))
-	} else {
-		message := errors.WithMessagef(
-			err,
-			"module '%s' unexpectedly disconnected",
-			moduleName,
+		s.logger.Info(
+			ctx,
+			"module disconnected",
+			helpers.LogFields(conn)...,
 		)
-		s.logger.Error(ctx, message)
+	} else {
+		message := errors.WithMessage(
+			err,
+			"module unexpectedly disconnected",
+		)
+		s.logger.Error(ctx, message, helpers.LogFields(conn)...)
 	}
 
 	moduleId, _ := store.Get[string](conn.Data(), moduleIdKey)
@@ -146,13 +154,12 @@ func (s Service) OnDisconnect(
 	return nil
 }
 
-func (s Service) OnError(ctx context.Context, conn *etp.Conn, moduleName string, err error) {
-	err = errors.WithMessagef(
+func (s Service) OnError(ctx context.Context, conn *etp.Conn, err error) {
+	err = errors.WithMessage(
 		err,
-		"unexpected error in communication, module: '%s'",
-		moduleName,
+		"unexpected error in communication",
 	)
-	s.logger.Error(ctx, err)
+	s.logger.Error(ctx, err, helpers.LogFields(conn)...)
 }
 
 func (s Service) OnModuleReady(
@@ -248,10 +255,7 @@ func (s Service) OnModuleConfigSchema(
 		return errors.WithMessage(err, "get active config")
 	}
 
-	err = conn.Emit(ctx, cluster.ConfigSendConfigWhenConnected, config.Data)
-	if err != nil {
-		return errors.WithMessage(err, "send event with config")
-	}
+	s.emitter.Emit(ctx, conn, cluster.ConfigSendConfigWhenConnected, config.Data)
 
 	s.subscriptionService.SubscribeToConfigChanges(conn, moduleId)
 

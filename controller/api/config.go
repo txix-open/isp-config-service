@@ -2,9 +2,12 @@ package api
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/grpc/apierrors"
+	"google.golang.org/grpc/metadata"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 )
@@ -36,7 +39,7 @@ func NewConfig(service ConfigService) Config {
 // @Produce json
 // @Param body body domain.GetByModuleNameRequest true "название модуля"
 // @Success 200 {object} domain.Config
-// @Failure 400 {object} apierrors.Error "если конфигурация не найдена"
+// @Failure 400 {object} apierrors.Error "`errorCode: 2001` - модуль не найден<br/>`errorCode: 2002` - конфиг не найден"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/get_active_config_by_module_name [POST]
 func (c Config) GetActiveConfigByModuleName(ctx context.Context, req domain.GetByModuleNameRequest) (*domain.Config, error) {
@@ -50,7 +53,7 @@ func (c Config) GetActiveConfigByModuleName(ctx context.Context, req domain.GetB
 		)
 	case errors.Is(err, entity.ErrConfigNotFound):
 		return nil, apierrors.NewBusinessError(
-			domain.ErrorCodeModuleNotFound,
+			domain.ErrorCodeConfigNotFound,
 			"active config not found",
 			err,
 		)
@@ -70,11 +73,16 @@ func (c Config) GetActiveConfigByModuleName(ctx context.Context, req domain.GetB
 // @Param body body domain.GetByModuleIdRequest true "ID модуля"
 // @Success 200 {array}  domain.Config
 // @Failure 400 {object} apierrors.Error "если идентификатор не указан"
-// @Failure 404 {object} apierrors.Error "если конфигурация не найдена"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/get_configs_by_module_id [POST]
 func (c Config) GetConfigsByModuleId(ctx context.Context, req domain.GetByModuleIdRequest) ([]domain.Config, error) {
-	c.service.GetConfigsByModuleId(, re)
+	configs, err := c.service.GetConfigsByModuleId(ctx, req.ModuleId)
+	switch {
+	case err != nil:
+		return nil, apierrors.NewInternalServiceError(err)
+	default:
+		return configs, nil
+	}
 }
 
 // CreateUpdateConfig
@@ -86,26 +94,83 @@ func (c Config) GetConfigsByModuleId(ctx context.Context, req domain.GetByModule
 // @Produce json
 // @Param body body domain.CreateUpdateConfigRequest true "объект для сохранения"
 // @Success 200 {object} domain.Config
-// @Failure 404 {object} apierrors.Error "если конфигурация не найдена"
+// @Failure 400 {object} apierrors.Error "`errorCode: 2003` - конфиг не соотвествует текущей схеме<br/>`errorCode: 2002` - указанного id не сущесвует<br/>`errorCode: 2004` - кто-то уже обновил конфигурацию<br/>`errorCode: 2005` - схема конфигурации не найдена<br/>"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/create_update_config [POST]
-func (c Config) CreateUpdateConfig(ctx context.Context, config domain.CreateUpdateConfigRequest) (*domain.Config, error) {
+func (c Config) CreateUpdateConfig(
+	ctx context.Context,
+	authData grpc.AuthData,
+	req domain.CreateUpdateConfigRequest,
+) (*domain.Config, error) {
+	adminIdValue, _ := grpc.StringFromMd("x-admin-id", metadata.MD(authData))
+	var adminId int
+	if adminIdValue != "" {
+		adminId, _ = strconv.Atoi(adminIdValue)
+	}
 
+	config, err := c.service.CreateUpdateConfig(ctx, adminId, req)
+
+	var validationError domain.ConfigValidationError
+	switch {
+	case errors.As(err, &validationError):
+		details := map[string]any{}
+		for key, value := range validationError.Details {
+			details[key] = value
+		}
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeInvalidConfig,
+			"invalid config",
+			err,
+		).WithDetails(details)
+	case errors.Is(err, entity.ErrConfigNotFound):
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeConfigNotFound,
+			"config not found",
+			err,
+		)
+	case errors.Is(err, entity.ErrConfigConflictUpdate):
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeConfigVersionConflict,
+			"someone has updated the config",
+			err,
+		)
+	case errors.Is(err, entity.ErrSchemaNotFound):
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeSchemaNotFound,
+			"config schema not found",
+			err,
+		)
+	case err != nil:
+		return nil, apierrors.NewInternalServiceError(err)
+	default:
+		return config, nil
+	}
 }
 
 // GetConfigById
-// @Summary Метод получение актуальной конфигурации конфигурации
-// @Description Возвращает актуальную версию конфигурации без дополнительного содержимого (ConfigData)
+// @Summary Метод получение конфигурации по id
 // @Tags Конфигурация
 // @Accept json
 // @Produce json
 // @Param body body domain.ConfigIdRequest true "id конфигурации"
 // @Success 200 {object} domain.Config
-// @Failure 400 {object} apierrors.Error "если не указан идентификатор конфигурации"
+// @Failure 400 {object} apierrors.Error "`errorCode: 2002` - конфиг не найден<br/>"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/get_config_by_id [POST]
-func (c Config) GetConfigById(ctx context.Context, req domain.ConfigIdRequest) (domain.Config, error) {
-
+func (c Config) GetConfigById(ctx context.Context, req domain.ConfigIdRequest) (*domain.Config, error) {
+	config, err := c.service.GetConfigById(ctx, req.Id)
+	switch {
+	case errors.Is(err, entity.ErrConfigNotFound):
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeConfigNotFound,
+			"config not found",
+			err,
+		)
+	case err != nil:
+		return nil, apierrors.NewInternalServiceError(err)
+	default:
+		return config, nil
+	}
 }
 
 // MarkConfigAsActive
@@ -115,12 +180,24 @@ func (c Config) GetConfigById(ctx context.Context, req domain.ConfigIdRequest) (
 // @Accept json
 // @Produce json
 // @Param body body domain.ConfigIdRequest true "id конфигурации для изменения"
-// @Success 200 {object} domain.Config "активированная конфигурация"
-// @Failure 404 {object} apierrors.Error "если конфигурация не найдена"
+// @Success 200
+// @Failure 400 {object} apierrors.Error "`errorCode: 2002` - конфиг не найден<br/>"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/mark_config_as_active [POST]
-func (c Config) MarkConfigAsActive(ctx context.Context, identity domain.ConfigIdRequest) (*domain.Config, error) {
-
+func (c Config) MarkConfigAsActive(ctx context.Context, identity domain.ConfigIdRequest) error {
+	err := c.service.MarkConfigAsActive(ctx, identity.Id)
+	switch {
+	case errors.Is(err, entity.ErrConfigNotFound):
+		return apierrors.NewBusinessError(
+			domain.ErrorCodeConfigNotFound,
+			"config not found",
+			err,
+		)
+	case err != nil:
+		return apierrors.NewInternalServiceError(err)
+	default:
+		return nil
+	}
 }
 
 // DeleteConfigs
@@ -135,5 +212,24 @@ func (c Config) MarkConfigAsActive(ctx context.Context, identity domain.ConfigId
 // @Failure 500 {object} apierrors.Error
 // @Router /config/delete_config [POST]
 func (c Config) DeleteConfigs(ctx context.Context, identities []string) (*domain.DeleteResponse, error) {
+	configId, err := getSingleId(identities)
+	if err != nil {
+		return nil, err
+	}
 
+	err = c.service.DeleteConfig(ctx, configId)
+	switch {
+	case errors.Is(err, entity.ErrConfigNotFoundOrActive):
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeConfigNotFound,
+			"config not found or is active",
+			err,
+		)
+	case err != nil:
+		return nil, apierrors.NewInternalServiceError(err)
+	default:
+		return &domain.DeleteResponse{
+			Deleted: 1,
+		}, nil
+	}
 }

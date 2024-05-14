@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
+	"isp-config-service/middlewares/sql_metrics"
 	"isp-config-service/service/rqlite/db"
 )
 
@@ -21,6 +22,8 @@ func NewEvent(db db.DB) Event {
 }
 
 func (r Event) Insert(ctx context.Context, event entity.Event) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Event.Insert")
+
 	query := fmt.Sprintf("insert into %s (payload) values (?)", Table("event"))
 	_, err := r.db.Exec(ctx, query, event.Payload)
 	if err != nil {
@@ -30,6 +33,8 @@ func (r Event) Insert(ctx context.Context, event entity.Event) error {
 }
 
 func (r Event) Get(ctx context.Context, lastEventId int, limit int) ([]entity.Event, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Event.Get")
+
 	query := fmt.Sprintf("select * from %s where id > ? order by id desc limit ?", Table("event"))
 	result := make([]entity.Event, 0)
 	err := r.db.Select(ctx, &result, query, lastEventId, limit)
@@ -40,6 +45,8 @@ func (r Event) Get(ctx context.Context, lastEventId int, limit int) ([]entity.Ev
 }
 
 func (r Event) DeleteByCreatedAt(ctx context.Context, before xtypes.Time) (int, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Event.DeleteByCreatedAt")
+
 	query := fmt.Sprintf("delete from %s where created_at < ?", Table("event"))
 	result, err := r.db.Exec(ctx, query, before)
 	if err != nil {

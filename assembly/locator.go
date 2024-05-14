@@ -61,11 +61,13 @@ func (l Locator) Config() Config {
 			InsecureSkipVerify: true,
 		}),
 	)
+	emitter := module.NewEmitter(l.logger)
 	subscriptionService := subscription.NewService(
 		moduleRepo,
 		backendRepo,
 		configRepo,
 		etpSrv.Rooms(),
+		emitter,
 		l.logger,
 	)
 
@@ -76,6 +78,7 @@ func (l Locator) Config() Config {
 		configRepo,
 		configSchemaRepo,
 		subscriptionService,
+		emitter,
 		l.logger,
 	)
 	moduleController := controller.NewModule(moduleService, l.logger)
@@ -108,7 +111,7 @@ func (l Locator) Config() Config {
 	mapper := endpoint.DefaultWrapper(l.logger)
 	grpcMux := routes.GrpcHandler(mapper, controllers)
 
-	routes.BindEtp(etpSrv, controllers)
+	routes.BindEtp(etpSrv, controllers, l.logger)
 
 	httpMux := routes.HttpHandler(etpSrv)
 

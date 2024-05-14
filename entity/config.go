@@ -11,6 +11,7 @@ type Config struct {
 	Data      []byte      `json:"data"`
 	Version   int         `json:"version"`
 	Active    xtypes.Bool `json:"active"`
+	AdminId   int         `json:"admin_id"`
 	CreatedAt xtypes.Time `json:"created_at"`
 	UpdatedAt xtypes.Time `json:"updated_at"`
 }

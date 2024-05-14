@@ -7,6 +7,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"isp-config-service/entity"
+	"isp-config-service/middlewares/sql_metrics"
 	"isp-config-service/service/rqlite/db"
 )
 
@@ -21,6 +22,8 @@ func NewModule(db db.DB) Module {
 }
 
 func (r Module) Upsert(ctx context.Context, module entity.Module) (string, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Module.Upsert")
+
 	query, args, err := squirrel.Insert(Table("module")).
 		Columns("id", "name", "last_connected_at").
 		Values(module.Id, module.Name, squirrel.Expr("unixepoch()")).
@@ -43,6 +46,8 @@ func (r Module) SetDisconnectedAtNow(
 	ctx context.Context,
 	moduleId string,
 ) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Module.SetDisconnectedAtNow")
+
 	query, args, err := squirrel.Update(Table("module")).
 		Set("last_disconnected_at", squirrel.Expr("unixepoch()")).
 		Where(squirrel.Eq{"id": moduleId}).
@@ -60,6 +65,8 @@ func (r Module) SetDisconnectedAtNow(
 }
 
 func (r Module) GetByNames(ctx context.Context, names []string) ([]entity.Module, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Module.GetByNames")
+
 	query, args, err := squirrel.Select("*").
 		From(Table("module")).
 		Where(squirrel.Eq{
@@ -80,11 +87,15 @@ func (r Module) GetByNames(ctx context.Context, names []string) ([]entity.Module
 }
 
 func (r Module) GetById(ctx context.Context, id string) (*entity.Module, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Module.GetById")
+
 	query := fmt.Sprintf("select * from %s where id = ?", Table("module"))
 	return selectRow[entity.Module](ctx, r.db, query, id)
 }
 
 func (r Module) All(ctx context.Context) ([]entity.Module, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Module.All")
+
 	result := make([]entity.Module, 0)
 	query := fmt.Sprintf("select * from %s order by name", Table("module"))
 	err := r.db.Select(ctx, &result, query)
@@ -95,6 +106,8 @@ func (r Module) All(ctx context.Context) ([]entity.Module, error) {
 }
 
 func (r Module) Delete(ctx context.Context, id string) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Module.Delete")
+
 	query, args, err := squirrel.Delete(Table("module")).
 		Where(squirrel.Eq{"id": id}).
 		ToSql()

@@ -17,6 +17,7 @@ create table isp_config_service__config
     data       blob    not null,
     version    int     not null default 1,
     active     int     not null default 0,
+    admin_id   int     not null default 0,
     created_at integer not null default (unixepoch()),
     updated_at integer not null default (unixepoch()),
     foreign key (module_id) references isp_config_service__module (id) on delete cascade on update cascade
@@ -30,7 +31,7 @@ create table isp_config_service__config_history
     config_id  text    not null,
     data       blob    not null,
     version    int     not null default 1,
-    admin_id   int     not null,
+    admin_id   int     not null default 0,
     created_at integer not null default (unixepoch()),
     foreign key (config_id) references isp_config_service__config (id) on delete cascade on update cascade
 );
@@ -65,7 +66,7 @@ create table isp_config_service__backend
 
 create table isp_config_service__event
 (
-    id integer,
+    id         integer,
     payload    blob    not null,
     created_at integer not null default (unixepoch()),
     primary key (id desc)

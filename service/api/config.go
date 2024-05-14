@@ -118,6 +118,7 @@ func (c Config) CreateUpdateConfig(
 			Data:     req.Data,
 			Version:  1,
 			Active:   false,
+			AdminId:  adminId,
 		}
 		err := c.configRepo.Insert(ctx, config)
 		if err != nil {
@@ -140,6 +141,7 @@ func (c Config) CreateUpdateConfig(
 		Name:    req.Name,
 		Data:    req.Data,
 		Version: req.Version,
+		AdminId: adminId,
 	}
 	updated, err := c.configRepo.UpdateByVersion(ctx, config)
 	if err != nil {
@@ -154,7 +156,7 @@ func (c Config) CreateUpdateConfig(
 		ConfigId: req.Id,
 		Data:     oldConfig.Data,
 		Version:  oldConfig.Version,
-		AdminId:  adminId,
+		AdminId:  oldConfig.AdminId,
 	}
 	err = c.configHistoryRepo.Insert(ctx, history)
 	if err != nil {

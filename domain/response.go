@@ -17,7 +17,7 @@ type ModuleInfo struct {
 	Active             bool
 	LastConnectedAt    *time.Time
 	LastDisconnectedAt *time.Time
-	ConfigSchema       json.RawMessage
+	ConfigSchema       json.RawMessage `swaggertype:"object"`
 	Status             []Connection
 	CreatedAt          time.Time
 }
@@ -35,7 +35,7 @@ type Config struct {
 	Name      string
 	ModuleId  string
 	Valid     bool
-	Data      json.RawMessage
+	Data      json.RawMessage `swaggertype:"object"`
 	Version   int
 	Active    bool
 	CreatedAt time.Time
@@ -46,7 +46,7 @@ type ConfigVersion struct {
 	Id            string
 	ConfigId      string
 	ConfigVersion int
-	Data          json.RawMessage
+	Data          json.RawMessage `swaggertype:"object"`
 	CreatedAt     time.Time
 }
 
@@ -54,7 +54,7 @@ type ConfigSchema struct {
 	Id        string
 	Version   string
 	ModuleId  string
-	Schema    json.RawMessage
+	Schema    json.RawMessage `swaggertype:"object"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

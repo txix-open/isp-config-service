@@ -7,6 +7,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"isp-config-service/entity"
+	"isp-config-service/middlewares/sql_metrics"
 	"isp-config-service/service/rqlite/db"
 )
 
@@ -21,6 +22,8 @@ func NewConfigHistory(db db.DB) ConfigHistory {
 }
 
 func (r ConfigHistory) GetByConfigId(ctx context.Context, configId string) ([]entity.ConfigHistory, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigHistory.GetByConfigId")
+
 	query := fmt.Sprintf(`select * from %s where config_id = ? order by version desc`, Table("config_history"))
 	result := make([]entity.ConfigHistory, 0)
 	err := r.db.Select(ctx, &result, query, configId)
@@ -31,6 +34,8 @@ func (r ConfigHistory) GetByConfigId(ctx context.Context, configId string) ([]en
 }
 
 func (r ConfigHistory) Delete(ctx context.Context, id string) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigHistory.Delete")
+
 	query := fmt.Sprintf(`delete from %s where id = ?`, Table("config_history"))
 	_, err := r.db.Exec(ctx, query, id)
 	if err != nil {
@@ -40,6 +45,8 @@ func (r ConfigHistory) Delete(ctx context.Context, id string) error {
 }
 
 func (r ConfigHistory) Insert(ctx context.Context, history entity.ConfigHistory) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigHistory.Insert")
+
 	query, args, err := squirrel.Insert(Table("config_history")).
 		Columns("id", "config_id", "data", "version", "admin_id").
 		Values(history.Id, history.ConfigId, history.Data, history.Version, history.AdminId).

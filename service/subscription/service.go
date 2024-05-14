@@ -2,7 +2,6 @@ package subscription
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/txix-open/etp/v3"
@@ -28,11 +27,16 @@ type ConfigRepo interface {
 	GetActive(ctx context.Context, moduleId string) (*entity.Config, error)
 }
 
+type Emitter interface {
+	Emit(ctx context.Context, conn *etp.Conn, event string, data []byte)
+}
+
 type Service struct {
 	moduleRepo  ModuleRepo
 	backendRepo BackendRepo
 	configRepo  ConfigRepo
 	rooms       *etp.Rooms
+	emitter     Emitter
 	logger      log.Logger
 }
 
@@ -41,6 +45,7 @@ func NewService(
 	backendRepo BackendRepo,
 	configRepo ConfigRepo,
 	rooms *etp.Rooms,
+	emitter Emitter,
 	logger log.Logger,
 ) Service {
 	return Service{
@@ -48,6 +53,7 @@ func NewService(
 		backendRepo: backendRepo,
 		configRepo:  configRepo,
 		rooms:       rooms,
+		emitter:     emitter,
 		logger:      logger,
 	}
 }
@@ -70,7 +76,7 @@ func (s Service) NotifyConfigChanged(ctx context.Context, moduleId string) error
 
 	for _, conn := range conns {
 		go func() {
-			s.emitEvent(ctx, conn, cluster.ConfigSendConfigChanged, config.Data)
+			s.emitter.Emit(ctx, conn, cluster.ConfigSendConfigChanged, config.Data)
 		}()
 	}
 
@@ -141,7 +147,7 @@ func (s Service) notifyBackendsChanged(
 
 	for _, conn := range conns {
 		go func() {
-			s.emitEvent(ctx, conn, cluster.ModuleConnectedEvent(module.Name), data)
+			s.emitter.Emit(ctx, conn, cluster.ModuleConnectedEvent(module.Name), data)
 		}()
 	}
 
@@ -196,32 +202,9 @@ func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns [
 
 	for _, conn := range conns {
 		go func() {
-			s.emitEvent(ctx, conn, event, data)
+			s.emitter.Emit(ctx, conn, event, data)
 		}()
 	}
 
 	return nil
-}
-
-const (
-	emitEventTimeout = 5 * time.Second
-)
-
-func (s Service) emitEvent(
-	ctx context.Context,
-	conn *etp.Conn,
-	event string,
-	data []byte,
-) {
-	ctx, cancel := context.WithTimeout(ctx, emitEventTimeout)
-	defer cancel()
-	err := conn.Emit(ctx, event, data)
-	if err != nil {
-		err := errors.WithMessagef(
-			err,
-			"emit event '%s', to %s module, connId: %d",
-			event, helpers.ModuleName(conn), conn.Id(),
-		)
-		s.logger.Error(ctx, err)
-	}
 }

@@ -19,7 +19,7 @@ var (
 type ModuleService interface {
 	OnConnect(ctx context.Context, conn *etp.Conn, moduleName string) error
 	OnDisconnect(ctx context.Context, conn *etp.Conn, moduleName string, isNormalClose bool, err error) error
-	OnError(ctx context.Context, conn *etp.Conn, moduleName string, err error)
+	OnError(ctx context.Context, conn *etp.Conn, err error)
 	OnModuleReady(
 		ctx context.Context,
 		conn *etp.Conn,
@@ -86,7 +86,7 @@ func (m Module) OnDisconnect(conn *etp.Conn, err error) {
 }
 
 func (m Module) OnError(conn *etp.Conn, err error) {
-	m.service.OnError(conn.HttpRequest().Context(), conn, helpers.ModuleName(conn), err)
+	m.service.OnError(conn.HttpRequest().Context(), conn, err)
 }
 
 func (m Module) OnModuleReady(ctx context.Context, conn *etp.Conn, event msg.Event) []byte {

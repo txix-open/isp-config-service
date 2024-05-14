@@ -21,6 +21,6 @@ type CreateUpdateConfigRequest struct {
 	Name     string `validate:"required"`
 	ModuleId string `validate:"required"`
 	Version  int
-	Data     json.RawMessage
+	Data     json.RawMessage `swaggertype:"object"`
 	Unsafe   bool
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"isp-config-service/entity"
+	"isp-config-service/middlewares/sql_metrics"
 	"isp-config-service/service/rqlite/db"
 )
 
@@ -22,6 +23,8 @@ func NewConfigSchema(db db.DB) ConfigSchema {
 }
 
 func (r ConfigSchema) Upsert(ctx context.Context, schema entity.ConfigSchema) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigSchema.Upsert")
+
 	query, args, err := squirrel.Insert(Table("config_schema")).
 		Columns("id", "module_id", "data", "module_version").
 		Values(schema.Id, schema.ModuleId, schema.Data, schema.ModuleVersion).
@@ -41,6 +44,8 @@ func (r ConfigSchema) Upsert(ctx context.Context, schema entity.ConfigSchema) er
 }
 
 func (r ConfigSchema) All(ctx context.Context) ([]entity.ConfigSchema, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigSchema.All")
+
 	result := make([]entity.ConfigSchema, 0)
 	query := fmt.Sprintf("select * from %s order by created_at", Table("config_schema"))
 	err := r.db.Select(ctx, &result, query)
@@ -51,6 +56,8 @@ func (r ConfigSchema) All(ctx context.Context) ([]entity.ConfigSchema, error) {
 }
 
 func (r ConfigSchema) GetByModuleId(ctx context.Context, moduleId string) (*entity.ConfigSchema, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigSchema.GetByModuleId")
+
 	query, args, err := squirrel.Select("*").
 		From(Table("config_schema")).
 		Where(squirrel.Eq{"module_id": moduleId}).

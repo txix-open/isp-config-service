@@ -20,6 +20,7 @@ import (
 	"github.com/txix-open/isp-kit/worker"
 	"isp-config-service/assembly"
 	"isp-config-service/conf"
+	"isp-config-service/middlewares"
 	"isp-config-service/service/rqlite"
 	"isp-config-service/service/rqlite/db"
 	"isp-config-service/service/rqlite/goose_store"
@@ -87,7 +88,11 @@ func (s *Service) Run(ctx context.Context) error {
 		s.logger.Debug(ctx, "is not a leader")
 	}
 
-	db, err := db.Open(ctx, s.rqlite.Dsn(), httpclix.Default(httpcli.WithMiddlewares(httpclix.Log(s.logger))))
+	db, err := db.Open(
+		ctx,
+		s.rqlite.Dsn(),
+		httpclix.Default(httpcli.WithMiddlewares(middlewares.SqlOperationMiddleware())),
+	)
 	if err != nil {
 		return errors.WithMessage(err, "dial to embedded rqlite")
 	}

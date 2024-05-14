@@ -1,0 +1,499 @@
+basePath: /api/config
+definitions:
+  cluster.AddressConfiguration:
+    properties:
+      ip:
+        type: string
+      port:
+        type: string
+    type: object
+  cluster.EndpointDescriptor:
+    properties:
+      extra:
+        additionalProperties: {}
+        type: object
+      inner:
+        type: boolean
+      path:
+        type: string
+      userAuthRequired:
+        type: boolean
+    type: object
+  domain.Config:
+    properties:
+      active:
+        type: boolean
+      createdAt:
+        type: string
+      data:
+        type: object
+      id:
+        type: string
+      moduleId:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+      valid:
+        type: boolean
+      version:
+        type: integer
+    type: object
+  domain.ConfigIdRequest:
+    properties:
+      id:
+        type: string
+    required:
+    - id
+    type: object
+  domain.ConfigSchema:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      moduleId:
+        type: string
+      schema:
+        type: object
+      updatedAt:
+        type: string
+      version:
+        type: string
+    type: object
+  domain.ConfigVersion:
+    properties:
+      configId:
+        type: string
+      configVersion:
+        type: integer
+      createdAt:
+        type: string
+      data:
+        type: object
+      id:
+        type: string
+    type: object
+  domain.Connection:
+    properties:
+      address:
+        $ref: '#/definitions/cluster.AddressConfiguration'
+      endpoints:
+        items:
+          $ref: '#/definitions/cluster.EndpointDescriptor'
+        type: array
+      establishedAt:
+        type: string
+      libVersion:
+        type: string
+      version:
+        type: string
+    type: object
+  domain.CreateUpdateConfigRequest:
+    properties:
+      data:
+        type: object
+      id:
+        type: string
+      moduleId:
+        type: string
+      name:
+        type: string
+      unsafe:
+        type: boolean
+      version:
+        type: integer
+    required:
+    - moduleId
+    - name
+    type: object
+  domain.DeleteResponse:
+    properties:
+      deleted:
+        type: integer
+    type: object
+  domain.GetByModuleIdRequest:
+    properties:
+      moduleId:
+        type: string
+    required:
+    - moduleId
+    type: object
+  domain.GetByModuleNameRequest:
+    properties:
+      moduleName:
+        type: string
+    required:
+    - moduleName
+    type: object
+  domain.ModuleInfo:
+    properties:
+      active:
+        type: boolean
+      configSchema:
+        type: object
+      createdAt:
+        type: string
+      id:
+        type: string
+      lastConnectedAt:
+        type: string
+      lastDisconnectedAt:
+        type: string
+      name:
+        type: string
+      status:
+        items:
+          $ref: '#/definitions/domain.Connection'
+        type: array
+    type: object
+  github_com_txix-open_isp-kit_grpc_apierrors.Error:
+    properties:
+      details:
+        additionalProperties: true
+        type: object
+      errorCode:
+        type: integer
+      errorMessage:
+        type: string
+    type: object
+host: localhost:9000
+info:
+  contact: {}
+  description: Модуль управления конфигурациями
+  license:
+    name: GNU GPL v3.0
+  title: isp-config-service
+  version: 1.0.0
+paths:
+  /config/create_update_config:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Если конфиг с таким id существует, то обновляет данные, если нет, то добавляет данные в базу
+        В случае обновления рассылает всем подключенным модулям актуальную конфигурацию
+      parameters:
+      - description: объект для сохранения
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateUpdateConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Config'
+        "400":
+          description: '`errorCode: 2003` - конфиг не соотвествует текущей схеме<br/>`errorCode:
+            2002` - указанного id не сущесвует<br/>`errorCode: 2004` - кто-то уже
+            обновил конфигурацию<br/>`errorCode: 2005` - схема конфигурации не найдена<br/>'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод обновления конфигурации
+      tags:
+      - Конфигурация
+  /config/delete_config:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает количество удаленных модулей
+      parameters:
+      - description: массив идентификаторов конфигураций
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.DeleteResponse'
+        "400":
+          description: если не указан массив идентификаторов
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод удаления объектов конфигурации по идентификаторам
+      tags:
+      - Конфигурация
+  /config/delete_version:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает количество удаленных версий
+      parameters:
+      - description: id версии конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.DeleteResponse'
+        "400":
+          description: не указан массив идентификаторов
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод удаления версии конфигурации
+      tags:
+      - Конфигурация
+  /config/get_active_config_by_module_name:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает активную конфиграцию по названию модуля
+      parameters:
+      - description: название модуля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.GetByModuleNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Config'
+        "400":
+          description: '`errorCode: 2001` - модуль не найден<br/>`errorCode: 2002`
+            - конфиг не найден'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод получения объекта конфигурации по названию модуля
+      tags:
+      - Конфигурация
+  /config/get_all_version:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает предыдущие версии конфигураций
+      parameters:
+      - description: id конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.ConfigVersion'
+            type: array
+        "400":
+          description: если не указан массив идентификаторов
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод получение старых версий конфигурации
+      tags:
+      - Конфигурация
+  /config/get_config_by_id:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: id конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Config'
+        "400":
+          description: '`errorCode: 2002` - конфиг не найден<br/>'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод получение конфигурации по id
+      tags:
+      - Конфигурация
+  /config/get_configs_by_module_id:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает список конфиграции по ID модуля
+      parameters:
+      - description: ID модуля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.GetByModuleIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Config'
+            type: array
+        "400":
+          description: если идентификатор не указан
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод получения списка конфигураций по ID модуля
+      tags:
+      - Конфигурация
+  /config/mark_config_as_active:
+    post:
+      consumes:
+      - application/json
+      description: Активирует указанную конфигурацию и деактивирует остальные, возвращает
+        активированную конфигурацию
+      parameters:
+      - description: id конфигурации для изменения
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfigIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: '`errorCode: 2002` - конфиг не найден<br/>'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод активации конфигурации для модуля
+      tags:
+      - Конфигурация
+  /module/delete_module:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает количество удаленных модулей
+      parameters:
+      - description: массив идентификаторов модулей
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.DeleteResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод удаления объектов модулей по идентификаторам
+      tags:
+      - Модули
+  /module/get_modules_info:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает полное состояние всех модулей в кластере (схема конфигурации,
+        подключенные экземпляры)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.ModuleInfo'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод полчения полной информации о состоянии модулей
+      tags:
+      - Модули
+  /schema/get_by_module_id:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает текущую json схему конфигурации модуля
+      parameters:
+      - description: идентификатор модуля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.GetByModuleIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ConfigSchema'
+        "400":
+          description: '`errorCode: 2005` - схема для модуля не найдена'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод получения схемы конфигурации модуля
+      tags:
+      - Схема
+swagger: "2.0"

@@ -13,7 +13,7 @@ var (
 )
 
 // @title isp-config-service
-// @version 1.0.0
+// @version 3.0.0
 // @description Модуль управления конфигурациями
 
 // @license.name GNU GPL v3.0
