@@ -10,6 +10,7 @@ require (
 	github.com/prometheus/client_golang v1.19.0
 	github.com/rqlite/gorqlite v0.0.0-20240227123050-397b03f02418
 	github.com/rqlite/rqlite/v8 v8.23.4
+	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/gjson v1.17.1
 	github.com/txix-open/etp/v3 v3.1.0
 	github.com/txix-open/isp-kit v1.31.2

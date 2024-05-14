@@ -174,6 +174,7 @@ func (s Service) NotifyRoutingChanged(ctx context.Context) error {
 }
 
 func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns []*etp.Conn) error {
+	ctx = db.NoneConsistency().ToContext(ctx)
 	backends, err := s.backendRepo.All(ctx)
 	if err != nil {
 		return errors.WithMessage(err, "get all backends")

@@ -3,10 +3,10 @@ configServiceAddress:
   port: 9001
 grpcOuterAddress:
   ip: 127.0.0.1
-  port: 9001
+  port: 9002
 grpcInnerAddress:
   ip: 0.0.0.0
-  port: 9001
+  port: 9002
 moduleName: isp-config-service
 
 infraServerPort: 9006

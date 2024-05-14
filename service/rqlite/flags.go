@@ -427,13 +427,10 @@ type BuildInfo struct {
 
 // ParseFlags parses the command line, and returns the configuration.
 func ParseFlags(name, desc string, build *BuildInfo) (*Config, error) {
-	if flag.Parsed() {
-		return nil, fmt.Errorf("command-line flags already parsed")
-	}
 	config := &Config{}
 	showVersion := false
 
-	fs := flag.NewFlagSet(name, flag.ExitOnError)
+	fs := flag.NewFlagSet(name, flag.ContinueOnError)
 
 	fs.StringVar(&config.NodeID, "node-id", "", "Unique ID for node. If not set, set to advertised Raft address")
 	fs.StringVar(&config.HTTPAddr, HTTPAddrFlag, "localhost:4001", "HTTP server bind address. To enable HTTPS, set X.509 certificate and key")

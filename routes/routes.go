@@ -59,47 +59,47 @@ func HttpHandler(etpSrv *etp.Server) http.Handler {
 
 func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 	return []cluster.EndpointDescriptor{{
-		Path:    "module/get_modules_info",
+		Path:    "config/module/get_modules_info",
 		Inner:   true,
 		Handler: c.ModuleApi.GetModulesAggregatedInfo,
 	}, {
-		Path:    "module/delete_module",
+		Path:    "config/module/delete_module",
 		Inner:   true,
 		Handler: c.ModuleApi.DeleteModule,
 	}, {
-		Path:    "config/get_active_config_by_module_name",
+		Path:    "config/config/get_active_config_by_module_name",
 		Inner:   true,
 		Handler: c.ConfigApi.GetActiveConfigByModuleName,
 	}, {
-		Path:    "config/get_configs_by_module_id",
+		Path:    "config/config/get_configs_by_module_id",
 		Inner:   true,
 		Handler: c.ConfigApi.GetConfigsByModuleId,
 	}, {
-		Path:    "config/create_update_config",
+		Path:    "config/config/create_update_config",
 		Inner:   true,
 		Handler: c.ConfigApi.CreateUpdateConfig,
 	}, {
-		Path:    "config/get_config_by_id",
+		Path:    "config/config/get_config_by_id",
 		Inner:   true,
 		Handler: c.ConfigApi.GetConfigById,
 	}, {
-		Path:    "config/mark_config_as_active",
+		Path:    "config/config/mark_config_as_active",
 		Inner:   true,
 		Handler: c.ConfigApi.MarkConfigAsActive,
 	}, {
-		Path:    "config/delete_config",
+		Path:    "config/config/delete_config",
 		Inner:   true,
 		Handler: c.ConfigApi.DeleteConfigs,
 	}, {
-		Path:    "config/get_all_version",
+		Path:    "config/config/get_all_version",
 		Inner:   true,
 		Handler: c.ConfigHistoryApi.GetAllVersion,
 	}, {
-		Path:    "config/delete_version",
+		Path:    "config/config/delete_version",
 		Inner:   true,
 		Handler: c.ConfigHistoryApi.DeleteConfigVersion,
 	}, {
-		Path:    "schema/get_by_module_id",
+		Path:    "config/schema/get_by_module_id",
 		Inner:   true,
 		Handler: c.ConfigSchemaApi.SchemaByModuleId,
 	}}
