@@ -58,8 +58,16 @@ func New(boot *bootstrap.Bootstrap) *Service {
 
 // nolint:funlen
 func (s *Service) Run(ctx context.Context) error {
+	logLevelValue := s.boot.App.Config().Optional().String("logLevel", "info")
+	var logLevel log.Level
+	err := logLevel.UnmarshalText([]byte(logLevelValue))
+	if err != nil {
+		return errors.WithMessage(err, "parse log level")
+	}
+	s.boot.App.Logger().SetLevel(logLevel)
+
 	localConfig := conf.Local{}
-	err := s.boot.App.Config().Read(&localConfig)
+	err = s.boot.App.Config().Read(&localConfig)
 	if err != nil {
 		return errors.WithMessage(err, "read local config")
 	}

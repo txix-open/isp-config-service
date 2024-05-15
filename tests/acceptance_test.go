@@ -27,7 +27,6 @@ func TestAcceptance(t *testing.T) {
 	t.Setenv("APP_CONFIG_PATH", "../conf/config.yml")
 	t.Setenv("DefaultRemoteConfigPath", "../conf/default_remote_config.json")
 	boot := bootstrap.New("1.0.0", conf.Remote{}, nil)
-	boot.App.Logger().SetLevel(log.DebugLevel)
 	boot.MigrationsDir = "../migrations"
 	dataPath := dataDir(t)
 	boot.App.Config().Set("rqlite.DataPath", dataPath)

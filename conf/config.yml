@@ -11,6 +11,8 @@ moduleName: isp-config-service
 
 infraServerPort: 9006
 
+logLevel: debug
+
 rqlite:
   DataPath: "data"
   NodeID: 1
