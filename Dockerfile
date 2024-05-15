@@ -5,7 +5,7 @@ ENV version_env=$version
 ARG app_name
 ENV app_name_env=$app_name
 COPY . .
-RUN apk update && apk upgrade && apk add --no-cache sqlite-dev
+RUN apk update && apk upgrade && apk add --no-cache gcc musl-dev
 RUN go build -ldflags="-X 'main.version=$version_env'" -o /main .
 
 FROM alpine:3.19
