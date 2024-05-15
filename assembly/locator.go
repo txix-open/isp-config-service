@@ -47,6 +47,7 @@ type Config struct {
 	CleanEventWorker  *worker.Worker
 }
 
+//nolint:funlen
 func (l Locator) Config() Config {
 	moduleRepo := repository.NewModule(l.db)
 	backendRepo := repository.NewBackend(l.db)

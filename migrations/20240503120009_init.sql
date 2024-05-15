@@ -69,7 +69,7 @@ create table isp_config_service__event
     id         integer,
     payload    blob    not null,
     created_at integer not null default (unixepoch()),
-    primary key (id desc)
+    primary key (id)
 );
 
 -- +goose Down

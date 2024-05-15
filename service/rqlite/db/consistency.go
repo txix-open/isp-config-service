@@ -8,7 +8,7 @@ import (
 type consistencyCtxKey struct{}
 
 var (
-	consistencyCtxValue = consistencyCtxKey{}
+	consistencyCtxValue = consistencyCtxKey{} //nolint:gochecknoglobals
 )
 
 func consistencyFromContext(ctx context.Context) Consistency {

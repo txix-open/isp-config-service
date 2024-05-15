@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -21,47 +20,12 @@ import (
 	"isp-config-service/service/startup"
 )
 
-type clusterEventHandler struct {
-	receivedConfigs [][]byte
-	receivedHosts   [][]string
-	receivedRoutes  []cluster.RoutingConfig
-	lock            sync.Locker
-}
-
-func newClusterEventHandler() *clusterEventHandler {
-	return &clusterEventHandler{
-		lock: &sync.Mutex{},
-	}
-}
-
-func (c *clusterEventHandler) ReceiveConfig(ctx context.Context, remoteConfig []byte) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.receivedConfigs = append(c.receivedConfigs, remoteConfig)
-	return nil
-}
-
-func (c *clusterEventHandler) Upgrade(hosts []string) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.receivedHosts = append(c.receivedHosts, hosts)
-}
-
-func (c *clusterEventHandler) ReceiveRoutes(ctx context.Context, routes cluster.RoutingConfig) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.receivedRoutes = append(c.receivedRoutes, routes)
-	return nil
-}
-
+//nolint:funlen
 func TestAcceptance(t *testing.T) {
-	t.Parallel()
 	require := require.New(t)
 
-	err := os.Setenv("APP_CONFIG_PATH", "../conf/config.yml")
-	require.NoError(err)
-	err = os.Setenv("DefaultRemoteConfigPath", "../conf/default_remote_config.json")
-	require.NoError(err)
+	t.Setenv("APP_CONFIG_PATH", "../conf/config.yml")
+	t.Setenv("DefaultRemoteConfigPath", "../conf/default_remote_config.json")
 	boot := bootstrap.New("1.0.0", conf.Remote{}, nil)
 	boot.App.Logger().SetLevel(log.DebugLevel)
 	boot.MigrationsDir = "../migrations"
@@ -76,7 +40,7 @@ func TestAcceptance(t *testing.T) {
 			require.NoError(err)
 		}
 	})
-	err = startup.Run(context.Background())
+	err := startup.Run(context.Background())
 	require.NoError(err)
 	time.Sleep(1 * time.Second)
 
@@ -84,7 +48,7 @@ func TestAcceptance(t *testing.T) {
 	go func() {
 		handler := cluster.NewEventHandler()
 		err := clientA1.Run(context.Background(), handler)
-		require.NoError(err)
+		require.NoError(err) //nolint:testifylint
 	}()
 
 	clientA2 := newClusterClient("A", "10.2.9.2", logger)
@@ -92,7 +56,7 @@ func TestAcceptance(t *testing.T) {
 	go func() {
 		handler := cluster.NewEventHandler()
 		err := clientA2.Run(clientA2Ctx, handler)
-		require.NoError(err)
+		require.NoError(err) //nolint:testifylint
 	}()
 	time.Sleep(2 * time.Second)
 
@@ -104,7 +68,7 @@ func TestAcceptance(t *testing.T) {
 			RequireModule("A", eventHandler).
 			RoutesReceiver(eventHandler)
 		err := clientB.Run(context.Background(), handler)
-		require.NoError(err)
+		require.NoError(err) //nolint:testifylint
 	}()
 	time.Sleep(2 * time.Second)
 
@@ -135,14 +99,14 @@ func TestAcceptance(t *testing.T) {
 	require.NoError(err)
 	time.Sleep(2 * time.Second)
 
-	require.Len(eventHandler.receivedConfigs, 2)
-	require.EqualValues([]byte("{}"), eventHandler.receivedConfigs[0])
+	require.Len(eventHandler.ReceivedConfigs(), 2)
+	require.EqualValues([]byte("{}"), eventHandler.ReceivedConfigs()[0])
 
-	require.Len(eventHandler.receivedHosts, 2)
-	require.EqualValues([]string{"10.2.9.1:9999", "10.2.9.2:9999"}, eventHandler.receivedHosts[0])
-	require.EqualValues([]string{"10.2.9.1:9999"}, eventHandler.receivedHosts[1])
+	require.Len(eventHandler.ReceivedHosts(), 2)
+	require.EqualValues([]string{"10.2.9.1:9999", "10.2.9.2:9999"}, eventHandler.ReceivedHosts()[0])
+	require.EqualValues([]string{"10.2.9.1:9999"}, eventHandler.ReceivedHosts()[1])
 
-	require.Len(eventHandler.receivedRoutes, 3)
+	require.Len(eventHandler.ReceivedRoutes(), 3)
 
 	statusResponse := make([]domain.ModuleInfo, 0)
 	err = apiCli.Invoke("config/module/get_modules_info").

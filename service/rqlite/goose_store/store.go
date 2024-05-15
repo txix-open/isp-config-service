@@ -56,23 +56,16 @@ func (s Store) GetMigration(ctx context.Context, db database.DBTxConn, version i
 	q := s.querier.GetMigrationByVersion(s.tablename)
 	var result database.GetMigrationResult
 
-	rows, err := s.db.QueryContext(ctx, q, version)
+	isApplied := float64(0)
+	err := s.db.QueryRowContext(ctx, q, version).Scan(&result.Timestamp, &isApplied)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("%w: %d", database.ErrVersionNotFound, version)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get migration %d: %w", version, err)
 	}
-	for rows.Next() {
-		isApplied := float64(0)
-		err := rows.Scan(&result.Timestamp, &isApplied)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get migration %d: %w", version, err)
-		}
-		result.IsApplied = isApplied == 0
-		return &result, nil
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("failed to get migration %d: %w", version, err)
-	}
-	return nil, fmt.Errorf("%w: %d", database.ErrVersionNotFound, version)
+	result.IsApplied = isApplied == 0
+	return &result, nil
 }
 
 func (s Store) GetLatestVersion(ctx context.Context, db database.DBTxConn) (int64, error) {
@@ -100,7 +93,7 @@ func (s Store) ListMigrations(ctx context.Context, db database.DBTxConn) ([]*dat
 		migrations = append(migrations, &result)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "fetch rows")
 	}
 	return migrations, nil
 }

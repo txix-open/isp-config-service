@@ -35,7 +35,7 @@ func (r Event) Insert(ctx context.Context, event entity.Event) error {
 func (r Event) Get(ctx context.Context, lastEventId int, limit int) ([]entity.Event, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Event.Get")
 
-	query := fmt.Sprintf("select * from %s where id > ? order by id desc limit ?", Table("event"))
+	query := fmt.Sprintf("select * from %s where id > ? order by id limit ?", Table("event"))
 	result := make([]entity.Event, 0)
 	err := r.db.Select(ctx, &result, query, lastEventId, limit)
 	if err != nil {

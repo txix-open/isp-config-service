@@ -50,22 +50,24 @@ func (s Module) Status(ctx context.Context) ([]domain.ModuleInfo, error) {
 		modules  []entity.Module
 		backends []entity.Backend
 		schemas  []entity.ConfigSchema
-		err      error
 	)
 	group, ctx := errgroup.WithContext(ctx)
 	group.Go(func() error {
+		var err error
 		modules, err = s.moduleRepo.All(ctx)
 		return errors.WithMessage(err, "get all modules")
 	})
 	group.Go(func() error {
+		var err error
 		backends, err = s.backendsRepo.All(ctx)
 		return errors.WithMessage(err, "get all backends")
 	})
 	group.Go(func() error {
+		var err error
 		schemas, err = s.schemaRepo.All(ctx)
 		return errors.WithMessage(err, "get all schemas")
 	})
-	err = group.Wait()
+	err := group.Wait()
 	if err != nil {
 		return nil, errors.WithMessage(err, "wait")
 	}

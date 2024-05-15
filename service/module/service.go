@@ -2,7 +2,7 @@ package module
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 
@@ -235,8 +235,8 @@ func (s Service) OnModuleConfigSchema(
 
 	config, err := s.configRepo.GetActive(ctx, moduleId)
 	if config == nil {
-		md5Sum := md5.Sum([]byte(moduleId))
-		initialConfigId := hex.EncodeToString(md5Sum[:])
+		hash := sha256.Sum256([]byte(moduleId))
+		initialConfigId := hex.EncodeToString(hash[:])
 		initialConfig := entity.Config{
 			Id:       initialConfigId,
 			Name:     helpers.ModuleName(conn),

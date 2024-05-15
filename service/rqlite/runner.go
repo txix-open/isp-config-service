@@ -62,7 +62,11 @@ func (r *Rqlite) SqlDB() (*sql.DB, error) {
 		return nil, ErrNotRun
 	}
 
-	return sql.Open("rqlite", r.Dsn())
+	db, err := sql.Open("rqlite", r.Dsn())
+	if err != nil {
+		return nil, errors.WithMessage(err, "open sql db")
+	}
+	return db, nil
 }
 
 func (r *Rqlite) Dsn() string {

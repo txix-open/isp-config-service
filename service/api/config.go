@@ -111,21 +111,7 @@ func (c Config) CreateUpdateConfig(
 	}
 
 	if req.Id == "" {
-		config := entity.Config{
-			Id:       uuid.NewString(),
-			Name:     req.Name,
-			ModuleId: req.ModuleId,
-			Data:     req.Data,
-			Version:  1,
-			Active:   false,
-			AdminId:  adminId,
-		}
-		err := c.configRepo.Insert(ctx, config)
-		if err != nil {
-			return nil, errors.WithMessage(err, "insert new config")
-		}
-		result := configToDto(config, nil)
-		return &result, nil
+		return c.insertNewConfig(ctx, adminId, req)
 	}
 
 	oldConfig, err := c.configRepo.GetById(ctx, req.Id)
@@ -237,6 +223,24 @@ func (c Config) DeleteConfig(ctx context.Context, configId string) error {
 		return entity.ErrConfigNotFoundOrActive
 	}
 	return nil
+}
+
+func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (*domain.Config, error) {
+	config := entity.Config{
+		Id:       uuid.NewString(),
+		Name:     req.Name,
+		ModuleId: req.ModuleId,
+		Data:     req.Data,
+		Version:  1,
+		Active:   false,
+		AdminId:  adminId,
+	}
+	err := c.configRepo.Insert(ctx, config)
+	if err != nil {
+		return nil, errors.WithMessage(err, "insert new config")
+	}
+	result := configToDto(config, nil)
+	return &result, nil
 }
 
 func (c Config) validateConfigUpdate(ctx context.Context, moduleId string, configData []byte) error {

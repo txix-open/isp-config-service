@@ -24,6 +24,7 @@ func EtpLogger(logger log.Logger) EtpMiddleware {
 	}
 }
 
+//nolint:ireturn
 func EtpChain(root etp.Handler, middlewares ...EtpMiddleware) etp.Handler {
 	for i := len(middlewares) - 1; i >= 0; i-- {
 		root = middlewares[i](root)

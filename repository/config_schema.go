@@ -69,6 +69,7 @@ func (r ConfigSchema) GetByModuleId(ctx context.Context, moduleId string) (*enti
 	return selectRow[entity.ConfigSchema](ctx, r.db, query, args...)
 }
 
+//nolint:nilnil
 func selectRow[T any](ctx context.Context, db db.DB, query string, args ...interface{}) (*T, error) {
 	var result T
 	err := db.SelectRow(ctx, &result, query, args...)

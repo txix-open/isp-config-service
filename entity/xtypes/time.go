@@ -3,6 +3,8 @@ package xtypes
 import (
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 type Time time.Time
@@ -27,7 +29,7 @@ func (l *Time) UnmarshalText(data []byte) error {
 	}
 	value, err := strconv.Atoi(string(data))
 	if err != nil {
-		return err
+		return errors.WithMessagef(err, "parse int: %s", string(data))
 	}
 	*l = Time(time.Unix(int64(value), 0))
 	return nil

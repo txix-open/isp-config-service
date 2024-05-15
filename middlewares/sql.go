@@ -11,6 +11,7 @@ import (
 )
 
 func SqlOperationMiddleware() httpcli.Middleware {
+	//nolint:promlinter
 	sqlQueryDuration := metrics.GetOrRegister(metrics.DefaultRegistry, prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Subsystem:  "sql",
 		Name:       "query_duration_ms",
@@ -26,7 +27,7 @@ func SqlOperationMiddleware() httpcli.Middleware {
 				duration := time.Since(now)
 				sqlQueryDuration.WithLabelValues(label).Observe(metrics.Milliseconds(duration))
 			}
-			return resp, err
+			return resp, err //nolint:wrapcheck
 		})
 	}
 }

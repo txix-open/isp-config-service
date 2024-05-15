@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ok = []byte("ok")
+	ok = []byte("ok") //nolint:gochecknoglobals
 )
 
 type ModuleService interface {
