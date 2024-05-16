@@ -1,7 +1,9 @@
 package api
 
 import (
+	"cmp"
 	"context"
+	"slices"
 	"time"
 
 	"github.com/pkg/errors"
@@ -74,16 +76,9 @@ func (s Module) Status(ctx context.Context) ([]domain.ModuleInfo, error) {
 
 	connections := make(map[string][]domain.Connection, len(modules))
 	for _, backend := range backends {
-		addr, err := helpers.SplitAddress(backend)
+		conn, err := s.backendToDto(backend)
 		if err != nil {
-			return nil, errors.WithMessage(err, "split address")
-		}
-		conn := domain.Connection{
-			LibVersion:    backend.LibVersion,
-			Version:       backend.Version,
-			Address:       addr,
-			Endpoints:     backend.Endpoints.Value,
-			EstablishedAt: time.Time(backend.UpdatedAt),
+			return nil, errors.WithMessage(err, "backend to dto")
 		}
 		connections[backend.ModuleId] = append(connections[backend.ModuleId], conn)
 	}
@@ -117,4 +112,53 @@ func (s Module) Delete(ctx context.Context, id string) error {
 		return errors.WithMessage(err, "delete modules")
 	}
 	return nil
+}
+
+func (s Module) Connections(ctx context.Context) ([]domain.Connection, error) {
+	backends, err := s.backendsRepo.All(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, "get all backends")
+	}
+
+	connections := make([]domain.Connection, 0, len(backends))
+	for _, backend := range backends {
+		conn, err := s.backendToDto(backend)
+		if err != nil {
+			return nil, errors.WithMessage(err, "backend to dto")
+		}
+		connections = append(connections, conn)
+	}
+
+	return connections, nil
+}
+
+func (s Module) backendToDto(backend entity.Backend) (domain.Connection, error) {
+	addr, err := helpers.SplitAddress(backend)
+	if err != nil {
+		return domain.Connection{}, errors.WithMessage(err, "split address")
+	}
+
+	endpointsDescriptors := make([]domain.EndpointDescriptor, 0)
+	for _, desc := range backend.Endpoints.Value {
+		endpointsDescriptors = append(endpointsDescriptors, domain.EndpointDescriptor{
+			Path:  desc.Path,
+			Inner: desc.Inner,
+		})
+	}
+	slices.SortFunc(endpointsDescriptors, func(a, b domain.EndpointDescriptor) int {
+		return cmp.Compare(a.Path, b.Path)
+	})
+
+	conn := domain.Connection{
+		LibVersion: backend.LibVersion,
+		Version:    backend.Version,
+		Address: domain.Address{
+			Ip:   addr.IP,
+			Port: addr.Port,
+		},
+		Endpoints:     endpointsDescriptors,
+		EstablishedAt: time.Time(backend.UpdatedAt),
+	}
+
+	return conn, nil
 }

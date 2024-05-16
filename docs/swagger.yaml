@@ -1,23 +1,11 @@
 basePath: /api/config
 definitions:
-  cluster.AddressConfiguration:
+  domain.Address:
     properties:
       ip:
         type: string
       port:
         type: string
-    type: object
-  cluster.EndpointDescriptor:
-    properties:
-      extra:
-        additionalProperties: {}
-        type: object
-      inner:
-        type: boolean
-      path:
-        type: string
-      userAuthRequired:
-        type: boolean
     type: object
   domain.Config:
     properties:
@@ -78,10 +66,10 @@ definitions:
   domain.Connection:
     properties:
       address:
-        $ref: '#/definitions/cluster.AddressConfiguration'
+        $ref: '#/definitions/domain.Address'
       endpoints:
         items:
-          $ref: '#/definitions/cluster.EndpointDescriptor'
+          $ref: '#/definitions/domain.EndpointDescriptor'
         type: array
       establishedAt:
         type: string
@@ -112,6 +100,13 @@ definitions:
     properties:
       deleted:
         type: integer
+    type: object
+  domain.EndpointDescriptor:
+    properties:
+      inner:
+        type: boolean
+      path:
+        type: string
     type: object
   domain.GetByModuleIdRequest:
     properties:
@@ -165,7 +160,7 @@ info:
   license:
     name: GNU GPL v3.0
   title: isp-config-service
-  version: 1.0.0
+  version: 3.0.0
 paths:
   /config/create_update_config:
     post:
@@ -464,6 +459,27 @@ paths:
           schema:
             $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
       summary: Метод полчения полной информации о состоянии модулей
+      tags:
+      - Модули
+  /routing/get_routes:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает все доступные роуты
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Connection'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод получения маршрутов
       tags:
       - Модули
   /schema/get_by_module_id:

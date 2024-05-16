@@ -48,7 +48,7 @@ func (r Config) GetActive(ctx context.Context, moduleId string) (*entity.Config,
 		From(Table("config")).
 		Where(squirrel.Eq{
 			"module_id": moduleId,
-			"active":    "1",
+			"active":    xtypes.Bool(true),
 		}).OrderBy("version DESC").
 		Limit(1).
 		ToSql()

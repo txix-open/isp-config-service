@@ -234,6 +234,9 @@ func (s Service) OnModuleConfigSchema(
 	}
 
 	config, err := s.configRepo.GetActive(ctx, moduleId)
+	if err != nil {
+		return errors.WithMessage(err, "get active config")
+	}
 	if config == nil {
 		hash := sha256.Sum256([]byte(moduleId))
 		initialConfigId := hex.EncodeToString(hash[:])
@@ -250,9 +253,6 @@ func (s Service) OnModuleConfigSchema(
 			return errors.WithMessage(err, "insert config in store")
 		}
 		config = &initialConfig
-	}
-	if err != nil {
-		return errors.WithMessage(err, "get active config")
 	}
 
 	s.emitter.Emit(ctx, conn, cluster.ConfigSendConfigWhenConnected, config.Data)

@@ -3,7 +3,6 @@ package domain
 import (
 	"time"
 
-	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/json"
 )
 
@@ -25,9 +24,19 @@ type ModuleInfo struct {
 type Connection struct {
 	LibVersion    string
 	Version       string
-	Address       cluster.AddressConfiguration
-	Endpoints     []cluster.EndpointDescriptor
+	Address       Address
+	Endpoints     []EndpointDescriptor
 	EstablishedAt time.Time
+}
+
+type Address struct {
+	Ip   string
+	Port string
+}
+
+type EndpointDescriptor struct {
+	Path  string
+	Inner bool
 }
 
 type Config struct {

@@ -17,6 +17,7 @@ import (
 	"github.com/txix-open/isp-kit/http/httpcli"
 	"github.com/txix-open/isp-kit/http/httpclix"
 	"github.com/txix-open/isp-kit/log"
+	"github.com/txix-open/isp-kit/observability/sentry"
 	"github.com/txix-open/isp-kit/worker"
 	"isp-config-service/assembly"
 	"isp-config-service/conf"
@@ -52,7 +53,7 @@ func New(boot *bootstrap.Bootstrap) *Service {
 		grpcSrv:    grpc.DefaultServer(),
 		httpSrv:    http.NewServer(boot.App.Logger()),
 		clusterCli: boot.ClusterCli,
-		logger:     boot.App.Logger(),
+		logger:     sentry.WrapErrorLogger(boot.App.Logger(), boot.SentryHub),
 	}
 }
 

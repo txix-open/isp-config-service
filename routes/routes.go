@@ -61,11 +61,15 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 	return []cluster.EndpointDescriptor{{
 		Path:    "config/module/get_modules_info",
 		Inner:   true,
-		Handler: c.ModuleApi.GetModulesAggregatedInfo,
+		Handler: c.ModuleApi.Status,
 	}, {
 		Path:    "config/module/delete_module",
 		Inner:   true,
 		Handler: c.ModuleApi.DeleteModule,
+	}, {
+		Path:    "config/routing/get_routes",
+		Inner:   true,
+		Handler: c.ModuleApi.Connections,
 	}, {
 		Path:    "config/config/get_active_config_by_module_name",
 		Inner:   true,

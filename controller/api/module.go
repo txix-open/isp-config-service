@@ -10,6 +10,7 @@ import (
 type ModuleService interface {
 	Status(ctx context.Context) ([]domain.ModuleInfo, error)
 	Delete(ctx context.Context, id string) error
+	Connections(ctx context.Context) ([]domain.Connection, error)
 }
 
 type Module struct {
@@ -22,7 +23,7 @@ func NewModule(service ModuleService) Module {
 	}
 }
 
-// GetModulesAggregatedInfo
+// Status
 // @Summary Метод полчения полной информации о состоянии модулей
 // @Description Возвращает полное состояние всех модулей в кластере (схема конфигурации, подключенные экземпляры)
 // @Tags Модули
@@ -31,7 +32,7 @@ func NewModule(service ModuleService) Module {
 // @Success 200 {array} domain.ModuleInfo
 // @Failure 500 {object} apierrors.Error
 // @Router /module/get_modules_info [POST]
-func (c Module) GetModulesAggregatedInfo(ctx context.Context) ([]domain.ModuleInfo, error) {
+func (c Module) Status(ctx context.Context) ([]domain.ModuleInfo, error) {
 	modulesInfo, err := c.service.Status(ctx)
 	if err != nil {
 		return nil, apierrors.NewInternalServiceError(err)
@@ -62,6 +63,23 @@ func (c Module) DeleteModule(ctx context.Context, identities []string) (*domain.
 	return &domain.DeleteResponse{
 		Deleted: len(identities),
 	}, nil
+}
+
+// Connections
+// @Summary Метод получения маршрутов
+// @Description Возвращает все доступные роуты
+// @Tags Модули
+// @Accept json
+// @Produce json
+// @Success 200 {array} domain.Connection
+// @Failure 500 {object} apierrors.Error
+// @Router /routing/get_routes [POST]
+func (c Module) Connections(ctx context.Context) ([]domain.Connection, error) {
+	connections, err := c.service.Connections(ctx)
+	if err != nil {
+		return nil, apierrors.NewInternalServiceError(err)
+	}
+	return connections, nil
 }
 
 func getSingleId(identities []string) (string, error) {
