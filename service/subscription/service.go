@@ -89,12 +89,23 @@ func (s Service) SubscribeToBackendsChanges(ctx context.Context, conn *etp.Conn,
 	if err != nil {
 		return errors.WithMessage(err, "get modules by names")
 	}
+	moduleByName := make(map[string]entity.Module)
+	for _, module := range modules {
+		moduleByName[module.Name] = module
+	}
 
 	roomsToJoin := make([]string, 0)
-	for _, module := range modules {
-		roomsToJoin = append(roomsToJoin, BackendsChangingRoom(module.Id))
+	conns := []*etp.Conn{conn}
+	for _, moduleName := range requiredModuleNames {
+		roomsToJoin = append(roomsToJoin, BackendsChangingRoom(moduleName))
 		go func() {
-			err := s.notifyBackendsChanged(ctx, module.Id, []*etp.Conn{conn})
+			module, ok := moduleByName[moduleName]
+			if !ok {
+				s.emitModuleConnectedEvent(ctx, conns, moduleName, []cluster.AddressConfiguration{})
+				return
+			}
+
+			err := s.notifyBackendsChanged(ctx, module.Id, moduleName, conns)
 			if err != nil {
 				s.logger.Error(ctx, errors.WithMessage(err, "notify backends changed"))
 			}
@@ -107,18 +118,6 @@ func (s Service) SubscribeToBackendsChanges(ctx context.Context, conn *etp.Conn,
 }
 
 func (s Service) NotifyBackendsChanged(ctx context.Context, moduleId string) error {
-	conns := s.rooms.ToBroadcast(BackendsChangingRoom(moduleId))
-	if len(conns) == 0 {
-		return nil
-	}
-	return s.notifyBackendsChanged(ctx, moduleId, conns)
-}
-
-func (s Service) notifyBackendsChanged(
-	ctx context.Context,
-	moduleId string,
-	conns []*etp.Conn,
-) error {
 	ctx = db.NoneConsistency().ToContext(ctx)
 	module, err := s.moduleRepo.GetById(ctx, moduleId)
 	if err != nil {
@@ -127,6 +126,22 @@ func (s Service) notifyBackendsChanged(
 	if module == nil {
 		return errors.Errorf("unknown module: %s", moduleId)
 	}
+
+	conns := s.rooms.ToBroadcast(BackendsChangingRoom(module.Name))
+	if len(conns) == 0 {
+		return nil
+	}
+
+	return s.notifyBackendsChanged(ctx, moduleId, module.Name, conns)
+}
+
+func (s Service) notifyBackendsChanged(
+	ctx context.Context,
+	moduleId string,
+	moduleName string,
+	conns []*etp.Conn,
+) error {
+	ctx = db.NoneConsistency().ToContext(ctx)
 	backends, err := s.backendRepo.GetByModuleId(ctx, moduleId)
 	if err != nil {
 		return errors.WithMessage(err, "get backends by module id")
@@ -140,16 +155,8 @@ func (s Service) notifyBackendsChanged(
 		}
 		addresses = append(addresses, addr)
 	}
-	data, err := json.Marshal(addresses)
-	if err != nil {
-		return errors.WithMessage(err, "marshal addresses")
-	}
 
-	for _, conn := range conns {
-		go func() {
-			s.emitter.Emit(ctx, conn, cluster.ModuleConnectedEvent(module.Name), data)
-		}()
-	}
+	s.emitModuleConnectedEvent(ctx, conns, moduleName, addresses)
 
 	return nil
 }
@@ -208,4 +215,19 @@ func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns [
 	}
 
 	return nil
+}
+
+func (s Service) emitModuleConnectedEvent(
+	ctx context.Context,
+	conns []*etp.Conn,
+	moduleName string,
+	addresses []cluster.AddressConfiguration,
+) {
+	data, _ := json.Marshal(addresses)
+
+	for _, conn := range conns {
+		go func() {
+			s.emitter.Emit(ctx, conn, cluster.ModuleConnectedEvent(moduleName), data)
+		}()
+	}
 }
