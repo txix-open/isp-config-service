@@ -84,7 +84,7 @@ func (d Adapter) SelectRow(ctx context.Context, ptr any, query string, args ...a
 	body, _ := httpResp.Body()
 	rows := gjson.GetBytes(body, "results.0.rows")
 	elems := rows.Array()
-	if rows.IsArray() && len(elems) == 0 {
+	if len(elems) == 0 {
 		return sql.ErrNoRows
 	}
 	err = json.Unmarshal([]byte(elems[0].Raw), ptr)
