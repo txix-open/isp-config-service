@@ -23,7 +23,7 @@ const (
 )
 
 type Repo interface {
-	Upsert(ctx context.Context, module entity.Module) (string, error)
+	Upsert(ctx context.Context, module entity.Module) error
 	SetDisconnectedAtNow(
 		ctx context.Context,
 		moduleId string,
@@ -90,11 +90,12 @@ func NewService(
 func (s Service) OnConnect(ctx context.Context, conn *etp.Conn, moduleName string) error {
 	s.logger.Info(ctx, "module connected", helpers.LogFields(conn)...)
 
+	moduleId := idByKey(moduleName)
 	module := entity.Module{
-		Id:   uuid.NewString(),
+		Id:   moduleId,
 		Name: moduleName,
 	}
-	moduleId, err := s.moduleRepo.Upsert(ctx, module)
+	err := s.moduleRepo.Upsert(ctx, module)
 	if err != nil {
 		return errors.WithMessage(err, "upsert module in store")
 	}
@@ -238,10 +239,8 @@ func (s Service) OnModuleConfigSchema(
 		return errors.WithMessage(err, "get active config")
 	}
 	if config == nil {
-		hash := sha256.Sum256([]byte(moduleId))
-		initialConfigId := hex.EncodeToString(hash[:])
 		initialConfig := entity.Config{
-			Id:       initialConfigId,
+			Id:       idByKey(moduleId),
 			Name:     helpers.ModuleName(conn),
 			ModuleId: moduleId,
 			Data:     data.Config,
@@ -271,4 +270,9 @@ func (s Service) OnModuleConfigSchema(
 	}
 
 	return nil
+}
+
+func idByKey(key string) string {
+	hash := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(hash[:])
 }
