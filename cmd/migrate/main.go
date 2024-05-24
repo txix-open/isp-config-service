@@ -55,6 +55,7 @@ func main() {
 	configSchemaRepo := repository.NewConfigSchema(dbClient)
 	configHistoryRepo := repository.NewConfigHistory(dbClient)
 
+	logger.Info(ctx, "start modules migration")
 	modules := make([]Module, 0)
 	err = pgDb.Select(ctx, &modules, "select * from modules")
 	if err != nil {
@@ -73,8 +74,9 @@ func main() {
 	}
 	logger.Info(ctx, "modules migrated")
 
+	logger.Info(ctx, "start configs migration")
 	configs := make([]Config, 0)
-	err = pgDb.Select(ctx, &configs, "select * from configs")
+	err = pgDb.Select(ctx, &configs, "select id, module_id, version, active, created_at, updated_at, data, name from configs")
 	if err != nil {
 		panic(errors.WithMessage(err, "err selecting configs"))
 	}
@@ -97,6 +99,7 @@ func main() {
 	}
 	logger.Info(ctx, "configs migrated")
 
+	logger.Info(ctx, "start config schemas migration")
 	schemas := make([]ConfigSchema, 0)
 	err = pgDb.Select(ctx, &schemas, "select * from config_schemas")
 	if err != nil {
@@ -118,6 +121,7 @@ func main() {
 	}
 	logger.Info(ctx, "config schemas migrated")
 
+	logger.Info(ctx, "start config history migration")
 	configHistories := make([]ConfigHistory, 0)
 	err = pgDb.Select(ctx, &configHistories, "select * from version_config")
 	if err != nil {
