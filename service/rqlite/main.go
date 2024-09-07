@@ -6,19 +6,22 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/pkg/errors"
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/rqlite/rqlite/v8/auth"
 	"github.com/rqlite/rqlite/v8/cluster"
 	"github.com/rqlite/rqlite/v8/cmd"
 	"github.com/rqlite/rqlite/v8/db"
+	"github.com/rqlite/rqlite/v8/extensions"
 	httpd "github.com/rqlite/rqlite/v8/http"
+	"github.com/rqlite/rqlite/v8/rarchive"
 	"github.com/rqlite/rqlite/v8/rtls"
 	"github.com/rqlite/rqlite/v8/store"
 	"github.com/rqlite/rqlite/v8/tcp"
@@ -65,8 +68,8 @@ func main(ctx context.Context, r *Rqlite) error {
 	r.localHttpAddr = cfg.HTTPAddr
 
 	// Configure logging and pump out initial message.
-	log.Printf("%s starting, version %s, SQLite %s, commit %s, branch %s, compiler %s", name, cmd.Version,
-		db.DBVersion, cmd.Commit, cmd.Branch, runtime.Compiler)
+	log.Printf("%s starting, version %s, SQLite %s, commit %s, branch %s, compiler (toolchain) %s, compiler (command) %s",
+		name, cmd.Version, db.DBVersion, cmd.Commit, cmd.Branch, runtime.Compiler, cmd.CompilerCommand)
 	log.Printf("%s, target architecture is %s, operating system target is %s", runtime.Version(),
 		runtime.GOARCH, runtime.GOOS)
 	log.Printf("launch command: %s", strings.Join(os.Args, " "))
@@ -83,7 +86,6 @@ func main(ctx context.Context, r *Rqlite) error {
 
 	// Raft internode layer
 	raftLn := mux.Listen(cluster.MuxRaftHeader)
-	log.Printf("Raft TCP mux Listener registered with byte header %d", cluster.MuxRaftHeader)
 	raftDialer, err := cluster.CreateRaftDialer(cfg.NodeX509Cert, cfg.NodeX509Key, cfg.NodeX509CACert,
 		cfg.NodeVerifyServerName, cfg.NoNodeVerify)
 	if err != nil {
@@ -91,8 +93,18 @@ func main(ctx context.Context, r *Rqlite) error {
 	}
 	raftTn := tcp.NewLayer(raftLn, raftDialer)
 
+	// Create extension store.
+	extensionsStore, err := createExtensionsStore(cfg)
+	if err != nil {
+		log.Fatalf("failed to create extensions store: %s", err.Error())
+	}
+	extensionsPaths, err := extensionsStore.List()
+	if err != nil {
+		log.Fatalf("failed to list extensions: %s", err.Error())
+	}
+
 	// Create the store.
-	str, err := createStore(cfg, raftTn)
+	str, err := createStore(cfg, raftTn, extensionsPaths)
 	if err != nil {
 		log.Fatalf("failed to create store: %s", err.Error())
 	}
@@ -110,7 +122,6 @@ func main(ctx context.Context, r *Rqlite) error {
 	if err != nil {
 		log.Fatalf("failed to create cluster service: %s", err.Error())
 	}
-	log.Printf("cluster TCP mux Listener registered with byte header %d", cluster.MuxClusterHeader)
 
 	// Create the HTTP service.
 	//
@@ -132,8 +143,18 @@ func main(ctx context.Context, r *Rqlite) error {
 	}
 
 	// Register remaining status providers.
-	httpServ.RegisterStatus("cluster", clstrServ)
-	httpServ.RegisterStatus("network", tcp.NetworkReporter{})
+	if err := httpServ.RegisterStatus("cluster", clstrServ); err != nil {
+		log.Fatalf("failed to register cluster status provider: %s", err.Error())
+	}
+	if err := httpServ.RegisterStatus("network", tcp.NetworkReporter{}); err != nil {
+		log.Fatalf("failed to register network status provider: %s", err.Error())
+	}
+	if err := httpServ.RegisterStatus("mux", mux); err != nil {
+		log.Fatalf("failed to register mux status provider: %s", err.Error())
+	}
+	if err := httpServ.RegisterStatus("extensions", extensionsStore); err != nil {
+		log.Fatalf("failed to register extensions status provider: %s", err.Error())
+	}
 
 	// Create the cluster!
 	nodes, err := str.Nodes()
@@ -152,9 +173,10 @@ func main(ctx context.Context, r *Rqlite) error {
 	// Block until done.
 	<-mainCtx.Done()
 
-	// Stop the HTTP server first, so clients get notification as soon as
+	// Stop the HTTP server and other network access first so clients get notification as soon as
 	// possible that the node is going away.
 	httpServ.Close()
+	clstrServ.Close()
 
 	if cfg.RaftClusterRemoveOnShutdown {
 		remover := cluster.NewRemover(clstrClient, 5*time.Second, str)
@@ -174,19 +196,52 @@ func main(ctx context.Context, r *Rqlite) error {
 		// Perform a stepdown, ignore any errors.
 		str.Stepdown(true)
 	}
+	muxLn.Close()
 
 	if err := str.Close(true); err != nil {
 		log.Printf("failed to close store: %s", err.Error())
 	}
-	clstrServ.Close()
-	muxLn.Close()
+
+	log.Println("rqlite server stopped")
 	return nil
 }
 
-func createStore(cfg *Config, ln *tcp.Layer) (*store.Store, error) {
+func createExtensionsStore(cfg *Config) (*extensions.Store, error) {
+	str, err := extensions.NewStore(filepath.Join(cfg.DataPath, "extensions"))
+	if err != nil {
+		log.Fatalf("failed to create extension store: %s", err.Error())
+	}
+
+	if len(cfg.ExtensionPaths) > 0 {
+		for _, path := range cfg.ExtensionPaths {
+			if isDir(path) {
+				if err := str.LoadFromDir(path); err != nil {
+					log.Fatalf("failed to load extensions from directory: %s", err.Error())
+				}
+			} else if rarchive.IsZipFile(path) {
+				if err := str.LoadFromZip(path); err != nil {
+					log.Fatalf("failed to load extensions from zip file: %s", err.Error())
+				}
+			} else if rarchive.IsTarGzipFile(path) {
+				if err := str.LoadFromTarGzip(path); err != nil {
+					log.Fatalf("failed to load extensions from tar.gz file: %s", err.Error())
+				}
+			} else {
+				if err := str.LoadFromFile(path); err != nil {
+					log.Fatalf("failed to load extension from file: %s", err.Error())
+				}
+			}
+		}
+	}
+
+	return str, nil
+}
+
+func createStore(cfg *Config, ln *tcp.Layer, extensions []string) (*store.Store, error) {
 	dbConf := store.NewDBConfig()
 	dbConf.OnDiskPath = cfg.OnDiskPath
 	dbConf.FKConstraints = cfg.FKConstraints
+	dbConf.Extensions = extensions
 
 	str := store.New(ln, &store.Config{
 		DBConf: dbConf,
@@ -208,6 +263,7 @@ func createStore(cfg *Config, ln *tcp.Layer) (*store.Store, error) {
 	str.ReapTimeout = cfg.RaftReapNodeTimeout
 	str.ReapReadOnlyTimeout = cfg.RaftReapReadOnlyNodeTimeout
 	str.AutoVacInterval = cfg.AutoVacInterval
+	str.AutoOptimizeInterval = cfg.AutoOptimizeInterval
 
 	if store.IsNewNode(cfg.DataPath) {
 		log.Printf("no preexisting node state detected in %s, node may be bootstrapping", cfg.DataPath)
@@ -230,14 +286,15 @@ func startHTTPService(cfg *Config, str *store.Store, cltr *cluster.Client, credS
 	s.DefaultQueueBatchSz = cfg.WriteQueueBatchSz
 	s.DefaultQueueTimeout = cfg.WriteQueueTimeout
 	s.DefaultQueueTx = cfg.WriteQueueTx
-	s.AllowOrigin = cfg.HTTPAllowOrigin
 	s.BuildInfo = map[string]interface{}{
-		"commit":     cmd.Commit,
-		"branch":     cmd.Branch,
-		"version":    cmd.Version,
-		"compiler":   runtime.Compiler,
-		"build_time": cmd.Buildtime,
+		"commit":             cmd.Commit,
+		"branch":             cmd.Branch,
+		"version":            cmd.Version,
+		"compiler_toolchain": runtime.Compiler,
+		"compiler_command":   cmd.CompilerCommand,
+		"build_time":         cmd.Buildtime,
 	}
+	s.SetAllowOrigin(cfg.HTTPAllowOrigin)
 	return s, s.Start()
 }
 

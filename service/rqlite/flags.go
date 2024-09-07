@@ -35,11 +35,36 @@ const (
 	NodeX509KeyFlag  = "node-key"
 )
 
+// StringSlice is a slice of strings which implments the flag.Value interface.
+type StringSliceValue []string
+
+// String returns a string representation of the slice.
+func (s *StringSliceValue) String() string {
+	return fmt.Sprintf("%v", *s)
+}
+
+// Set sets the value of the slice.
+func (s *StringSliceValue) Set(value string) error {
+	*s = strings.Split(value, ",")
+	var r []string
+	for _, v := range *s {
+		if v != "" {
+			r = append(r, v)
+		}
+	}
+	*s = r
+	return nil
+}
+
 // Config represents the configuration as set by command-line flags.
 // All variables will be set, unless explicit noted.
 type Config struct {
 	// DataPath is path to node data. Always set.
 	DataPath string
+
+	// ExtensionPaths is a comma-delimited list of path to SQLite extensions to be loaded.
+	// Each element may be a directory path, zipfile, or tar.gz file. May not be set.
+	ExtensionPaths StringSliceValue
 
 	// HTTPAddr is the bind network address for the HTTP Server.
 	// It never includes a trailing HTTP or HTTPS.
@@ -139,6 +164,9 @@ type Config struct {
 	// AutoVacInterval sets the automatic VACUUM interval. Use 0s to disable.
 	AutoVacInterval time.Duration
 
+	// AutoOptimizeInterval sets the automatic optimization interval. Use 0s to disable.
+	AutoOptimizeInterval time.Duration
+
 	// RaftLogLevel sets the minimum logging level for the Raft subsystem.
 	RaftLogLevel string
 
@@ -207,6 +235,9 @@ type Config struct {
 
 	// MemProfile enables memory profiling.
 	MemProfile string
+
+	// TraceProfile enables trace profiling.
+	TraceProfile string
 }
 
 // Validate checks the configuration for internal consistency, and activates
@@ -223,6 +254,19 @@ func (c *Config) Validate() error {
 	err = c.CheckFilePaths()
 	if err != nil {
 		return err
+	}
+
+	err = c.CheckDirPaths()
+	if err != nil {
+		return err
+	}
+
+	if len(c.ExtensionPaths) > 0 {
+		for _, p := range c.ExtensionPaths {
+			if !fileExists(p) {
+				return fmt.Errorf("extension path does not exist: %s", p)
+			}
+		}
 	}
 
 	if !bothUnsetSet(c.HTTPx509Cert, c.HTTPx509Key) {
@@ -408,9 +452,38 @@ func (c *Config) CheckFilePaths() error {
 			if filePath == "" {
 				continue
 			}
-			_, err := os.Stat(filePath)
-			if os.IsNotExist(err) {
+			if !fileExists(filePath) {
 				return fmt.Errorf("%s does not exist", filePath)
+			}
+		}
+	}
+	return nil
+}
+
+// CheckDirPaths checks that all directory paths in the config exist and are directories.
+// Empty directory paths are ignored.
+func (c *Config) CheckDirPaths() error {
+	v := reflect.ValueOf(c).Elem()
+
+	// Iterate through the fields of the struct
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Type().Field(i)
+		fieldValue := v.Field(i)
+
+		if fieldValue.Kind() != reflect.String {
+			continue
+		}
+
+		if tagValue, ok := field.Tag.Lookup("dirpath"); ok && tagValue == "true" {
+			dirPath := fieldValue.String()
+			if dirPath == "" {
+				continue
+			}
+			if !fileExists(dirPath) {
+				return fmt.Errorf("%s does not exist", dirPath)
+			}
+			if !isDir(dirPath) {
+				return fmt.Errorf("%s is not a directory", dirPath)
 			}
 		}
 	}
@@ -427,12 +500,15 @@ type BuildInfo struct {
 
 // ParseFlags parses the command line, and returns the configuration.
 func ParseFlags(name, desc string, build *BuildInfo) (*Config, error) {
-	config := &Config{}
+	config := &Config{
+		ExtensionPaths: StringSliceValue{},
+	}
 	showVersion := false
 
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
 
 	fs.StringVar(&config.NodeID, "node-id", "", "Unique ID for node. If not set, set to advertised Raft address")
+	fs.Var(&config.ExtensionPaths, "extensions-path", "Comma-delimited list of paths to directories, zipfiles, or tar.gz files containing SQLite extensions")
 	fs.StringVar(&config.HTTPAddr, HTTPAddrFlag, "localhost:4001", "HTTP server bind address. To enable HTTPS, set X.509 certificate and key")
 	fs.StringVar(&config.HTTPAdv, HTTPAdvAddrFlag, "", "Advertised HTTP address. If not set, same as HTTP server bind address")
 	fs.StringVar(&config.HTTPAllowOrigin, "http-allow-origin", "", "Value to set for Access-Control-Allow-Origin HTTP header")
@@ -464,6 +540,7 @@ func ParseFlags(name, desc string, build *BuildInfo) (*Config, error) {
 	fs.BoolVar(&config.FKConstraints, "fk", false, "Enable SQLite foreign key constraints")
 	fs.BoolVar(&showVersion, "version", false, "Show version information and exit")
 	fs.DurationVar(&config.AutoVacInterval, "auto-vacuum-int", 0, "Period between automatic VACUUMs. It not set, not enabled")
+	fs.DurationVar(&config.AutoOptimizeInterval, "auto-optimize-int", mustParseDuration("24h"), `Period between automatic 'PRAGMA optimize'. Set to 0h to disable`)
 	fs.BoolVar(&config.RaftNonVoter, "raft-non-voter", false, "Configure as non-voting node")
 	fs.DurationVar(&config.RaftHeartbeatTimeout, "raft-timeout", time.Second, "Raft heartbeat timeout")
 	fs.DurationVar(&config.RaftElectionTimeout, "raft-election-timeout", time.Second, "Raft election timeout")
@@ -485,6 +562,7 @@ func ParseFlags(name, desc string, build *BuildInfo) (*Config, error) {
 	fs.BoolVar(&config.WriteQueueTx, "write-queue-tx", false, "Use a transaction when processing a queued write")
 	fs.StringVar(&config.CPUProfile, "cpu-profile", "", "Path to file for CPU profiling information")
 	fs.StringVar(&config.MemProfile, "mem-profile", "", "Path to file for memory profiling information")
+	fs.StringVar(&config.TraceProfile, "trace-profile", "", "Path to file for trace profiling information")
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, "\n%s\n\n", desc)
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags] <data directory>\n", name)
@@ -526,4 +604,25 @@ func errorExit(code int, msg string) {
 // bothUnsetSet returns true if both a and b are unset, or both are set.
 func bothUnsetSet(a, b string) bool {
 	return (a == "" && b == "") || (a != "" && b != "")
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func isDir(path string) bool {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return fi.IsDir()
+}
+
+func mustParseDuration(d string) time.Duration {
+	td, err := time.ParseDuration(d)
+	if err != nil {
+		panic(err)
+	}
+	return td
 }

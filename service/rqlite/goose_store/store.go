@@ -69,7 +69,7 @@ func (s Store) GetMigration(ctx context.Context, db database.DBTxConn, version i
 }
 
 func (s Store) GetLatestVersion(ctx context.Context, db database.DBTxConn) (int64, error) {
-	return -1, errors.New("not implemented")
+	return -1, nil
 }
 
 func (s Store) ListMigrations(ctx context.Context, db database.DBTxConn) ([]*database.ListMigrationsResult, error) {

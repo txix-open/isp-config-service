@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine3.19 as builder
+FROM golang:1.22-alpine3.20 as builder
 WORKDIR /build
 ARG version
 ENV version_env=$version
@@ -8,7 +8,7 @@ COPY . .
 RUN apk update && apk upgrade && apk add --no-cache gcc musl-dev
 RUN go build -ldflags="-X 'main.version=$version_env'" -o /main .
 
-FROM alpine:3.19
+FROM alpine:3.20
 WORKDIR /app
 ARG app_name
 ENV app_name_env=$app_name
