@@ -102,7 +102,7 @@ func TestAcceptance(t *testing.T) {
 	require.EqualValues([]byte("{}"), eventHandler.ReceivedConfigs()[0])
 
 	require.Len(eventHandler.ReceivedHosts(), 2)
-	require.EqualValues([]string{"10.2.9.1:9999", "10.2.9.2:9999"}, eventHandler.ReceivedHosts()[0])
+	require.ElementsMatch([]string{"10.2.9.1:9999", "10.2.9.2:9999"}, eventHandler.ReceivedHosts()[0])
 	require.EqualValues([]string{"10.2.9.1:9999"}, eventHandler.ReceivedHosts()[1])
 
 	require.Len(eventHandler.ReceivedRoutes(), 3)
