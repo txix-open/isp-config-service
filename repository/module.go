@@ -21,23 +21,24 @@ func NewModule(db db.DB) Module {
 	}
 }
 
-func (r Module) Upsert(ctx context.Context, module entity.Module) error {
+func (r Module) Upsert(ctx context.Context, module entity.Module) (string, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Module.Upsert")
 
 	query, args, err := squirrel.Insert(Table("module")).
 		Columns("id", "name", "last_connected_at").
 		Values(module.Id, module.Name, squirrel.Expr("unixepoch()")).
-		Suffix(`on conflict (name) do update set last_connected_at = unixepoch()`).
+		Suffix(`on conflict (name) do update set last_connected_at = unixepoch() returning id`).
 		ToSql()
 	if err != nil {
-		return errors.WithMessage(err, "build query")
+		return "", errors.WithMessage(err, "build query")
 	}
 
-	_, err = r.db.Exec(ctx, query, args...)
+	result := make(map[string]string)
+	err = r.db.SelectRow(ctx, &result, query, args...)
 	if err != nil {
-		return errors.WithMessagef(err, "select: %s", query)
+		return "", errors.WithMessagef(err, "select: %s", query)
 	}
-	return nil
+	return result["id"], nil
 }
 
 func (r Module) SetDisconnectedAtNow(

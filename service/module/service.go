@@ -23,7 +23,7 @@ const (
 )
 
 type Repo interface {
-	Upsert(ctx context.Context, module entity.Module) error
+	Upsert(ctx context.Context, module entity.Module) (string, error)
 	SetDisconnectedAtNow(
 		ctx context.Context,
 		moduleId string,
@@ -95,7 +95,7 @@ func (s Service) OnConnect(ctx context.Context, conn *etp.Conn, moduleName strin
 		Id:   moduleId,
 		Name: moduleName,
 	}
-	err := s.moduleRepo.Upsert(ctx, module)
+	moduleId, err := s.moduleRepo.Upsert(ctx, module)
 	if err != nil {
 		return errors.WithMessage(err, "upsert module in store")
 	}
