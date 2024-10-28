@@ -111,11 +111,15 @@ func main(ctx context.Context, r *Rqlite) error {
 
 	r.store = str
 
+	credStr, err := credentialsStore(r.credentials)
+	if err != nil {
+		log.Fatalf("failed to create credentials: %s", err.Error())
+	}
 	// Get any credential store.
-	credStr, err := credentialStore(cfg)
+	/*credStr, err := credentialStore(cfg)
 	if err != nil {
 		log.Fatalf("failed to get credential store: %s", err.Error())
-	}
+	}*/
 
 	// Create cluster service now, so nodes will be able to learn information about each other.
 	clstrServ, err := clusterService(cfg, mux.Listen(cluster.MuxClusterHeader), str, str, credStr)

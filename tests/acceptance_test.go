@@ -32,14 +32,15 @@ func TestAcceptance(t *testing.T) {
 	boot.App.Config().Set("rqlite.DataPath", dataPath)
 	logger := boot.App.Logger()
 
-	startup := startup.New(boot)
+	startup, err := startup.New(boot)
+	require.NoError(err)
 	t.Cleanup(func() {
 		for _, closer := range startup.Closers() {
 			err := closer.Close()
 			require.NoError(err)
 		}
 	})
-	err := startup.Run(context.Background())
+	err = startup.Run(context.Background())
 	require.NoError(err)
 	time.Sleep(1 * time.Second)
 

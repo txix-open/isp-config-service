@@ -2,6 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/txix-open/isp-kit/config"
+	"github.com/txix-open/isp-kit/dbx"
+	"github.com/txix-open/isp-kit/http/httpcli"
+	"github.com/txix-open/isp-kit/http/httpclix"
+	"github.com/txix-open/isp-kit/log"
+	"github.com/txix-open/isp-kit/validator"
 	"os"
 	"time"
 
@@ -17,19 +23,33 @@ import (
 	"isp-config-service/repository"
 )
 
-func main() {
-	if len(os.Args) == 1 {
-		fmt.Println("usage: migrate postgres://username:password@localhost:5432/database_name?search_path=config_service")
-		os.Exit(1)
+type Cfg struct {
+	Db               dbx.Config
+	NewConfigService struct {
+		Address  string
+		Username string
+		Password string
 	}
-	app, err := app.New()
+}
+
+func main() {
+	app, err := app.New(app.WithConfigOptions(
+		config.WithValidator(validator.Default),
+		config.WithExtraSource(config.NewYamlConfig("config.yml")),
+	))
 	if err != nil {
 		panic(err)
 	}
 	logger := app.Logger()
+	logger.SetLevel(log.DebugLevel)
 	ctx := app.Context()
+	cfg := Cfg{}
+	err = app.Config().Read(&cfg)
+	if err != nil {
+		panic(errors.WithMessage(err, "read config"))
+	}
 
-	pgDb, err := db.Open(ctx, os.Args[1])
+	pgDb, err := dbx.Open(ctx, cfg.Db, dbx.WithQueryTracer(dbx.NewLogTracer(logger)))
 	if err != nil {
 		panic(err)
 	}
@@ -142,6 +162,31 @@ func main() {
 		}
 	}
 	logger.Info(ctx, "config history migrated")
+
+	logger.Info(ctx, "close sqlite db")
+	_ = dbClient.Close()
+
+	logger.Info(ctx, "loading db to isp-config-service")
+	sqliteFile, err := os.ReadFile(fileName)
+	if err != nil {
+		panic(errors.WithMessage(err, "err opening sqlite file"))
+	}
+
+	cli := httpcli.New(httpcli.WithMiddlewares(httpclix.Log(logger)))
+	cli.GlobalRequestConfig().BaseUrl = cfg.NewConfigService.Address
+	cli.GlobalRequestConfig().BasicAuth = &httpcli.BasicAuth{
+		Username: cfg.NewConfigService.Username,
+		Password: cfg.NewConfigService.Password,
+	}
+	ctx = httpclix.LogConfigToContext(ctx, false, true)
+	err = cli.Post("/db/load").
+		Header("Content-Type", "application/octet-stream").
+		RequestBody(sqliteFile).
+		StatusCodeToError().
+		DoWithoutResponse(ctx)
+	if err != nil {
+		panic(errors.WithMessage(err, "load sqlite file"))
+	}
 
 	logger.Info(ctx, "done!")
 }

@@ -33,6 +33,7 @@ const (
 
 type Service struct {
 	boot       *bootstrap.Bootstrap
+	cfg        conf.Local
 	rqlite     *rqlite.Rqlite
 	grpcSrv    *grpc.Server
 	httpSrv    *http.Server
@@ -45,34 +46,41 @@ type Service struct {
 	cleanEventWorker  *worker.Worker
 }
 
-func New(boot *bootstrap.Bootstrap) *Service {
-	rqlite := rqlite.New(boot.App.Config())
+func New(boot *bootstrap.Bootstrap) (*Service, error) {
+	localConfig := conf.Local{}
+	err := boot.App.Config().Read(&localConfig)
+	if err != nil {
+		return nil, errors.WithMessage(err, "read local config")
+	}
+
+	logLevelValue := boot.App.Config().Optional().String("logLevel", "info")
+	var logLevel log.Level
+	err = logLevel.UnmarshalText([]byte(logLevelValue))
+	if err != nil {
+		return nil, errors.WithMessage(err, "unmarshal log level")
+	}
+	boot.App.Logger().SetLevel(logLevel)
+
+	internalClientCredential, err := internalClientCredentials(localConfig)
+	if err != nil {
+		return nil, errors.WithMessage(err, "get internal client credentials")
+	}
+
+	rqlite := rqlite.New(boot.App.Config(), internalClientCredential, localConfig.Credentials)
+
 	return &Service{
 		boot:       boot,
+		cfg:        localConfig,
 		rqlite:     rqlite,
 		grpcSrv:    grpc.DefaultServer(),
 		httpSrv:    http.NewServer(boot.App.Logger()),
 		clusterCli: boot.ClusterCli,
 		logger:     sentry.WrapErrorLogger(boot.App.Logger(), boot.SentryHub),
-	}
+	}, nil
 }
 
 // nolint:funlen
 func (s *Service) Run(ctx context.Context) error {
-	logLevelValue := s.boot.App.Config().Optional().String("logLevel", "info")
-	var logLevel log.Level
-	err := logLevel.UnmarshalText([]byte(logLevelValue))
-	if err != nil {
-		return errors.WithMessage(err, "parse log level")
-	}
-	s.boot.App.Logger().SetLevel(logLevel)
-
-	localConfig := conf.Local{}
-	err = s.boot.App.Config().Read(&localConfig)
-	if err != nil {
-		return errors.WithMessage(err, "read local config")
-	}
-
 	go func() {
 		s.logger.Debug(ctx, "running embedded rqlite...")
 		err := s.rqlite.Run(ctx)
@@ -83,7 +91,7 @@ func (s *Service) Run(ctx context.Context) error {
 	time.Sleep(1 * time.Second) // optimistically wait for store initialization
 
 	s.logger.Debug(ctx, fmt.Sprintf("waiting for cluster startup for %s...", waitForLeaderTimeout))
-	err = s.rqlite.WaitForLeader(waitForLeaderTimeout)
+	err := s.rqlite.WaitForLeader(waitForLeaderTimeout)
 	if err != nil {
 		return errors.WithMessage(err, "wait for leader")
 	}
@@ -98,16 +106,21 @@ func (s *Service) Run(ctx context.Context) error {
 		s.logger.Debug(ctx, "is not a leader")
 	}
 
+	rqliteClient := httpclix.Default(httpcli.WithMiddlewares(middlewares.SqlOperationMiddleware()))
+	rqliteClient.GlobalRequestConfig().BaseUrl = fmt.Sprintf("http://%s", s.rqlite.LocalHttpAddr())
+	rqliteClient.GlobalRequestConfig().BasicAuth = s.rqlite.InternalClientCredential()
 	db, err := db.Open(
 		ctx,
-		s.rqlite.Dsn(),
-		httpclix.Default(httpcli.WithMiddlewares(middlewares.SqlOperationMiddleware())),
+		rqliteClient,
 	)
 	if err != nil {
 		return errors.WithMessage(err, "dial to embedded rqlite")
 	}
 
-	config := assembly.NewLocator(s.logger, db).Config()
+	config := assembly.NewLocator(s.logger, db, assembly.LocalConfig{
+		Local:         s.cfg,
+		RqliteAddress: s.rqlite.LocalHttpAddr(),
+	}).Config()
 	s.etpSrv = config.EtpSrv
 	s.handleEventWorker = config.HandleEventWorker
 	s.cleanEventWorker = config.CleanEventWorker
@@ -126,7 +139,7 @@ func (s *Service) Run(ctx context.Context) error {
 	}()
 
 	go func() {
-		httpPort := localConfig.ConfigServiceAddress.Port
+		httpPort := s.cfg.ConfigServiceAddress.Port
 		s.logger.Debug(ctx, fmt.Sprintf("starting http server on 0.0.0.0:%s", httpPort))
 		err := s.httpSrv.ListenAndServe(fmt.Sprintf("0.0.0.0:%s", httpPort))
 		if err != nil {
@@ -192,4 +205,13 @@ func (s *Service) leaderStartup(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func internalClientCredentials(cfg conf.Local) (*httpcli.BasicAuth, error) {
+	for _, credential := range cfg.Credentials {
+		if credential.Username == cfg.InternalClientCredential {
+			return &httpcli.BasicAuth{Username: credential.Username, Password: credential.Password}, nil
+		}
+	}
+	return nil, errors.Errorf("internal client credential '%s' not found", cfg.InternalClientCredential)
 }

@@ -2,7 +2,7 @@ configServiceAddress:
   ip: 127.0.0.1
   port: 9001
 grpcOuterAddress:
-  ip: 127.0.0.1
+  ip: isp-config-service
   port: 9002
 grpcInnerAddress:
   ip: 0.0.0.0
@@ -13,6 +13,15 @@ infraServerPort: 9006
 
 logLevel: debug
 
+maintenanceMode: false
+
+credentials:
+  - username: default
+    password: 38kPk0upqI5j
+    perms: ["all"]
+
+internalClientCredential: default
+
 rqlite:
   DataPath: "data"
   NodeID: 1
@@ -21,4 +30,4 @@ rqlite:
   JoinAddrs: "127.0.0.1:9008"
   FKConstraints: true
   AutoVacInterval: 12h
-
+  JoinAs: default

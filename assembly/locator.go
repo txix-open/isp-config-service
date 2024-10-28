@@ -1,7 +1,10 @@
 package assembly
 
 import (
+	"isp-config-service/conf"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"time"
 
 	"github.com/txix-open/etp/v3"
@@ -27,14 +30,21 @@ const (
 	eventTtl             = 60 * time.Second
 )
 
+type LocalConfig struct {
+	Local         conf.Local
+	RqliteAddress string
+}
+
 type Locator struct {
 	db     db.DB
+	cfg    LocalConfig
 	logger log.Logger
 }
 
-func NewLocator(logger log.Logger, db db.DB) Locator {
+func NewLocator(logger log.Logger, db db.DB, cfg LocalConfig) Locator {
 	return Locator{
 		db:     db,
+		cfg:    cfg,
 		logger: logger,
 	}
 }
@@ -114,7 +124,12 @@ func (l Locator) Config() Config {
 
 	routes.BindEtp(etpSrv, controllers, l.logger)
 
-	httpMux := routes.HttpHandler(etpSrv)
+	rqliteUrl, err := url.Parse(l.cfg.RqliteAddress)
+	if err != nil {
+		panic(err)
+	}
+	rqliteProxy := httputil.NewSingleHostReverseProxy(rqliteUrl)
+	httpMux := routes.HttpHandler(etpSrv, l.cfg.Local, rqliteProxy)
 
 	eventHandler := event.NewHandler(subscriptionService, l.logger)
 	handleEventJob := event.NewWorker(eventRepo, eventHandler, l.logger)

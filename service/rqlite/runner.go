@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/rqlite/rqlite/v8/auth"
+	"github.com/txix-open/isp-kit/http/httpcli"
 	"time"
 
 	"github.com/pkg/errors"
@@ -17,7 +19,9 @@ var (
 )
 
 type Rqlite struct {
-	cfg *config.Config
+	cfg                      *config.Config
+	internalClientCredential *httpcli.BasicAuth
+	credentials              []auth.Credential
 
 	localHttpAddr string
 	store         *store.Store
@@ -25,10 +29,16 @@ type Rqlite struct {
 	cancel        context.CancelFunc
 }
 
-func New(cfg *config.Config) *Rqlite {
+func New(
+	cfg *config.Config,
+	internalClientCredential *httpcli.BasicAuth,
+	credentials []auth.Credential,
+) *Rqlite {
 	return &Rqlite{
-		cfg:    cfg,
-		closed: make(chan struct{}),
+		cfg:                      cfg,
+		internalClientCredential: internalClientCredential,
+		credentials:              credentials,
+		closed:                   make(chan struct{}),
 	}
 }
 
@@ -70,7 +80,20 @@ func (r *Rqlite) SqlDB() (*sql.DB, error) {
 }
 
 func (r *Rqlite) Dsn() string {
-	return fmt.Sprintf("http://%s", r.localHttpAddr)
+	return fmt.Sprintf(
+		"http://%s:%s@%s",
+		r.internalClientCredential.Username,
+		r.internalClientCredential.Password,
+		r.localHttpAddr,
+	)
+}
+
+func (r *Rqlite) LocalHttpAddr() string {
+	return r.localHttpAddr
+}
+
+func (r *Rqlite) InternalClientCredential() *httpcli.BasicAuth {
+	return r.internalClientCredential
 }
 
 func (r *Rqlite) Close() error {

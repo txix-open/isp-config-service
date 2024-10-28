@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"isp-config-service/conf"
 	"net/http"
 
 	"github.com/txix-open/etp/v3"
@@ -51,9 +52,13 @@ func BindEtp(etpSrv *etp.Server, c Controllers, logger log.Logger) {
 	etpSrv.On(cluster.ModuleReady, onModuleReady)
 }
 
-func HttpHandler(etpSrv *etp.Server) http.Handler {
+func HttpHandler(etpSrv *etp.Server, conf conf.Local, rqliteProxy http.Handler) http.Handler {
 	httpMux := http.NewServeMux()
-	httpMux.Handle("/isp-etp/", etpSrv)
+	if conf.MaintenanceMode {
+		httpMux.Handle("/", rqliteProxy)
+	} else {
+		httpMux.Handle("/isp-etp/", etpSrv)
+	}
 	return httpMux
 }
 

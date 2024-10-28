@@ -14,8 +14,7 @@ type Adapter struct {
 	cli *httpcli.Client
 }
 
-func Open(ctx context.Context, dsn string, client *httpcli.Client) (*Adapter, error) {
-	client.GlobalRequestConfig().BaseUrl = dsn
+func Open(ctx context.Context, client *httpcli.Client) (*Adapter, error) {
 	db := &Adapter{
 		cli: client,
 	}
