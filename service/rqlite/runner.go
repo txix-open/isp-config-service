@@ -89,7 +89,7 @@ func (r *Rqlite) Dsn() string {
 }
 
 func (r *Rqlite) LocalHttpAddr() string {
-	return r.localHttpAddr
+	return fmt.Sprintf("http://%s", r.localHttpAddr)
 }
 
 func (r *Rqlite) InternalClientCredential() *httpcli.BasicAuth {

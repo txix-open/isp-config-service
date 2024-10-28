@@ -107,7 +107,7 @@ func (s *Service) Run(ctx context.Context) error {
 	}
 
 	rqliteClient := httpclix.Default(httpcli.WithMiddlewares(middlewares.SqlOperationMiddleware()))
-	rqliteClient.GlobalRequestConfig().BaseUrl = fmt.Sprintf("http://%s", s.rqlite.LocalHttpAddr())
+	rqliteClient.GlobalRequestConfig().BaseUrl = s.rqlite.LocalHttpAddr()
 	rqliteClient.GlobalRequestConfig().BasicAuth = s.rqlite.InternalClientCredential()
 	db, err := db.Open(
 		ctx,
@@ -148,12 +148,14 @@ func (s *Service) Run(ctx context.Context) error {
 	}()
 	time.Sleep(1 * time.Second) // wait for http start
 
-	go func() {
-		err = s.clusterCli.Run(ctx, cluster.NewEventHandler())
-		if err != nil {
-			s.boot.Fatal(errors.WithMessage(err, "connect to it's self"))
-		}
-	}()
+	if !s.cfg.MaintenanceMode {
+		go func() {
+			err = s.clusterCli.Run(ctx, cluster.NewEventHandler())
+			if err != nil {
+				s.boot.Fatal(errors.WithMessage(err, "connect to it's self"))
+			}
+		}()
+	}
 
 	return nil
 }
