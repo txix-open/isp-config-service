@@ -10,21 +10,38 @@ import (
 	"isp-config-service/entity/xtypes"
 )
 
-type Cleaner struct {
-	repo     Repo
-	eventTtl time.Duration
-	logger   log.Logger
+type LeaderChecker interface {
+	IsLeader() bool
 }
 
-func NewCleaner(repo Repo, eventTtl time.Duration, logger log.Logger) Cleaner {
+type Cleaner struct {
+	repo          Repo
+	leaderChecker LeaderChecker
+	eventTtl      time.Duration
+	logger        log.Logger
+}
+
+func NewCleaner(
+	repo Repo,
+	leaderChecker LeaderChecker,
+	eventTtl time.Duration,
+	logger log.Logger,
+) Cleaner {
 	return Cleaner{
-		repo:     repo,
-		eventTtl: eventTtl,
-		logger:   logger,
+		repo:          repo,
+		leaderChecker: leaderChecker,
+		eventTtl:      eventTtl,
+		logger:        logger,
 	}
 }
 
 func (c Cleaner) Do(ctx context.Context) {
+	ctx = log.ToContext(ctx, log.String("worker", "eventCleaner"))
+	if !c.leaderChecker.IsLeader() {
+		c.logger.Debug(ctx, "is not a leader, skip work")
+		return
+	}
+
 	deleteBefore := time.Now().Add(-c.eventTtl)
 	deleted, err := c.repo.DeleteByCreatedAt(ctx, xtypes.Time(deleteBefore))
 	if err != nil {

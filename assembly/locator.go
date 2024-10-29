@@ -36,16 +36,27 @@ type LocalConfig struct {
 }
 
 type Locator struct {
-	db     db.DB
-	cfg    LocalConfig
-	logger log.Logger
+	db            db.DB
+	cfg           LocalConfig
+	leaderChecker LeaderChecker
+	logger        log.Logger
 }
 
-func NewLocator(logger log.Logger, db db.DB, cfg LocalConfig) Locator {
+type LeaderChecker interface {
+	IsLeader() bool
+}
+
+func NewLocator(
+	db db.DB,
+	leaderChecker LeaderChecker,
+	cfg LocalConfig,
+	logger log.Logger,
+) Locator {
 	return Locator{
-		db:     db,
-		cfg:    cfg,
-		logger: logger,
+		db:            db,
+		leaderChecker: leaderChecker,
+		cfg:           cfg,
+		logger:        logger,
 	}
 }
 
@@ -135,7 +146,7 @@ func (l Locator) Config() Config {
 	handleEventJob := event.NewWorker(eventRepo, eventHandler, l.logger)
 	handleEventWorker := worker.New(handleEventJob, worker.WithInterval(handleEventsInterval))
 
-	cleanerJob := event.NewCleaner(eventRepo, eventTtl, l.logger)
+	cleanerJob := event.NewCleaner(eventRepo, l.leaderChecker, eventTtl, l.logger)
 	cleanEventWorker := worker.New(cleanerJob, worker.WithInterval(cleanEventInterval))
 
 	return Config{

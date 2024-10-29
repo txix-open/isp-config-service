@@ -117,10 +117,11 @@ func (s *Service) Run(ctx context.Context) error {
 		return errors.WithMessage(err, "dial to embedded rqlite")
 	}
 
-	config := assembly.NewLocator(s.logger, db, assembly.LocalConfig{
+	cfg := assembly.LocalConfig{
 		Local:         s.cfg,
 		RqliteAddress: s.rqlite.LocalHttpAddr(),
-	}).Config()
+	}
+	config := assembly.NewLocator(db, s.rqlite, cfg, s.logger).Config()
 	s.etpSrv = config.EtpSrv
 	s.handleEventWorker = config.HandleEventWorker
 	s.cleanEventWorker = config.CleanEventWorker
