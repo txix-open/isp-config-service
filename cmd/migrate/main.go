@@ -87,7 +87,7 @@ func main() {
 			Name:      module.Name,
 			CreatedAt: xtypes.Time(module.CreatedAt),
 		}
-		err := moduleRepo.Upsert(ctx, result)
+		_, err := moduleRepo.Upsert(ctx, result)
 		if err != nil {
 			panic(errors.WithMessagef(err, "err upserting module: %s", module.Name))
 		}
