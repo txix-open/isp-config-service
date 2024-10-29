@@ -15,11 +15,12 @@ logLevel: debug
 
 maintenanceMode: false
 
+keepConfigVersions: 64
+
 credentials:
   - username: default
     password: 38kPk0upqI5j
     perms: ["all"]
-
 internalClientCredential: default
 
 rqlite:

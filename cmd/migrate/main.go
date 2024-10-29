@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"github.com/pressly/goose/v3"
-	"github.com/pressly/goose/v3/database"
 	"github.com/txix-open/isp-kit/config"
 	"github.com/txix-open/isp-kit/dbx"
 	"github.com/txix-open/isp-kit/http/httpcli"
 	"github.com/txix-open/isp-kit/http/httpclix"
 	"github.com/txix-open/isp-kit/log"
 	"github.com/txix-open/isp-kit/validator"
+	"isp-config-service/service/rqlite/goose_store"
 	"os"
 	"time"
 
@@ -66,10 +66,7 @@ func main() {
 	}
 	defer dbClient.Close()
 
-	migrationStore, err := database.NewStore(migration.DialectSqlite3, repository.Table("goose_db_version"))
-	if err != nil {
-		panic(errors.WithMessage(err, "create store"))
-	}
+	migrationStore := goose_store.NewStore(dbClient.DB.DB)
 	mr := migration.NewRunner("", migrations.Migrations, logger)
 	err = mr.Run(ctx, dbClient.DB.DB, goose.WithStore(migrationStore))
 	if err != nil {

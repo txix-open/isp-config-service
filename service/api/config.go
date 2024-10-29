@@ -26,12 +26,16 @@ type EventRepo interface {
 	Insert(ctx context.Context, event entity.Event) error
 }
 
+type ConfigHistoryService interface {
+	OnUpdateConfig(ctx context.Context, oldConfig entity.Config) error
+}
+
 type Config struct {
-	configRepo        ConfigRepo
-	moduleRepo        ModuleRepo
-	schemaRepo        SchemaRepo
-	eventRepo         EventRepo
-	configHistoryRepo ConfigHistoryRepo
+	configRepo           ConfigRepo
+	moduleRepo           ModuleRepo
+	schemaRepo           SchemaRepo
+	eventRepo            EventRepo
+	configHistoryService ConfigHistoryService
 }
 
 func NewConfig(
@@ -39,14 +43,14 @@ func NewConfig(
 	moduleRepo ModuleRepo,
 	schemaRepo SchemaRepo,
 	eventRepo EventRepo,
-	configHistoryRepo ConfigHistoryRepo,
+	configHistoryService ConfigHistoryService,
 ) Config {
 	return Config{
-		configRepo:        configRepo,
-		moduleRepo:        moduleRepo,
-		schemaRepo:        schemaRepo,
-		eventRepo:         eventRepo,
-		configHistoryRepo: configHistoryRepo,
+		configRepo:           configRepo,
+		moduleRepo:           moduleRepo,
+		schemaRepo:           schemaRepo,
+		eventRepo:            eventRepo,
+		configHistoryService: configHistoryService,
 	}
 }
 
@@ -137,16 +141,9 @@ func (c Config) CreateUpdateConfig(
 		return nil, entity.ErrConfigConflictUpdate
 	}
 
-	history := entity.ConfigHistory{
-		Id:       uuid.NewString(),
-		ConfigId: req.Id,
-		Data:     oldConfig.Data,
-		Version:  oldConfig.Version,
-		AdminId:  oldConfig.AdminId,
-	}
-	err = c.configHistoryRepo.Insert(ctx, history)
+	err = c.configHistoryService.OnUpdateConfig(ctx, *oldConfig)
 	if err != nil {
-		return nil, errors.WithMessage(err, "save config history")
+		return nil, errors.WithMessage(err, "change config history")
 	}
 
 	if oldConfig.Active {

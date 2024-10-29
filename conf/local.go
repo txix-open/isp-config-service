@@ -9,5 +9,6 @@ type Local struct {
 	ConfigServiceAddress     bootstrap.ConfigServiceAddr
 	MaintenanceMode          bool
 	Credentials              []auth.Credential
+	KeepConfigVersions       int    `validate:"required"`
 	InternalClientCredential string `validate:"required"`
 }

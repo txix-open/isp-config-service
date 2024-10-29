@@ -94,6 +94,9 @@ func (l Locator) Config() Config {
 	)
 	moduleController := controller.NewModule(moduleService, l.logger)
 
+	configHistoryApiService := apisvs.NewConfigHistory(configHistoryRepo, l.cfg.Local.KeepConfigVersions, l.logger)
+	configHistoryController := api.NewConfigHistory(configHistoryApiService)
+
 	moduleApiService := apisvs.NewModule(moduleRepo, backendRepo, configSchemaRepo)
 	moduleApiController := api.NewModule(moduleApiService)
 
@@ -102,12 +105,9 @@ func (l Locator) Config() Config {
 		moduleRepo,
 		configSchemaRepo,
 		eventRepo,
-		configHistoryRepo,
+		configHistoryApiService,
 	)
 	configApiController := api.NewConfig(configApiService)
-
-	configHistoryApiService := apisvs.NewConfigHistory(configHistoryRepo)
-	configHistoryController := api.NewConfigHistory(configHistoryApiService)
 
 	configSchemaApiService := apisvs.NewConfigSchema(configSchemaRepo)
 	configSchemaController := api.NewConfigSchema(configSchemaApiService)

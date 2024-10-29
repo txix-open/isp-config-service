@@ -62,3 +62,22 @@ func (r ConfigHistory) Insert(ctx context.Context, history entity.ConfigHistory)
 
 	return nil
 }
+
+func (r ConfigHistory) DeleteOld(ctx context.Context, configId string, keepVersions int) (int, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigHistory.DeleteOld")
+
+	query := fmt.Sprintf(`delete from %s where config_id = ? and id not in (
+                   select id from %s where config_id = ? order by version desc limit ?
+            	)`, Table("config_history"), Table("config_history"))
+	result, err := r.db.Exec(ctx, query, configId, configId, keepVersions)
+	if err != nil {
+		return 0, errors.WithMessagef(err, "exec: %s", query)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.WithMessage(err, "get rows affected")
+	}
+
+	return int(rowsAffected), nil
+}
