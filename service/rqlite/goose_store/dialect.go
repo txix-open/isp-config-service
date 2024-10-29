@@ -12,7 +12,7 @@ func (s *Rqlite) CreateTable(tableName string) string {
 		version_id INTEGER NOT NULL,
 		is_applied INTEGER NOT NULL,
 		tstamp DATETIME DEFAULT (datetime('now'))
-	)`
+	) if not exists`
 	return fmt.Sprintf(q, tableName)
 }
 

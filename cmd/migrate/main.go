@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/pressly/goose/v3"
+	"github.com/pressly/goose/v3/database"
 	"github.com/txix-open/isp-kit/config"
 	"github.com/txix-open/isp-kit/dbx"
 	"github.com/txix-open/isp-kit/http/httpcli"
@@ -64,8 +66,12 @@ func main() {
 	}
 	defer dbClient.Close()
 
-	mr := migration.NewRunner(migration.DialectSqlite3, migrations.Migrations, logger)
-	err = mr.Run(ctx, dbClient.DB.DB)
+	migrationStore, err := database.NewStore(migration.DialectSqlite3, repository.Table("goose_db_version"))
+	if err != nil {
+		panic(errors.WithMessage(err, "create store"))
+	}
+	mr := migration.NewRunner("", migrations.Migrations, logger)
+	err = mr.Run(ctx, dbClient.DB.DB, goose.WithStore(migrationStore))
 	if err != nil {
 		panic(errors.WithMessage(err, "err connecting to db"))
 	}
@@ -87,10 +93,7 @@ func main() {
 			Name:      module.Name,
 			CreatedAt: xtypes.Time(module.CreatedAt),
 		}
-		_, err := moduleRepo.Upsert(ctx, result)
-		if err != nil {
-			panic(errors.WithMessagef(err, "err upserting module: %s", module.Name))
-		}
+		_, _ = moduleRepo.Upsert(ctx, result)
 	}
 	logger.Info(ctx, "modules migrated")
 
