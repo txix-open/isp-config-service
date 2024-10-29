@@ -183,6 +183,7 @@ func main() {
 		Header("Content-Type", "application/octet-stream").
 		RequestBody(sqliteFile).
 		StatusCodeToError().
+		Timeout(60 * time.Second).
 		DoWithoutResponse(ctx)
 	if err != nil {
 		panic(errors.WithMessage(err, "load sqlite file"))

@@ -163,6 +163,7 @@ func (s *Service) Run(ctx context.Context) error {
 
 func (s *Service) Closers() []app.Closer {
 	return []app.Closer{
+		s.clusterCli,
 		app.CloserFunc(func() error {
 			s.grpcSrv.Shutdown()
 			return nil
