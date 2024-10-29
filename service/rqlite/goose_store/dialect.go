@@ -7,12 +7,12 @@ import (
 type Rqlite struct{}
 
 func (s *Rqlite) CreateTable(tableName string) string {
-	q := `CREATE TABLE %s (
+	q := `CREATE TABLE if not exists %s (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		version_id INTEGER NOT NULL,
 		is_applied INTEGER NOT NULL,
 		tstamp DATETIME DEFAULT (datetime('now'))
-	) if not exists`
+	)`
 	return fmt.Sprintf(q, tableName)
 }
 
