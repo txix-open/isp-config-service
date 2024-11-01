@@ -22,6 +22,7 @@ type ModuleInfo struct {
 }
 
 type Connection struct {
+	Id            string
 	ModuleName    string
 	LibVersion    string
 	Version       string

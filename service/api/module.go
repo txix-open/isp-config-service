@@ -150,6 +150,7 @@ func (s Module) backendToDto(backend entity.Backend) (domain.Connection, error) 
 	})
 
 	conn := domain.Connection{
+		Id:         backend.WsConnectionId,
 		ModuleName: backend.ModuleName,
 		LibVersion: backend.LibVersion,
 		Version:    backend.Version,
