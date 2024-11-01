@@ -73,7 +73,11 @@ definitions:
         type: array
       establishedAt:
         type: string
+      id:
+        type: string
       libVersion:
+        type: string
+      moduleName:
         type: string
       version:
         type: string
