@@ -158,7 +158,7 @@ func (s Module) backendToDto(backend entity.Backend) (domain.Connection, error) 
 			Port: addr.Port,
 		},
 		Endpoints:     endpointsDescriptors,
-		EstablishedAt: time.Time(backend.UpdatedAt),
+		EstablishedAt: time.Time(backend.CreatedAt),
 	}
 
 	return conn, nil

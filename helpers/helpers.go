@@ -1,14 +1,12 @@
 package helpers
 
 import (
-	"net"
-	"strconv"
-
 	"github.com/pkg/errors"
-	"github.com/txix-open/etp/v3"
+	"github.com/txix-open/etp/v4"
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/log"
 	"isp-config-service/entity"
+	"net"
 )
 
 func ModuleName(conn *etp.Conn) string {
@@ -29,6 +27,6 @@ func SplitAddress(backend entity.Backend) (cluster.AddressConfiguration, error) 
 func LogFields(conn *etp.Conn) []log.Field {
 	return []log.Field{
 		log.String("moduleName", ModuleName(conn)),
-		log.String("connId", strconv.FormatUint(conn.Id(), 10)),
+		log.String("connId", conn.Id()),
 	}
 }

@@ -9,11 +9,11 @@ require (
 	github.com/pressly/goose/v3 v3.22.1
 	github.com/prometheus/client_golang v1.20.5
 	github.com/rqlite/gorqlite v0.0.0-20241013203532-4385768ae85d
-	github.com/rqlite/rqlite/v8 v8.32.4
+	github.com/rqlite/rqlite/v8 v8.32.5
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/gjson v1.18.0
-	github.com/txix-open/etp/v3 v3.2.0
-	github.com/txix-open/isp-kit v1.39.0
+	github.com/txix-open/etp/v4 v4.0.1
+	github.com/txix-open/isp-kit v1.39.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sync v0.8.0
 	google.golang.org/grpc v1.67.1
@@ -28,7 +28,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/coder/websocket v1.8.12 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/fatih/color v1.17.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.6 // indirect
 	github.com/getsentry/sentry-go v0.29.1 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
@@ -62,7 +62,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rqlite/go-sqlite3 v1.36.0 // indirect
 	github.com/rqlite/raft-boltdb/v2 v2.0.0-20230523104317-c08e70f4de48 // indirect
-	github.com/rqlite/sql v0.0.0-20240312185922-ffac88a740bd // indirect
+	github.com/rqlite/sql v0.0.0-20241029220113-152a320b02f7 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect

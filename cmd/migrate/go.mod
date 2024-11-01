@@ -9,7 +9,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.22.1
-	github.com/txix-open/isp-kit v1.39.0
+	github.com/txix-open/isp-kit v1.39.1
 	isp-config-service v0.0.0-00010101000000-000000000000
 )
 
@@ -50,7 +50,7 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/txix-open/bellows v1.2.0 // indirect
-	github.com/txix-open/etp/v3 v3.2.0 // indirect
+	github.com/txix-open/etp/v4 v4.0.1 // indirect
 	github.com/txix-open/validator/v10 v10.0.0-20240401163703-e83541b40f99 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.56.0 // indirect
 	go.opentelemetry.io/otel v1.31.0 // indirect

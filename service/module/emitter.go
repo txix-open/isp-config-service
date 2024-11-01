@@ -2,11 +2,11 @@ package module
 
 import (
 	"context"
+	"github.com/txix-open/etp/v4"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/txix-open/etp/v3"
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/log"
 	"isp-config-service/helpers"
@@ -51,7 +51,7 @@ func (s Emitter) Emit(
 	if err != nil {
 		err := errors.WithMessagef(
 			err,
-			"emit event '%s', to %s module, connId: %d",
+			"emit event '%s', to %s module, connId: %s",
 			event, helpers.ModuleName(conn), conn.Id(),
 		)
 		s.logger.Error(ctx, err)

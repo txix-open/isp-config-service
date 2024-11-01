@@ -1,10 +1,10 @@
 package routes
 
 import (
+	"github.com/txix-open/etp/v4"
 	"isp-config-service/conf"
 	"net/http"
 
-	"github.com/txix-open/etp/v3"
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/grpc/endpoint"

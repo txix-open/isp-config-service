@@ -21,21 +21,17 @@ func NewBackend(db db.DB) Backend {
 	}
 }
 
-func (r Backend) Upsert(ctx context.Context, backend entity.Backend) error {
-	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.Upsert")
+func (r Backend) Insert(ctx context.Context, backend entity.Backend) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.Insert")
 
 	query, args, err := squirrel.Insert(Table("backend")).
-		Columns("module_id", "address",
-			"version", "lib_version", "module_name",
+		Columns("ws_connection_id", "module_id", "address",
+			"version", "lib_version", "module_name", "config_service_node_id",
 			"endpoints", "required_modules").
-		Values(backend.ModuleId, backend.Address,
-			backend.Version, backend.LibVersion, backend.ModuleName,
+		Values(backend.WsConnectionId, backend.ModuleId, backend.Address,
+			backend.Version, backend.LibVersion, backend.ModuleName, backend.ConfigServiceNodeId,
 			backend.Endpoints, backend.RequiredModules,
-		).Suffix(`on conflict (module_id, address)  do update
-	set version = excluded.version, lib_version = excluded.lib_version, module_name = excluded.module_name,
-		endpoints = excluded.endpoints, required_modules = excluded.required_modules,
-		updated_at = unixepoch()
-		`).
+		).
 		ToSql()
 	if err != nil {
 		return errors.WithMessage(err, "build query")
@@ -49,13 +45,12 @@ func (r Backend) Upsert(ctx context.Context, backend entity.Backend) error {
 	return nil
 }
 
-func (r Backend) Delete(ctx context.Context, moduleId string, address string) error {
-	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.Delete")
+func (r Backend) DeleteByWsConnectionIds(ctx context.Context, wsConnectionIds []string) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.DeleteByWsConnectionIds")
 
 	query, args, err := squirrel.Delete(Table("backend")).
 		Where(squirrel.Eq{
-			"module_id": moduleId,
-			"address":   address,
+			"ws_connection_id": wsConnectionIds,
 		}).ToSql()
 	if err != nil {
 		return errors.WithMessage(err, "build query")
@@ -67,6 +62,52 @@ func (r Backend) Delete(ctx context.Context, moduleId string, address string) er
 	}
 
 	return nil
+}
+
+func (r Backend) DeleteByConfigServiceNodeId(ctx context.Context, configServiceNodeId string) (int, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.DeleteByConfigServiceNodeId")
+
+	query, args, err := squirrel.Delete(Table("backend")).
+		Where(squirrel.Eq{
+			"config_service_node_id": configServiceNodeId,
+		}).ToSql()
+	if err != nil {
+		return 0, errors.WithMessage(err, "build query")
+	}
+
+	result, err := r.db.Exec(ctx, query, args...)
+	if err != nil {
+		return 0, errors.WithMessagef(err, "exec: %s", query)
+	}
+
+	deleted, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.WithMessage(err, "rows affected")
+	}
+
+	return int(deleted), nil
+}
+
+func (r Backend) GetByConfigServiceNodeId(ctx context.Context, configServiceNodeId string) ([]entity.Backend, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.GetByConfigServiceNodeId")
+
+	query, args, err := squirrel.Select("*").
+		From(Table("backend")).
+		Where(squirrel.Eq{
+			"config_service_node_id": configServiceNodeId,
+		}).OrderBy("created_at desc").
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
+	result := make([]entity.Backend, 0)
+	err = r.db.Select(ctx, &result, query, args...)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+
+	return result, nil
 }
 
 func (r Backend) All(ctx context.Context) ([]entity.Backend, error) {

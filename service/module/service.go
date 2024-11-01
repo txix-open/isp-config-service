@@ -4,12 +4,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
-
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/txix-open/etp/v3"
-	"github.com/txix-open/etp/v3/store"
+	"github.com/txix-open/etp/v4"
+	"github.com/txix-open/etp/v4/store"
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/log"
 	"isp-config-service/entity"
@@ -30,13 +28,9 @@ type Repo interface {
 	) error
 }
 
-type BackendRepo interface {
-	Upsert(ctx context.Context, backend entity.Backend) error
-	Delete(ctx context.Context, moduleId string, address string) error
-}
-
-type EventRepo interface {
-	Insert(ctx context.Context, event entity.Event) error
+type BackendService interface {
+	Connect(ctx context.Context, connId string, moduleId string, declaration cluster.BackendDeclaration) (*entity.Backend, error)
+	Disconnect(ctx context.Context, backend entity.Backend) error
 }
 
 type ConfigSchemaRepo interface {
@@ -56,8 +50,7 @@ type SubscriptionService interface {
 
 type Service struct {
 	moduleRepo          Repo
-	backendRepo         BackendRepo
-	eventRepo           EventRepo
+	backendService      BackendService
 	configRepo          ConfigRepo
 	configSchemaRepo    ConfigSchemaRepo
 	subscriptionService SubscriptionService
@@ -67,8 +60,7 @@ type Service struct {
 
 func NewService(
 	moduleRepo Repo,
-	backendRepo BackendRepo,
-	eventRepo EventRepo,
+	backendService BackendService,
 	configRepo ConfigRepo,
 	configSchemaRepo ConfigSchemaRepo,
 	subscriptionService SubscriptionService,
@@ -77,8 +69,7 @@ func NewService(
 ) Service {
 	return Service{
 		moduleRepo:          moduleRepo,
-		backendRepo:         backendRepo,
-		eventRepo:           eventRepo,
+		backendService:      backendService,
 		configRepo:          configRepo,
 		configSchemaRepo:    configSchemaRepo,
 		subscriptionService: subscriptionService,
@@ -136,19 +127,9 @@ func (s Service) OnDisconnect(
 
 	backend, _ := store.Get[entity.Backend](conn.Data(), backendKey)
 	if backend.ModuleId != "" {
-		err = s.backendRepo.Delete(ctx, backend.ModuleId, backend.Address)
+		err := s.backendService.Disconnect(ctx, backend)
 		if err != nil {
-			return errors.WithMessage(err, "delete backend in store")
-		}
-
-		event := entity.NewEvent(entity.EventPayload{
-			ModuleDisconnected: &entity.PayloadModuleDisconnected{
-				ModuleId: moduleId,
-			},
-		})
-		err = s.eventRepo.Insert(ctx, event)
-		if err != nil {
-			return errors.WithMessage(err, "insert event in store")
+			return errors.WithMessage(err, "disconnect")
 		}
 	}
 
@@ -173,31 +154,12 @@ func (s Service) OnModuleReady(
 		return errors.WithMessage(err, "resolve module id")
 	}
 
-	backend := entity.Backend{
-		ModuleId:        moduleId,
-		Address:         fmt.Sprintf("%s:%s", declaration.Address.IP, declaration.Address.Port),
-		Version:         declaration.Version,
-		LibVersion:      declaration.LibVersion,
-		ModuleName:      declaration.ModuleName,
-		Endpoints:       xtypes.Json[[]cluster.EndpointDescriptor]{Value: declaration.Endpoints},
-		RequiredModules: xtypes.Json[[]cluster.ModuleDependency]{Value: declaration.RequiredModules},
-	}
-	err = s.backendRepo.Upsert(ctx, backend)
+	backend, err := s.backendService.Connect(ctx, conn.Id(), moduleId, declaration)
 	if err != nil {
-		return errors.WithMessage(err, "upsert backend in store")
+		return errors.WithMessage(err, "connect")
 	}
 
-	conn.Data().Set(backendKey, backend)
-
-	event := entity.NewEvent(entity.EventPayload{
-		ModuleReady: &entity.PayloadModuleReady{
-			ModuleId: moduleId,
-		},
-	})
-	err = s.eventRepo.Insert(ctx, event)
-	if err != nil {
-		return errors.WithMessage(err, "insert event in store")
-	}
+	conn.Data().Set(backendKey, *backend)
 
 	return nil
 }

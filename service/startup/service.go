@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3"
-	"github.com/txix-open/etp/v3"
 	"github.com/txix-open/isp-kit/app"
 	"github.com/txix-open/isp-kit/bootstrap"
 	"github.com/txix-open/isp-kit/cluster"
@@ -18,7 +17,6 @@ import (
 	"github.com/txix-open/isp-kit/http/httpclix"
 	"github.com/txix-open/isp-kit/log"
 	"github.com/txix-open/isp-kit/observability/sentry"
-	"github.com/txix-open/isp-kit/worker"
 	"isp-config-service/assembly"
 	"isp-config-service/conf"
 	"isp-config-service/middlewares"
@@ -41,9 +39,7 @@ type Service struct {
 	logger     log.Logger
 
 	// initialized in Run
-	etpSrv            *etp.Server
-	handleEventWorker *worker.Worker
-	cleanEventWorker  *worker.Worker
+	locatorConfig *assembly.Config
 }
 
 func New(boot *bootstrap.Bootstrap) (*Service, error) {
@@ -121,15 +117,13 @@ func (s *Service) Run(ctx context.Context) error {
 		Local:         s.cfg,
 		RqliteAddress: s.rqlite.LocalHttpAddr(),
 	}
-	config := assembly.NewLocator(db, s.rqlite, cfg, s.logger).Config()
-	s.etpSrv = config.EtpSrv
-	s.handleEventWorker = config.HandleEventWorker
-	s.cleanEventWorker = config.CleanEventWorker
-	s.grpcSrv.Upgrade(config.GrpcMux)
-	s.httpSrv.Upgrade(config.HttpMux)
+	s.locatorConfig = assembly.NewLocator(db, s.rqlite, cfg, s.logger).Config()
+	s.grpcSrv.Upgrade(s.locatorConfig.GrpcMux)
+	s.httpSrv.Upgrade(s.locatorConfig.HttpMux)
 
-	s.handleEventWorker.Run(ctx)
-	s.cleanEventWorker.Run(ctx)
+	s.locatorConfig.HandleEventWorker.Run(ctx)
+	s.locatorConfig.CleanEventWorker.Run(ctx)
+	s.locatorConfig.CleanPhantomBackendWorker.Run(ctx)
 
 	go func() {
 		s.logger.Debug(ctx, fmt.Sprintf("starting grpc server on %s", s.boot.BindingAddress))
@@ -174,20 +168,19 @@ func (s *Service) Closers() []app.Closer {
 			return s.httpSrv.Shutdown(ctx)
 		}),
 		app.CloserFunc(func() error {
-			if s.handleEventWorker != nil {
-				s.handleEventWorker.Shutdown()
-			}
-			if s.cleanEventWorker != nil {
-				s.cleanEventWorker.Shutdown()
-			}
-			return nil
-		}),
-		app.CloserFunc(func() error {
-			if s.etpSrv == nil {
+			if s.locatorConfig == nil {
 				return nil
 			}
-			s.etpSrv.OnDisconnect(nil)
-			s.etpSrv.Shutdown()
+
+			s.locatorConfig.HandleEventWorker.Shutdown()
+			s.locatorConfig.CleanEventWorker.Shutdown()
+			s.locatorConfig.CleanPhantomBackendWorker.Shutdown()
+
+			s.locatorConfig.EtpSrv.OnDisconnect(nil)
+			s.locatorConfig.EtpSrv.Shutdown()
+
+			s.locatorConfig.OwnBackendsCleaner.DeleteOwnBackends(context.Background())
+
 			return nil
 		}),
 		s.rqlite,

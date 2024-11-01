@@ -11,4 +11,9 @@ type Local struct {
 	Credentials              []auth.Credential
 	KeepConfigVersions       int    `validate:"required"`
 	InternalClientCredential string `validate:"required"`
+	Rqlite                   Rqlite
+}
+
+type Rqlite struct {
+	NodeId string `validate:"required"`
 }

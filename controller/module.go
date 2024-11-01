@@ -2,10 +2,10 @@ package controller
 
 import (
 	"context"
+	"github.com/txix-open/etp/v4"
 
 	"github.com/pkg/errors"
-	"github.com/txix-open/etp/v3"
-	"github.com/txix-open/etp/v3/msg"
+	"github.com/txix-open/etp/v4/msg"
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/json"
 	"github.com/txix-open/isp-kit/log"

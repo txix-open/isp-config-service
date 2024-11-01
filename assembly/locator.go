@@ -1,13 +1,15 @@
 package assembly
 
 import (
+	"context"
 	"isp-config-service/conf"
+	"isp-config-service/service/module/backend"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"time"
 
-	"github.com/txix-open/etp/v3"
+	"github.com/txix-open/etp/v4"
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/grpc/endpoint"
 	"github.com/txix-open/isp-kit/log"
@@ -24,10 +26,11 @@ import (
 )
 
 const (
-	wsReadLimit          = 4 * 1024 * 1024
-	handleEventsInterval = 500 * time.Millisecond
-	cleanEventInterval   = 60 * time.Second
-	eventTtl             = 60 * time.Second
+	wsReadLimit                  = 4 * 1024 * 1024
+	handleEventsInterval         = 500 * time.Millisecond
+	cleanEventInterval           = 60 * time.Second
+	cleanPhantomBackendsInterval = 5 * time.Minute
+	eventTtl                     = 60 * time.Second
 )
 
 type LocalConfig struct {
@@ -46,6 +49,10 @@ type LeaderChecker interface {
 	IsLeader() bool
 }
 
+type OwnBackendsCleaner interface {
+	DeleteOwnBackends(ctx context.Context)
+}
+
 func NewLocator(
 	db db.DB,
 	leaderChecker LeaderChecker,
@@ -61,15 +68,17 @@ func NewLocator(
 }
 
 type Config struct {
-	GrpcMux           *grpc.Mux
-	HttpMux           http.Handler
-	EtpSrv            *etp.Server
-	HandleEventWorker *worker.Worker
-	CleanEventWorker  *worker.Worker
+	GrpcMux                   *grpc.Mux
+	HttpMux                   http.Handler
+	EtpSrv                    *etp.Server
+	HandleEventWorker         *worker.Worker
+	CleanEventWorker          *worker.Worker
+	CleanPhantomBackendWorker *worker.Worker
+	OwnBackendsCleaner        OwnBackendsCleaner
 }
 
 //nolint:funlen
-func (l Locator) Config() Config {
+func (l Locator) Config() *Config {
 	moduleRepo := repository.NewModule(l.db)
 	backendRepo := repository.NewBackend(l.db)
 	eventRepo := repository.NewEvent(l.db)
@@ -93,10 +102,19 @@ func (l Locator) Config() Config {
 		l.logger,
 	)
 
-	moduleService := module.NewService(
-		moduleRepo,
+	backendService := backend.NewBackend(
 		backendRepo,
 		eventRepo,
+		l.cfg.Local.Rqlite.NodeId,
+		etpSrv.Rooms(),
+		l.logger,
+	)
+	cleanPhantomBackendJob := backend.NewCleaner(backendService, l.logger)
+	cleanPhantomBackendWorker := worker.New(cleanPhantomBackendJob, worker.WithInterval(cleanPhantomBackendsInterval))
+
+	moduleService := module.NewService(
+		moduleRepo,
+		backendService,
 		configRepo,
 		configSchemaRepo,
 		subscriptionService,
@@ -149,11 +167,13 @@ func (l Locator) Config() Config {
 	cleanerJob := event.NewCleaner(eventRepo, l.leaderChecker, eventTtl, l.logger)
 	cleanEventWorker := worker.New(cleanerJob, worker.WithInterval(cleanEventInterval))
 
-	return Config{
-		GrpcMux:           grpcMux,
-		EtpSrv:            etpSrv,
-		HttpMux:           httpMux,
-		HandleEventWorker: handleEventWorker,
-		CleanEventWorker:  cleanEventWorker,
+	return &Config{
+		GrpcMux:                   grpcMux,
+		EtpSrv:                    etpSrv,
+		HttpMux:                   httpMux,
+		HandleEventWorker:         handleEventWorker,
+		CleanEventWorker:          cleanEventWorker,
+		CleanPhantomBackendWorker: cleanPhantomBackendWorker,
+		OwnBackendsCleaner:        backendService,
 	}
 }
