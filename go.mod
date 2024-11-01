@@ -13,7 +13,6 @@ require (
 	github.com/integration-system/isp-lib/v2 v2.11.0
 	github.com/integration-system/isp-log v1.2.0
 	github.com/integration-system/net-mux v1.0.1
-	github.com/integration-system/swag v1.7.115
 	github.com/json-iterator/go v1.1.12
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/pkg/errors v0.9.1
@@ -98,6 +97,6 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	mellium.im/sasl v0.3.0 // indirect
+	mellium.im/sasl v0.3.1 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 )
