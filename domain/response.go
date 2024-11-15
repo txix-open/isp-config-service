@@ -3,9 +3,7 @@ package domain
 import (
 	"time"
 
-	"github.com/integration-system/isp-lib/v2/config/schema"
-	"github.com/integration-system/isp-lib/v2/structure"
-	"isp-config-service/entity"
+	"github.com/txix-open/isp-kit/json"
 )
 
 type DeleteResponse struct {
@@ -16,44 +14,58 @@ type ModuleInfo struct {
 	Id                 string
 	Name               string
 	Active             bool
-	CreatedAt          time.Time
-	LastConnectedAt    time.Time
-	LastDisconnectedAt time.Time
-	Configs            []ConfigModuleInfo
-	ConfigSchema       *schema.Schema
+	LastConnectedAt    *time.Time
+	LastDisconnectedAt *time.Time
+	ConfigSchema       json.RawMessage `swaggertype:"object"`
 	Status             []Connection
-	RequiredModules    []ModuleDependency
+	CreatedAt          time.Time
 }
 
 type Connection struct {
+	Id            string
+	ModuleName    string
 	LibVersion    string
 	Version       string
-	Address       structure.AddressConfiguration
-	Endpoints     []structure.EndpointDescriptor
+	Address       Address
+	Endpoints     []EndpointDescriptor
 	EstablishedAt time.Time
 }
 
-type ModuleDependency struct {
-	Id       string
-	Name     string
-	Required bool
+type Address struct {
+	Ip   string
+	Port string
 }
 
-type CommonConfigLinks map[string][]string
-
-type CompiledConfigResponse map[string]interface{}
-
-type DeleteCommonConfigResponse struct {
-	Deleted bool
-	Links   CommonConfigLinks
+type EndpointDescriptor struct {
+	Path  string
+	Inner bool
 }
 
-type CreateUpdateConfigResponse struct {
-	ErrorDetails map[string]string
-	Config       *ConfigModuleInfo
+type Config struct {
+	Id        string
+	Name      string
+	ModuleId  string
+	Valid     bool
+	Data      json.RawMessage `swaggertype:"object"`
+	Version   int
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-type ConfigModuleInfo struct {
-	entity.Config
-	Valid bool
+type ConfigVersion struct {
+	Id            string
+	ConfigId      string
+	ConfigVersion int
+	Data          json.RawMessage `swaggertype:"object"`
+	CreatedAt     time.Time
+}
+
+type ConfigSchema struct {
+	Id        string
+	Version   string
+	ModuleId  string
+	Schema    json.RawMessage `swaggertype:"object"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

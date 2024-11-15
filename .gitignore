@@ -9,8 +9,8 @@
 .idea/**/tasks.xml
 .idea/dictionaries
 *.iml
-config_service
-config-service
+convert_service
+convert-service
 
 # Sensitive or high-churn files:
 .idea/**/dataSources/
@@ -69,3 +69,7 @@ fabric.properties
 
 /node_modules/
 /vendor/
+package.json
+yarn.lock
+
+conf/config_dev.yml

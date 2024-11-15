@@ -1,7 +1,0 @@
-moduleName: config
-
-registry:
-  host: nexus.msp.mobi
-
-images:
-  module: nexus.msp.mobi/msp2/dev/isp-config-service:latest

@@ -1,46 +1,35 @@
 package entity
 
 import (
-	"time"
-
-	"github.com/integration-system/isp-lib/v2/config/schema"
+	"isp-config-service/entity/xtypes"
 )
 
-type ConfigData map[string]interface{}
-
 type Config struct {
-	//nolint
-	tableName     string     `pg:"?db_schema.configs" json:"-"`
-	Id            string     `json:"id"`
-	Name          string     `json:"name" valid:"required~Required"`
-	CommonConfigs []string   `json:"commonConfigs" pg:",array"`
-	Description   string     `json:"description"`
-	ModuleId      string     `json:"moduleId" valid:"required~Required"`
-	Version       int32      `json:"version" pg:",null"`
-	Active        bool       `json:"active" pg:",null"`
-	CreatedAt     time.Time  `json:"createdAt" pg:",null"`
-	UpdatedAt     time.Time  `json:"updatedAt" pg:",null"`
-	Data          ConfigData `json:"data,omitempty" pg:",notnull"`
+	Id        string      `json:"id"`
+	Name      string      `json:"name"`
+	ModuleId  string      `json:"module_id"`
+	Data      []byte      `json:"data"`
+	Version   int         `json:"version"`
+	Active    xtypes.Bool `json:"active"`
+	AdminId   int         `json:"admin_id"`
+	CreatedAt xtypes.Time `json:"created_at"`
+	UpdatedAt xtypes.Time `json:"updated_at"`
 }
 
-type CommonConfig struct {
-	//nolint
-	tableName   string     `pg:"?db_schema.common_configs" json:"-"`
-	Id          string     `json:"id"`
-	Name        string     `json:"name" valid:"required~Required"`
-	Description string     `json:"description"`
-	CreatedAt   time.Time  `json:"createdAt" pg:",null"`
-	UpdatedAt   time.Time  `json:"updatedAt" pg:",null"`
-	Data        ConfigData `json:"data" pg:",notnull"`
+type ConfigHistory struct {
+	Id        string      `json:"id"`
+	ConfigId  string      `json:"config_id"`
+	Data      []byte      `json:"data"`
+	Version   int         `json:"version"`
+	AdminId   int         `json:"admin_id"`
+	CreatedAt xtypes.Time `json:"created_at"`
 }
 
 type ConfigSchema struct {
-	//nolint
-	tableName string `pg:"?db_schema.config_schemas" json:"-"`
-	Id        string `json:"id"`
-	Version   string
-	ModuleId  string
-	Schema    schema.Schema
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Id            string      `json:"id"`
+	ModuleId      string      `json:"module_id"`
+	Data          []byte      `json:"data"`
+	ModuleVersion string      `json:"module_version"`
+	CreatedAt     xtypes.Time `json:"created_at"`
+	UpdatedAt     xtypes.Time `json:"updated_at"`
 }

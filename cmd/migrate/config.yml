@@ -1,0 +1,12 @@
+db:
+  host: 127.0.0.1
+  port: 5432
+  database: test
+  username: test
+  password: test
+  schema: config_service
+
+newConfigService:
+  address: http://127.0.0.1:9002/
+  username: default
+  password: test

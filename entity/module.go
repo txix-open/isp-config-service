@@ -1,13 +1,13 @@
 package entity
 
-import "time"
+import (
+	"isp-config-service/entity/xtypes"
+)
 
 type Module struct {
-	//nolint
-	tableName          string    `pg:"?db_schema.modules" json:"-"`
-	Id                 string    `json:"id"`
-	Name               string    `json:"name" valid:"required~Required"`
-	CreatedAt          time.Time `json:"createdAt" pg:",null"`
-	LastConnectedAt    time.Time `json:"lastConnectedAt"`
-	LastDisconnectedAt time.Time `json:"lastDisconnectedAt"`
+	Id                 string       `json:"id"`
+	Name               string       `json:"name"`
+	LastConnectedAt    *xtypes.Time `json:"last_connected_at"`
+	LastDisconnectedAt *xtypes.Time `json:"last_disconnected_at"`
+	CreatedAt          xtypes.Time  `json:"created_at"`
 }
