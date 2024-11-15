@@ -1,35 +1,26 @@
 package domain
 
 import (
-	json2 "encoding/json"
-
-	"isp-config-service/entity"
+	"github.com/txix-open/isp-kit/json"
 )
 
 type ConfigIdRequest struct {
-	Id string `json:"id" valid:"required~Required"`
-}
-
-type CompileConfigsRequest struct {
-	Data                map[string]interface{}
-	CommonConfigsIdList []string
+	Id string `validate:"required"`
 }
 
 type GetByModuleIdRequest struct {
-	ModuleId string `valid:"required~Required"`
+	ModuleId string `validate:"required"`
 }
 
 type GetByModuleNameRequest struct {
-	ModuleName string `valid:"required~Required"`
-}
-
-type BroadcastEventRequest struct {
-	ModuleNames []string `valid:"required~Required"`
-	Event       string   `valid:"required~Required"`
-	Payload     json2.RawMessage
+	ModuleName string `validate:"required"`
 }
 
 type CreateUpdateConfigRequest struct {
-	entity.Config
-	Unsafe bool
+	Id       string
+	Name     string `validate:"required"`
+	ModuleId string `validate:"required"`
+	Version  int
+	Data     json.RawMessage `swaggertype:"object"`
+	Unsafe   bool
 }
