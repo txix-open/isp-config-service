@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose NO TRANSACTION
 drop table isp_config_service__backend;
 
 create table isp_config_service__backend
