@@ -9,7 +9,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.22.1
-	github.com/txix-open/isp-kit v1.39.1
+	github.com/txix-open/isp-kit v1.39.2
 	isp-config-service v0.0.0-00010101000000-000000000000
 )
 

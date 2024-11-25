@@ -5,11 +5,16 @@ package rqlite
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/rqlite/rqlite-disco-clients/dns"
+	"github.com/rqlite/rqlite-disco-clients/dnssrv"
+	"github.com/txix-open/isp-kit/config"
 	"log"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -55,11 +60,17 @@ func main(ctx context.Context, r *Rqlite) error {
 	if err != nil {
 		log.Fatalf("failed to parse command-line flags: %s", err.Error())
 	}
+	err = evaluateAdvAddresses(r.cfg)
+	if err != nil {
+		return errors.WithMessage(err, "check adv ports")
+	}
 	localCfg := localConfig{Rqlite: cfg}
 	err = r.cfg.Read(&localCfg)
 	if err != nil {
 		return errors.WithMessage(err, "read local config")
 	}
+	dumpRqliteConfig, _ := json.MarshalIndent(cfg, "", "  ")
+	log.Printf("rqlite config:\n %s \n", string(dumpRqliteConfig))
 	err = cfg.Validate()
 	if err != nil {
 		return errors.WithMessage(err, "validate rqlite configuration")
@@ -207,6 +218,37 @@ func main(ctx context.Context, r *Rqlite) error {
 	}
 
 	log.Println("rqlite server stopped")
+	return nil
+}
+
+func evaluateAdvAddresses(cfg *config.Config) error {
+	httpAdv := cfg.Optional().String("rqlite.HTTPAdv", "")
+	shouldEvalHttp := strings.Contains(httpAdv, "$HOSTNAME")
+	raftAdv := cfg.Optional().String("rqlite.RaftAdv", "")
+	shouldEvalRaft := strings.Contains(raftAdv, "$HOSTNAME")
+	if !shouldEvalHttp && !shouldEvalRaft {
+		return nil
+	}
+
+	var (
+		host string
+	)
+	data, err := exec.Command("hostname", "-f").Output()
+	if err != nil {
+		host, err = os.Hostname()
+		if err != nil {
+			return errors.WithMessage(err, "rqlite.HTTPAdv is not set, couldn't resolve local hostname")
+		}
+	} else {
+		host = strings.TrimSpace(string(data))
+	}
+
+	if shouldEvalHttp {
+		cfg.Set("rqlite.HTTPAdv", strings.ReplaceAll(httpAdv, "$HOSTNAME", host))
+	}
+	if shouldEvalRaft {
+		cfg.Set("rqlite.RaftAdv", strings.ReplaceAll(raftAdv, "$HOSTNAME", host))
+	}
 	return nil
 }
 
@@ -421,7 +463,46 @@ func createCluster(ctx context.Context, cfg *Config, hasPeers bool, client *clus
 		// existing Raft state.
 		return nil
 	}
-	return nil
+
+	// DNS-based discovery requested. It's OK to proceed with this even if this node
+	// is already part of a cluster. Re-joining and re-notifying other nodes will be
+	// ignored when the node is already part of the cluster.
+	log.Printf("discovery mode: %s", cfg.DiscoMode)
+	switch cfg.DiscoMode {
+	case DiscoModeDNS, DiscoModeDNSSRV:
+		rc := cfg.DiscoConfigReader()
+		defer func() {
+			if rc != nil {
+				rc.Close()
+			}
+		}()
+
+		var provider interface {
+			cluster.AddressProvider
+			httpd.StatusReporter
+		}
+		if cfg.DiscoMode == DiscoModeDNS {
+			dnsCfg, err := dns.NewConfigFromReader(rc)
+			if err != nil {
+				return fmt.Errorf("error reading DNS configuration: %s", err.Error())
+			}
+			provider = dns.NewWithPort(dnsCfg, cfg.RaftPort())
+
+		} else {
+			dnssrvCfg, err := dnssrv.NewConfigFromReader(rc)
+			if err != nil {
+				return fmt.Errorf("error reading DNS configuration: %s", err.Error())
+			}
+			provider = dnssrv.New(dnssrvCfg)
+		}
+
+		bs := cluster.NewBootstrapper(provider, client)
+		bs.SetCredentials(cluster.CredentialsFor(credStr, cfg.JoinAs))
+		httpServ.RegisterStatus("disco", provider)
+		return bs.Boot(ctx, str.ID(), cfg.RaftAdv, clusterSuf, bootDoneFn, cfg.BootstrapExpectTimeout)
+	default:
+		return fmt.Errorf("invalid disco mode %s", cfg.DiscoMode)
+	}
 }
 
 func networkCheckJoinAddrs(joinAddrs []string) error {

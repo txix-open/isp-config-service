@@ -77,6 +77,17 @@ func New(boot *bootstrap.Bootstrap) (*Service, error) {
 
 // nolint:funlen
 func (s *Service) Run(ctx context.Context) error {
+	if s.boot.App.Config().Optional().String("KUBERNETES_SERVICE_HOST", "") != "" {
+		s.logger.Info(
+			ctx,
+			"run in kubernetes, sleep extra 5s, reason described here: https://github.com/rqlite/rqlite/blob/master/docker-entrypoint.sh#L96",
+		)
+		select {
+		case <-ctx.Done():
+		case <-time.After(5 * time.Second): //nolint:mnd
+		}
+	}
+
 	go func() {
 		s.logger.Debug(ctx, "running embedded rqlite...")
 		err := s.rqlite.Run(ctx)

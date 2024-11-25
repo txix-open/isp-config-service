@@ -201,6 +201,8 @@ github.com/rqlite/gorqlite v0.0.0-20241013203532-4385768ae85d h1:c88ius/WcN19inn
 github.com/rqlite/gorqlite v0.0.0-20241013203532-4385768ae85d/go.mod h1:xF/KoXmrRyahPfo5L7Szb5cAAUl53dMWBh9cMruGEZg=
 github.com/rqlite/raft-boltdb/v2 v2.0.0-20230523104317-c08e70f4de48 h1:NZ62M+kT0JqhyFUMc8I4SMmfmD4NGJxhb2ePJQXjryc=
 github.com/rqlite/raft-boltdb/v2 v2.0.0-20230523104317-c08e70f4de48/go.mod h1:CRnsxgy5G8fAf5J+AM0yrsSdxXHKkIYOaq2sm+Q4DYc=
+github.com/rqlite/rqlite-disco-clients v0.0.0-20231230135307-118e35426347 h1:01eOG4AXjYsrsLRITgBFHaDPXys1NfeY2idx25ZJFF8=
+github.com/rqlite/rqlite-disco-clients v0.0.0-20231230135307-118e35426347/go.mod h1:pym85nj6JnCI7rM9RxTZ4cubkTQyyg7uLwVydso9B80=
 github.com/rqlite/rqlite/v8 v8.32.5 h1:wEzDX2HrGWMvFkg2fcCmi+rb1wQ1m5yEefUQfOMvMSY=
 github.com/rqlite/rqlite/v8 v8.32.5/go.mod h1:a1irqNWEZ+pWuWpgekbScCXp85QtNTJLarN3bVPjn9M=
 github.com/rqlite/sql v0.0.0-20241029220113-152a320b02f7 h1:Mnz6yd4FWtiD6bbH9WHFFHfrOM2OYTUTmwrsckRc4W8=
@@ -237,8 +239,8 @@ github.com/txix-open/etp/v4 v4.0.1 h1:5VSYgGsvnMz0tvUHsjVWFETI0qWBTCF1O3ARCHaCIg
 github.com/txix-open/etp/v4 v4.0.1/go.mod h1:FIu7TUDdwcgmtmF6tFTV1bGA2fRY/iVaPQdsGzvqYc8=
 github.com/txix-open/grmq v1.6.0 h1:V4QRb0sI2CMfdMaMsFGvGvUIDGad5vr3khNU7A3LlP8=
 github.com/txix-open/grmq v1.6.0/go.mod h1:s+NNNv42+32yLpjvl2tpqtyBbMB9e7kKFee3lfa/dyo=
-github.com/txix-open/isp-kit v1.39.1 h1:10zEILNQSPY7naiuaQkIKNS2/fnWxuE9bz+dTiAptXw=
-github.com/txix-open/isp-kit v1.39.1/go.mod h1:xB6mkoOewZBI1ND8kjU5TR6kvLu3VQI3Rdkh6g6FE4I=
+github.com/txix-open/isp-kit v1.39.2 h1:2L2LFwi+sNop9NeLDQ4scIy8LuohzXh4EBejHApAeDM=
+github.com/txix-open/isp-kit v1.39.2/go.mod h1:xB6mkoOewZBI1ND8kjU5TR6kvLu3VQI3Rdkh6g6FE4I=
 github.com/txix-open/jsonschema v1.2.0 h1:B8TrdSsPhDvYv67oi/LVqf7/+PuqFlMsNwUzGeHfl1s=
 github.com/txix-open/jsonschema v1.2.0/go.mod h1:l8YDZ1nvJrw6uxWowSVOxCV/ebiMJyapffW87ZEqH00=
 github.com/txix-open/validator/v10 v10.0.0-20240401163703-e83541b40f99 h1:Z0Sqf+U+Sc6hfIXtRCIZlbJprkCjwMFbS4ZbEPQ44To=
