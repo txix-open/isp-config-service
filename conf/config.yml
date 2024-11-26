@@ -31,7 +31,8 @@ rqlite:
   DataPath: "data"
   NodeID: 1
   BootstrapExpect: 1
-  JoinAddrs: "localhost:4002"
+  RaftAddr: "127.0.0.1:9008"
+  JoinAddrs: "127.0.0.1:9008"
   FKConstraints: true
   AutoVacInterval: 12h
   JoinAs: default
