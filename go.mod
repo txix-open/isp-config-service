@@ -9,11 +9,12 @@ require (
 	github.com/pressly/goose/v3 v3.22.1
 	github.com/prometheus/client_golang v1.20.5
 	github.com/rqlite/gorqlite v0.0.0-20241013203532-4385768ae85d
+	github.com/rqlite/rqlite-disco-clients v0.0.0-20231230135307-118e35426347
 	github.com/rqlite/rqlite/v8 v8.32.5
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/txix-open/etp/v4 v4.0.1
-	github.com/txix-open/isp-kit v1.39.1
+	github.com/txix-open/isp-kit v1.39.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sync v0.8.0
 	google.golang.org/grpc v1.67.1

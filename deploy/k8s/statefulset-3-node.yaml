@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: isp-config-service
+spec:
+  selector:
+    matchLabels:
+      app: isp-config-service # has to match .spec.template.metadata.labels
+  serviceName: isp-config-service-internal
+  replicas: 3
+  podManagementPolicy: "Parallel"
+  template:
+    metadata:
+      labels:
+        app: isp-config-service # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: isp-config-service
+          image: isp-config-service:latest
+          imagePullPolicy: Always
+          env:
+            - name: rqlite.NodeID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: rqlite.BootstrapExpect
+              value: "3"
+            - name: rqlite.HttpAddr
+              value: "0.0.0.0:4001"
+            - name: rqlite.HttpAdv
+              value: "$HOSTNAME:4001"
+            - name: rqlite.RaftAddr
+              value: "0.0.0.0:4002"
+            - name: rqlite.RaftAdv
+              value: "$HOSTNAME:4002"
+            - name: rqlite.JoinAddrs
+              value: ""
+            - name: rqlite.DiscoMode
+              value: "dns"
+            - name: rqlite.DiscoConfig
+              value: "{\"name\":\"isp-config-service-internal\"}"
+            - name: rqlite.JoinInterval
+              value: "1s"
+            - name: rqlite.JoinAttempts
+              value: "120"
+            - name: rqlite.RaftClusterRemoveOnShutdown
+              value: "true"
+          ports:
+            - containerPort: 4001
+              name: rqlite
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /readyz
+              port: rqlite
+              httpHeaders:
+                - name: Authorization
+                  value: Basic bW9uaXRvcjptb25pdG9y
+            periodSeconds: 5
+            timeoutSeconds: 2
+            initialDelaySeconds: 2
+          livenessProbe:
+              httpGet:
+                scheme: HTTP
+                path: /readyz?noleader
+                port: rqlite
+                httpHeaders:
+                  - name: Authorization
+                    value: Basic bW9uaXRvcjptb25pdG9y
+              initialDelaySeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 3
+          volumeMounts:
+            - name: isp-config-service-data
+              mountPath: /app/data
+  volumeClaimTemplates:
+    - metadata:
+        name: isp-config-service-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "local-path"
+        resources:
+          requests:
+            storage: 1Gi
