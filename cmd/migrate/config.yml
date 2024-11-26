@@ -7,6 +7,6 @@ db:
   schema: config_service
 
 newConfigService:
-  address: http://127.0.0.1:9002/
+  address: http://127.0.0.1:9001/
   username: default
   password: test

@@ -1,5 +1,5 @@
 configServiceAddress:
-  ip: 127.0.0.1
+  ip: localhost
   port: 9001
 grpcOuterAddress:
   ip: isp-config-service
@@ -21,6 +21,10 @@ credentials:
   - username: default
     password: 38kPk0upqI5j
     perms: ["all"]
+  - username: monitor
+    password: monitor
+    perms: ["ready"]
+
 internalClientCredential: default
 
 rqlite:

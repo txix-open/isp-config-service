@@ -1,0 +1,40 @@
+services:
+  isp-config-service-1:
+    image: "isp-config-service:latest"
+    container_name: "isp-config-service-1"
+    hostname: "isp-config-service-1"
+    restart: unless-stopped
+    environment:
+      grpcOuterAddress.ip: isp-config-service-1
+      rqlite.NodeID: 1
+      rqlite.BootstrapExpect: 3
+      rqlite.RaftAddr: "isp-config-service-1:4002"
+      rqlite.JoinAddrs: "isp-config-service-1:4002,isp-config-service-2:4002,isp-config-service-3:4002"
+    volumes:
+      - "./isp-config-service-1/data:/app/data"
+  isp-config-service-2:
+    image: "isp-config-service:latest"
+    container_name: "isp-config-service-2"
+    hostname: "isp-config-service-2"
+    restart: unless-stopped
+    environment:
+      grpcOuterAddress.ip: isp-config-service-2
+      rqlite.NodeID: 2
+      rqlite.BootstrapExpect: 3
+      rqlite.RaftAddr: "isp-config-service-2:4002"
+      rqlite.JoinAddrs: "isp-config-service-1:4002,isp-config-service-2:4002,isp-config-service-3:4002"
+    volumes:
+      - "./isp-config-service-2/data:/app/data"
+  isp-config-service-3:
+    image: "isp-config-service:latest"
+    container_name: "isp-config-service-3"
+    hostname: "isp-config-service-3"
+    restart: unless-stopped
+    environment:
+      grpcOuterAddress.ip: isp-config-service-3
+      rqlite.NodeID: 3
+      rqlite.BootstrapExpect: 3
+      rqlite.RaftAddr: "isp-config-service-3:4002"
+      rqlite.JoinAddrs: "isp-config-service-1:4002,isp-config-service-2:4002,isp-config-service-3:4002"
+    volumes:
+      - "./isp-config-service-3/data:/app/data"
