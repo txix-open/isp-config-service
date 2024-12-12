@@ -112,8 +112,9 @@ func (s *Service) Run(ctx context.Context) error {
 	} else {
 		s.logger.Debug(ctx, "is not a leader")
 	}
+	time.Sleep(1 * time.Second)
 
-	rqliteClient := httpclix.Default(httpcli.WithMiddlewares(middlewares.SqlOperationMiddleware()))
+	rqliteClient := httpclix.Default(httpcli.WithMiddlewares(middlewares.SqlOperationMiddleware(), httpclix.Log(s.logger)))
 	rqliteClient.GlobalRequestConfig().BaseUrl = s.rqlite.LocalHttpAddr()
 	rqliteClient.GlobalRequestConfig().BasicAuth = s.rqlite.InternalClientCredential()
 	db, err := db.Open(
