@@ -1,0 +1,41 @@
+FROM dockerhub.mos.ru/mosos/arbat:15.5 as builder
+RUN zypper --no-gpg-checks update -y && zypper --no-gpg-checks install -y go1.23 git
+WORKDIR /build
+ARG version
+ENV version_env=$version
+ARG app_name
+ENV app_name_env=$app_name
+COPY . .
+ENV GOPROXY=https://repo-mirror.mos.ru/repository/go-public
+RUN go build -ldflags="-X 'main.version=$version_env'" -o /main .
+
+FROM dockerhub.mos.ru/mosos/arbat:15.5
+
+RUN cp /usr/share/zoneinfo/Europe/Moscow /etc/localtime
+RUN echo "Europe/Moscow" > /etc/timezone
+
+ARG UID=10001
+RUN useradd \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    --user-group \
+    appuser
+
+RUN mkdir -p /app/data
+RUN chown  appuser:appuser /app/data    
+VOLUME /app/data
+
+USER appuser
+
+WORKDIR /app
+
+ARG app_name
+ENV app_name_env=$app_name
+COPY --from=builder main /app/$app_name_env
+COPY /conf/config.yml /app/config.yml
+COPY /conf/default_remote_config.json* /app/default_remote_config.json
+COPY /migrations /app/migrations
+
+ENTRYPOINT /app/$app_name_env
