@@ -23,7 +23,6 @@ import (
 	"isp-config-service/codes"
 	"isp-config-service/conf"
 	"isp-config-service/controller"
-	_ "isp-config-service/docs"
 	"isp-config-service/helper"
 	"isp-config-service/holder"
 	"isp-config-service/model"
