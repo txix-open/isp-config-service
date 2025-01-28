@@ -1,0 +1,23 @@
+docker-build:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - export VERSION=`cat .version `
+    - echo $VERSION
+    - echo $CI_DOCKER_FILE
+    - echo $CI_REGISTRY
+  script:
+    - set
+    - mkdir -p migrations
+    - docker build -f "$CI_DOCKER_FILE" --force-rm --build-arg="version=$VERSION" --build-arg="app_name=$CI_PROJECT_NAME" --pull -t "$CI_REGISTRY/$CI_PROJECT_NAME:$VERSION" .
+    - |
+        docker tag "$CI_REGISTRY/$CI_PROJECT_NAME:$VERSION" "$CI_REGISTRY/$CI_PROJECT_NAME:latest"
+        docker push "$CI_REGISTRY/$CI_PROJECT_NAME:$VERSION"
+        docker push "$CI_REGISTRY/$CI_PROJECT_NAME:latest"
+        docker rmi -f "$CI_REGISTRY/$CI_PROJECT_NAME:$VERSION"
+        docker rmi -f "$CI_REGISTRY/$CI_PROJECT_NAME:latest"    
+    - docker logout $CI_REGISTRY
+
