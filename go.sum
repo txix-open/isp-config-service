@@ -268,8 +268,6 @@ github.com/txix-open/etp/v4 v4.0.1 h1:5VSYgGsvnMz0tvUHsjVWFETI0qWBTCF1O3ARCHaCIg
 github.com/txix-open/etp/v4 v4.0.1/go.mod h1:FIu7TUDdwcgmtmF6tFTV1bGA2fRY/iVaPQdsGzvqYc8=
 github.com/txix-open/grmq v1.7.0 h1:nwenrlxEjXpK0EBCa/WbIxK+y0mF2pZxNKbheFjQVsI=
 github.com/txix-open/grmq v1.7.0/go.mod h1:DAfbV4jLyxQBLG8OYJVy8kCbhucdlu/C/wl+nUDc9p8=
-github.com/txix-open/isp-kit v1.42.1 h1:1YB0AqO3Mu0mUrghmtpsBdFJV20rsoxq68nqBWLyYQU=
-github.com/txix-open/isp-kit v1.42.1/go.mod h1:BHRF3AYRcQtEtNvoQZXxTVj/CYOVMKhOcCD3n8CdsxE=
 github.com/txix-open/isp-kit v1.43.0 h1:fVVa8WNGSShtK935ypOAN1eQCY7Y4bqr17A3JCbp6mA=
 github.com/txix-open/isp-kit v1.43.0/go.mod h1:BHRF3AYRcQtEtNvoQZXxTVj/CYOVMKhOcCD3n8CdsxE=
 github.com/txix-open/jsonschema v1.2.0 h1:B8TrdSsPhDvYv67oi/LVqf7/+PuqFlMsNwUzGeHfl1s=

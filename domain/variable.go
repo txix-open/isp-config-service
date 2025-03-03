@@ -3,7 +3,6 @@ package domain
 import "time"
 
 type Variable struct {
-	Id                string
 	Name              string
 	Description       string
 	Type              string
@@ -14,8 +13,9 @@ type Variable struct {
 }
 
 type LinkedConfig struct {
-	Id   string
-	Name string
+	Id       string
+	ModuleId string
+	Name     string
 }
 
 type CreateVariableRequest struct {

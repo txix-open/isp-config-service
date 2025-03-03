@@ -4,6 +4,7 @@ import (
 	"context"
 	"isp-config-service/conf"
 	"isp-config-service/service/module/backend"
+	"isp-config-service/service/variable"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -141,12 +142,16 @@ func (l Locator) Config() *Config {
 	configSchemaApiService := apisvs.NewConfigSchema(configSchemaRepo)
 	configSchemaController := api.NewConfigSchema(configSchemaApiService)
 
+	variableService := variable.NewService()
+	variableController := api.NewVariable(variableService)
+
 	controllers := routes.Controllers{
 		Module:           moduleController,
 		ModuleApi:        moduleApiController,
 		ConfigApi:        configApiController,
 		ConfigHistoryApi: configHistoryController,
 		ConfigSchemaApi:  configSchemaController,
+		VariableApi:      variableController,
 	}
 	mapper := endpoint.DefaultWrapper(l.logger)
 	grpcMux := routes.GrpcHandler(mapper, controllers)

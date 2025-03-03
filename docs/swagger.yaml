@@ -145,6 +145,8 @@ definitions:
     properties:
       id:
         type: string
+      moduleId:
+        type: string
       name:
         type: string
     type: object
@@ -203,8 +205,6 @@ definitions:
       createdAt:
         type: string
       description:
-        type: string
-      id:
         type: string
       name:
         type: string
@@ -718,6 +718,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/domain.Variable'
+        "400":
+          description: '`errorCode: 2006` - переменная по имени не найдена<br/>'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
         "500":
           description: Internal Server Error
           schema:

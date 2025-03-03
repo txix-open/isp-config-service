@@ -10,4 +10,7 @@ var (
 	ErrSchemaNotFound         = errors.New("config schema not found")
 	ErrConfigNotFoundOrActive = errors.New("config not found or markers as active")
 	ErrConfigConflictUpdate   = errors.New("config conflict update")
+	ErrVariableNotFound       = errors.New("variable not found")
+	ErrVariableAlreadyExists  = errors.New("variable already exists")
+	ErrVariableUsedInConfigs  = errors.New("variable used in configs")
 )
