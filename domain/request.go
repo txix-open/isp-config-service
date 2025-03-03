@@ -4,7 +4,7 @@ import (
 	"github.com/txix-open/isp-kit/json"
 )
 
-type ConfigIdRequest struct {
+type IdRequest struct {
 	Id string `validate:"required"`
 }
 

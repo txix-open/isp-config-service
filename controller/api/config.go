@@ -153,12 +153,12 @@ func (c Config) CreateUpdateConfig(
 // @Tags Конфигурация
 // @Accept json
 // @Produce json
-// @Param body body domain.ConfigIdRequest true "id конфигурации"
+// @Param body body domain.IdRequest true "id конфигурации"
 // @Success 200 {object} domain.Config
 // @Failure 400 {object} apierrors.Error "`errorCode: 2002` - конфиг не найден<br/>"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/get_config_by_id [POST]
-func (c Config) GetConfigById(ctx context.Context, req domain.ConfigIdRequest) (*domain.Config, error) {
+func (c Config) GetConfigById(ctx context.Context, req domain.IdRequest) (*domain.Config, error) {
 	config, err := c.service.GetConfigById(ctx, req.Id)
 	switch {
 	case errors.Is(err, entity.ErrConfigNotFound):
@@ -180,12 +180,12 @@ func (c Config) GetConfigById(ctx context.Context, req domain.ConfigIdRequest) (
 // @Tags Конфигурация
 // @Accept json
 // @Produce json
-// @Param body body domain.ConfigIdRequest true "id конфигурации для изменения"
+// @Param body body domain.IdRequest true "id конфигурации для изменения"
 // @Success 200
 // @Failure 400 {object} apierrors.Error "`errorCode: 2002` - конфиг не найден<br/>"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/mark_config_as_active [POST]
-func (c Config) MarkConfigAsActive(ctx context.Context, identity domain.ConfigIdRequest) error {
+func (c Config) MarkConfigAsActive(ctx context.Context, identity domain.IdRequest) error {
 	err := c.service.MarkConfigAsActive(ctx, identity.Id)
 	switch {
 	case errors.Is(err, entity.ErrConfigNotFound):

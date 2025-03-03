@@ -28,12 +28,12 @@ func NewConfigHistory(service ConfigHistoryService) ConfigHistory {
 // @Tags Конфигурация
 // @Accept json
 // @Produce json
-// @Param body body domain.ConfigIdRequest true "id конфигурации"
+// @Param body body domain.IdRequest true "id конфигурации"
 // @Success 200 {array} domain.ConfigVersion
 // @Failure 400 {object} apierrors.Error "если не указан массив идентификаторов"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/get_all_version [POST]
-func (c ConfigHistory) GetAllVersion(ctx context.Context, req domain.ConfigIdRequest) ([]domain.ConfigVersion, error) {
+func (c ConfigHistory) GetAllVersion(ctx context.Context, req domain.IdRequest) ([]domain.ConfigVersion, error) {
 	versions, err := c.service.GetAllVersions(ctx, req.Id)
 	if err != nil {
 		return nil, apierrors.NewInternalServiceError(err)
@@ -47,12 +47,12 @@ func (c ConfigHistory) GetAllVersion(ctx context.Context, req domain.ConfigIdReq
 // @Tags Конфигурация
 // @Accept json
 // @Produce json
-// @Param body body domain.ConfigIdRequest true "id версии конфигурации"
+// @Param body body domain.IdRequest true "id версии конфигурации"
 // @Success 200 {object} domain.DeleteResponse
 // @Failure 400 {object} apierrors.Error "не указан массив идентификаторов"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/delete_version [POST]
-func (c ConfigHistory) DeleteConfigVersion(ctx context.Context, req domain.ConfigIdRequest) (*domain.DeleteResponse, error) {
+func (c ConfigHistory) DeleteConfigVersion(ctx context.Context, req domain.IdRequest) (*domain.DeleteResponse, error) {
 	err := c.service.Delete(ctx, req.Id)
 	if err != nil {
 		return nil, apierrors.NewInternalServiceError(err)

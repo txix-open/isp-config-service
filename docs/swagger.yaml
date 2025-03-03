@@ -28,13 +28,6 @@ definitions:
       version:
         type: integer
     type: object
-  domain.ConfigIdRequest:
-    properties:
-      id:
-        type: string
-    required:
-    - id
-    type: object
   domain.ConfigSchema:
     properties:
       createdAt:
@@ -100,6 +93,21 @@ definitions:
     - moduleId
     - name
     type: object
+  domain.CreateVariableRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      type:
+        type: string
+      value:
+        type: string
+    required:
+    - name
+    - type
+    - value
+    type: object
   domain.DeleteResponse:
     properties:
       deleted:
@@ -126,6 +134,20 @@ definitions:
     required:
     - moduleName
     type: object
+  domain.IdRequest:
+    properties:
+      id:
+        type: string
+    required:
+    - id
+    type: object
+  domain.LinkedConfig:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   domain.ModuleInfo:
     properties:
       active:
@@ -146,6 +168,59 @@ definitions:
         items:
           $ref: '#/definitions/domain.Connection'
         type: array
+    type: object
+  domain.UpdateVariableRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      value:
+        type: string
+    required:
+    - name
+    - value
+    type: object
+  domain.UpsertVariableRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      value:
+        type: string
+    required:
+    - description
+    - name
+    - value
+    type: object
+  domain.Variable:
+    properties:
+      containsInConfigs:
+        items:
+          $ref: '#/definitions/domain.LinkedConfig'
+        type: array
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      type:
+        type: string
+      updatedAt:
+        type: string
+      value:
+        type: string
+    type: object
+  domain.VariableByNameRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
     type: object
   github_com_txix-open_isp-kit_grpc_apierrors.Error:
     properties:
@@ -243,7 +318,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/domain.ConfigIdRequest'
+          $ref: '#/definitions/domain.IdRequest'
       produces:
       - application/json
       responses:
@@ -304,7 +379,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/domain.ConfigIdRequest'
+          $ref: '#/definitions/domain.IdRequest'
       produces:
       - application/json
       responses:
@@ -335,7 +410,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/domain.ConfigIdRequest'
+          $ref: '#/definitions/domain.IdRequest'
       produces:
       - application/json
       responses:
@@ -398,7 +473,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/domain.ConfigIdRequest'
+          $ref: '#/definitions/domain.IdRequest'
       produces:
       - application/json
       responses:
@@ -516,4 +591,166 @@ paths:
       summary: Метод получения схемы конфигурации модуля
       tags:
       - Схема
+  /variable/all:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Variable'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод получения списка всех переменных
+      tags:
+      - Переменные
+  /variable/create:
+    post:
+      consumes:
+      - application/json
+      description: Создает новую переменную с указанным наименованием и значением
+      parameters:
+      - description: тело запроса
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateVariableRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Variable'
+        "400":
+          description: '`errorCode: 2007` - переменная с таким именем уже существует<br/>'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод создания новой переменной
+      tags:
+      - Переменные
+  /variable/delete:
+    post:
+      consumes:
+      - application/json
+      description: Переменная связанная с конфигурациями, не может быть удалена
+      parameters:
+      - description: тело запроса
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.VariableByNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: '`errorCode: 2006` - переменная по имени не найдена<br/>`errorCode:
+            2008` - переменная используется в конфигурациях<br/>'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод удаления переменной
+      tags:
+      - Переменные
+  /variable/get_by_name:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: тело запроса
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.VariableByNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Variable'
+        "400":
+          description: '`errorCode: 2006` - переменная по имени не найдена<br/>'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод получения переменной по точному совпадению имени
+      tags:
+      - Переменные
+  /variable/update:
+    post:
+      consumes:
+      - application/json
+      description: Выполняет обновление переменной по ее названию
+      parameters:
+      - description: тело запроса
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateVariableRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Variable'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод обновления переменной
+      tags:
+      - Переменные
+  /variable/upsert:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Выполняет безусловное добавление/обновление указанных в теле запроса переменных
+        Операция выполняется не в транзакции
+      parameters:
+      - description: тело запроса
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/domain.UpsertVariableRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод добавления/обновления переменных
+      tags:
+      - Переменные
 swagger: "2.0"
