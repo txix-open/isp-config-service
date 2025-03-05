@@ -42,7 +42,7 @@ func (d Adapter) Select(ctx context.Context, ptr any, query string, args ...any)
 	consistencyFromContext(ctx).appendParams(params)
 	err := d.cli.Post("/db/query").
 		QueryParams(params).
-		JsonRequestBody(requests(request(query, args...))).
+		JsonRequestBody(Requests(Request(query, args...))).
 		JsonResponseBody(resp).
 		StatusCodeToError().
 		DoWithoutResponse(ctx)
@@ -69,7 +69,7 @@ func (d Adapter) SelectRow(ctx context.Context, ptr any, query string, args ...a
 	consistencyFromContext(ctx).appendParams(params)
 	httpResp, err := d.cli.Post("/db/request").
 		QueryParams(params).
-		JsonRequestBody(requests(request(query, args...))).
+		JsonRequestBody(Requests(Request(query, args...))).
 		JsonResponseBody(resp).
 		StatusCodeToError().
 		Do(ctx)
@@ -98,21 +98,19 @@ func (d Adapter) SelectRow(ctx context.Context, ptr any, query string, args ...a
 }
 
 func (d Adapter) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	result := &Result{}
-	resp := &Response{
-		Results: []*Result{result},
-	}
-	err := d.cli.Post("/db/execute").
-		QueryParams(map[string]any{
-			"timings": true,
-		}).JsonRequestBody(requests(request(query, args...))).
-		JsonResponseBody(resp).
-		StatusCodeToError().
-		DoWithoutResponse(ctx)
+	results, err := d.exec(ctx, false, Requests(Request(query, args...)))
 	if err != nil {
-		return nil, errors.WithMessage(err, "call rqlite")
+		return nil, err
 	}
-	err = catchError(resp, result)
+
+	if len(results) == 0 {
+		return nil, errors.Errorf("unexpected empty results")
+	}
+	result, ok := results[0].(*Result)
+	if !ok {
+		return nil, errors.Errorf("unexpected result type: %T", results[0])
+	}
+	err = catchError(nil, result)
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +120,38 @@ func (d Adapter) Exec(ctx context.Context, query string, args ...any) (sql.Resul
 
 func (d Adapter) ExecNamed(ctx context.Context, query string, arg any) (sql.Result, error) {
 	return d.Exec(ctx, query, arg)
+}
+
+func (d Adapter) ExecTransaction(ctx context.Context, requests [][]any) ([]sql.Result, error) {
+	return d.exec(ctx, true, requests)
+}
+
+func (d Adapter) exec(ctx context.Context, inTx bool, requests [][]any) ([]sql.Result, error) {
+	resp := &Response{
+		Results: []*Result{},
+	}
+	err := d.cli.Post("/db/execute").
+		QueryParams(map[string]any{
+			"timings":     true,
+			"transaction": inTx,
+		}).JsonRequestBody(requests).
+		JsonResponseBody(resp).
+		StatusCodeToError().
+		DoWithoutResponse(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, "call rqlite")
+	}
+	err = catchError(resp, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]sql.Result, 0, len(requests))
+	for _, result := range resp.Results {
+		results = append(results, result)
+	}
+
+	return results, nil
 }
 
 func catchError(resp *Response, result *Result) error {

@@ -65,7 +65,7 @@ func HttpHandler(etpSrv *etp.Server, conf conf.Local, rqliteProxy http.Handler) 
 
 func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 	return []cluster.EndpointDescriptor{
-		//modules
+		// modules
 		{
 			Path:    "config/module/get_modules_info",
 			Inner:   true,
@@ -79,7 +79,7 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 			Inner:   true,
 			Handler: c.ModuleApi.Connections,
 		},
-		//configs
+		// configs
 		{
 			Path:    "config/config/get_active_config_by_module_name",
 			Inner:   true,
@@ -117,7 +117,7 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 			Inner:   true,
 			Handler: c.ConfigSchemaApi.SchemaByModuleId,
 		},
-		//variables
+		// variables
 		{
 			Path:    "variable/all",
 			Inner:   true,

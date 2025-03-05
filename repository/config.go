@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"isp-config-service/entity"
@@ -169,4 +169,31 @@ func (r Config) SetActive(ctx context.Context, configId string, active xtypes.Bo
 	}
 
 	return nil
+}
+
+func (r Config) GetMetaByVariables(ctx context.Context, variables []string) (map[string][]entity.ConfigMetaWithVariable, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Config.GetMetaByVariables")
+
+	query, args, err := squirrel.Select("c.id", "c.name", "c.module_id", "c.active", "l.variable_name").
+		From(Table("config c")).
+		Join(fmt.Sprintf("%s l on c.id = l.config_id", Table("config_has_variable"))).
+		Where(squirrel.Eq{
+			"l.variable_name": variables,
+		}).ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
+	list := make([]entity.ConfigMetaWithVariable, 0)
+	err = r.db.Select(ctx, &list, query, args...)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+
+	result := make(map[string][]entity.ConfigMetaWithVariable)
+	for _, variable := range list {
+		result[variable.VariableName] = append(result[variable.VariableName], variable)
+	}
+
+	return result, nil
 }

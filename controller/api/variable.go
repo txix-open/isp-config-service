@@ -1,3 +1,4 @@
+//nolint:lll
 package api
 
 import (
@@ -12,10 +13,10 @@ import (
 type Service interface {
 	All(ctx context.Context) ([]domain.Variable, error)
 	GetByName(ctx context.Context, name string) (*domain.Variable, error)
-	Create(ctx context.Context, req domain.CreateVariableRequest) (*domain.Variable, error)
-	Update(ctx context.Context, req domain.UpdateVariableRequest) (*domain.Variable, error)
+	Create(ctx context.Context, req domain.CreateVariableRequest) error
+	Update(ctx context.Context, req domain.UpdateVariableRequest) error
 	Upsert(ctx context.Context, req []domain.UpsertVariableRequest) error
-	Delete(ctx context.Context, name string) (*domain.Variable, error)
+	Delete(ctx context.Context, name string) error
 }
 
 type Variable struct {
@@ -68,19 +69,19 @@ func (c Variable) GetByName(ctx context.Context, req domain.VariableByNameReques
 // @Accept json
 // @Produce json
 // @Param body body domain.CreateVariableRequest true "тело запроса"
-// @Success 200 {object} domain.Variable
+// @Success 200
 // @Failure 400 {object} apierrors.Error "`errorCode: 2007` - переменная с таким именем уже существует<br/>"
 // @Failure 500 {object} apierrors.Error
 // @Router /variable/create [POST]
-func (c Variable) Create(ctx context.Context, req domain.CreateVariableRequest) (*domain.Variable, error) {
-	v, err := c.service.Create(ctx, req)
+func (c Variable) Create(ctx context.Context, req domain.CreateVariableRequest) error {
+	err := c.service.Create(ctx, req)
 	switch {
 	case errors.Is(err, entity.ErrVariableAlreadyExists):
-		return nil, apierrors.NewBusinessError(domain.ErrorCodeVariableAlreadyExists, "variable with the same name already exists", err)
+		return apierrors.NewBusinessError(domain.ErrorCodeVariableAlreadyExists, "variable with the same name already exists", err)
 	case err != nil:
-		return nil, apierrors.NewInternalServiceError(err)
+		return apierrors.NewInternalServiceError(err)
 	}
-	return v, nil
+	return nil
 }
 
 // Update
@@ -90,19 +91,19 @@ func (c Variable) Create(ctx context.Context, req domain.CreateVariableRequest) 
 // @Accept json
 // @Produce json
 // @Param body body domain.UpdateVariableRequest true "тело запроса"
-// @Success 200 {object} domain.Variable
+// @Success 200
 // @Failure 400 {object} apierrors.Error "`errorCode: 2006` - переменная по имени не найдена<br/>"
 // @Failure 500 {object} apierrors.Error
 // @Router /variable/update [POST]
-func (c Variable) Update(ctx context.Context, req domain.UpdateVariableRequest) (*domain.Variable, error) {
-	v, err := c.service.Update(ctx, req)
+func (c Variable) Update(ctx context.Context, req domain.UpdateVariableRequest) error {
+	err := c.service.Update(ctx, req)
 	switch {
 	case errors.Is(err, entity.ErrVariableNotFound):
-		return nil, apierrors.NewBusinessError(domain.ErrorCodeVariableNotFound, "variable by name not found", err)
+		return apierrors.NewBusinessError(domain.ErrorCodeVariableNotFound, "variable by name not found", err)
 	case err != nil:
-		return nil, apierrors.NewInternalServiceError(err)
+		return apierrors.NewInternalServiceError(err)
 	}
-	return v, nil
+	return nil
 }
 
 // Upsert
@@ -135,15 +136,15 @@ func (c Variable) Upsert(ctx context.Context, req []domain.UpsertVariableRequest
 // @Failure 400 {object} apierrors.Error "`errorCode: 2006` - переменная по имени не найдена<br/>`errorCode: 2008` - переменная используется в конфигурациях<br/>"
 // @Failure 500 {object} apierrors.Error
 // @Router /variable/delete [POST]
-func (c Variable) Delete(ctx context.Context, req domain.VariableByNameRequest) (*domain.Variable, error) {
-	v, err := c.service.Delete(ctx, req.Name)
+func (c Variable) Delete(ctx context.Context, req domain.VariableByNameRequest) error {
+	err := c.service.Delete(ctx, req.Name)
 	switch {
 	case errors.Is(err, entity.ErrConfigNotFound):
-		return nil, apierrors.NewBusinessError(domain.ErrorCodeVariableNotFound, "variable by name not found", err)
+		return apierrors.NewBusinessError(domain.ErrorCodeVariableNotFound, "variable by name not found", err)
 	case errors.Is(err, entity.ErrVariableUsedInConfigs):
-		return nil, apierrors.NewBusinessError(domain.ErrorCodeVariableUsedInConfigs, "variable used in configs", err)
+		return apierrors.NewBusinessError(domain.ErrorCodeVariableUsedInConfigs, "variable used in configs", err)
 	case err != nil:
-		return nil, apierrors.NewInternalServiceError(err)
+		return apierrors.NewInternalServiceError(err)
 	}
-	return v, nil
+	return nil
 }

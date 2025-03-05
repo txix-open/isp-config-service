@@ -5,15 +5,15 @@ import (
 )
 
 type Variable struct {
-	Name        string
-	Description string
-	Type        string
-	Value       string
-	CreatedAt   xtypes.Time
-	UpdatedAt   xtypes.Time
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Type        string      `json:"type"`
+	Value       string      `json:"value"`
+	CreatedAt   xtypes.Time `json:"created_at"`
+	UpdatedAt   xtypes.Time `json:"updated_at"`
 }
 
 type ConfigHasVariable struct {
-	ConfigId     string
-	VariableName string
+	ConfigId     string `json:"config_id"`
+	VariableName string `json:"variable_name"`
 }

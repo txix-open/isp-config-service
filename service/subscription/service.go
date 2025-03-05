@@ -27,17 +27,22 @@ type ConfigRepo interface {
 	GetActive(ctx context.Context, moduleId string) (*entity.Config, error)
 }
 
+type VariableService interface {
+	RenderConfig(ctx context.Context, input []byte) ([]byte, error)
+}
+
 type Emitter interface {
 	Emit(ctx context.Context, conn *etp.Conn, event string, data []byte)
 }
 
 type Service struct {
-	moduleRepo  ModuleRepo
-	backendRepo BackendRepo
-	configRepo  ConfigRepo
-	rooms       *etp.Rooms
-	emitter     Emitter
-	logger      log.Logger
+	moduleRepo      ModuleRepo
+	backendRepo     BackendRepo
+	configRepo      ConfigRepo
+	rooms           *etp.Rooms
+	emitter         Emitter
+	variableService VariableService
+	logger          log.Logger
 }
 
 func NewService(
@@ -46,15 +51,17 @@ func NewService(
 	configRepo ConfigRepo,
 	rooms *etp.Rooms,
 	emitter Emitter,
+	variableService VariableService,
 	logger log.Logger,
 ) Service {
 	return Service{
-		moduleRepo:  moduleRepo,
-		backendRepo: backendRepo,
-		configRepo:  configRepo,
-		rooms:       rooms,
-		emitter:     emitter,
-		logger:      logger,
+		moduleRepo:      moduleRepo,
+		backendRepo:     backendRepo,
+		configRepo:      configRepo,
+		rooms:           rooms,
+		emitter:         emitter,
+		variableService: variableService,
+		logger:          logger,
 	}
 }
 
@@ -73,10 +80,14 @@ func (s Service) NotifyConfigChanged(ctx context.Context, moduleId string) error
 	if err != nil {
 		return errors.WithMessage(err, "get active config")
 	}
+	configData, err := s.variableService.RenderConfig(ctx, config.Data)
+	if err != nil {
+		return errors.WithMessage(err, "render config")
+	}
 
 	for _, conn := range conns {
 		go func() {
-			s.emitter.Emit(ctx, conn, cluster.ConfigSendConfigChanged, config.Data)
+			s.emitter.Emit(ctx, conn, cluster.ConfigSendConfigChanged, configData)
 		}()
 	}
 

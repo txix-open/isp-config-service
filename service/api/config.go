@@ -30,12 +30,18 @@ type ConfigHistoryService interface {
 	OnUpdateConfig(ctx context.Context, oldConfig entity.Config) error
 }
 
+type VariableService interface {
+	ExtractVariables(ctx context.Context, configId string, input []byte) (*domain.VariableExtractionResult, error)
+	SaveVariableLinks(ctx context.Context, configId string, links []entity.ConfigHasVariable) error
+}
+
 type Config struct {
 	configRepo           ConfigRepo
 	moduleRepo           ModuleRepo
 	schemaRepo           SchemaRepo
 	eventRepo            EventRepo
 	configHistoryService ConfigHistoryService
+	variableService      VariableService
 }
 
 func NewConfig(
@@ -44,6 +50,7 @@ func NewConfig(
 	schemaRepo SchemaRepo,
 	eventRepo EventRepo,
 	configHistoryService ConfigHistoryService,
+	variableService VariableService,
 ) Config {
 	return Config{
 		configRepo:           configRepo,
@@ -51,6 +58,7 @@ func NewConfig(
 		schemaRepo:           schemaRepo,
 		eventRepo:            eventRepo,
 		configHistoryService: configHistoryService,
+		variableService:      variableService,
 	}
 }
 
@@ -118,6 +126,11 @@ func (c Config) CreateUpdateConfig(
 		return c.insertNewConfig(ctx, adminId, req)
 	}
 
+	variableExtractionResult, err := c.extractAndCheckVariables(ctx, req.Id, req.Data)
+	if err != nil {
+		return nil, errors.WithMessage(err, "extract variables")
+	}
+
 	oldConfig, err := c.configRepo.GetById(ctx, req.Id)
 	if err != nil {
 		return nil, errors.WithMessage(err, "get old config")
@@ -144,6 +157,11 @@ func (c Config) CreateUpdateConfig(
 	err = c.configHistoryService.OnUpdateConfig(ctx, *oldConfig)
 	if err != nil {
 		return nil, errors.WithMessage(err, "change config history")
+	}
+
+	err = c.variableService.SaveVariableLinks(ctx, config.Id, variableExtractionResult.VariableLinks)
+	if err != nil {
+		return nil, errors.WithMessage(err, "save variable links")
 	}
 
 	if oldConfig.Active {
@@ -236,8 +254,33 @@ func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.Cre
 	if err != nil {
 		return nil, errors.WithMessage(err, "insert new config")
 	}
+
+	extractResult, err := c.extractAndCheckVariables(ctx, config.Id, config.Data)
+	if err != nil {
+		return nil, err
+	}
+	err = c.variableService.SaveVariableLinks(ctx, config.Id, extractResult.VariableLinks)
+	if err != nil {
+		return nil, errors.WithMessage(err, "save variable links")
+	}
+
 	result := configToDto(config, nil)
 	return &result, nil
+}
+
+func (c Config) extractAndCheckVariables(ctx context.Context, configId string, input []byte) (*domain.VariableExtractionResult, error) {
+	variableExtractionResult, err := c.variableService.ExtractVariables(ctx, configId, input)
+	if err != nil {
+		return nil, errors.WithMessage(err, "extract variables")
+	}
+	if len(variableExtractionResult.AbsentVariables) > 0 {
+		details := make(map[string]string)
+		for _, variable := range variableExtractionResult.AbsentVariables {
+			details[variable] = "variable is not defined"
+		}
+		return nil, domain.NewConfigValidationError(details)
+	}
+	return variableExtractionResult, nil
 }
 
 func (c Config) validateConfigUpdate(ctx context.Context, moduleId string, configData []byte) error {

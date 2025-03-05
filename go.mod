@@ -1,6 +1,6 @@
 module isp-config-service
 
-go 1.23.0
+go 1.23
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
@@ -16,7 +16,7 @@ require (
 	github.com/txix-open/etp/v4 v4.0.1
 	github.com/txix-open/isp-kit v1.43.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/sync v0.10.0
+	golang.org/x/sync v0.11.0
 	google.golang.org/grpc v1.70.0
 )
 

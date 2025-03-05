@@ -86,6 +86,10 @@ func (l Locator) Config() *Config {
 	configRepo := repository.NewConfig(l.db)
 	configSchemaRepo := repository.NewConfigSchema(l.db)
 	configHistoryRepo := repository.NewConfigHistory(l.db)
+	variableRepo := repository.NewVariable(l.db)
+
+	variableService := variable.NewService(variableRepo, configRepo, eventRepo)
+	variableController := api.NewVariable(variableService)
 
 	etpSrv := etp.NewServer(
 		etp.WithServerReadLimit(wsReadLimit),
@@ -100,6 +104,7 @@ func (l Locator) Config() *Config {
 		configRepo,
 		etpSrv.Rooms(),
 		emitter,
+		variableService,
 		l.logger,
 	)
 
@@ -120,6 +125,7 @@ func (l Locator) Config() *Config {
 		configSchemaRepo,
 		subscriptionService,
 		emitter,
+		variableService,
 		l.logger,
 	)
 	moduleController := controller.NewModule(moduleService, l.logger)
@@ -136,14 +142,12 @@ func (l Locator) Config() *Config {
 		configSchemaRepo,
 		eventRepo,
 		configHistoryApiService,
+		variableService,
 	)
 	configApiController := api.NewConfig(configApiService)
 
 	configSchemaApiService := apisvs.NewConfigSchema(configSchemaRepo)
 	configSchemaController := api.NewConfigSchema(configSchemaApiService)
-
-	variableService := variable.NewService()
-	variableController := api.NewVariable(variableService)
 
 	controllers := routes.Controllers{
 		Module:           moduleController,

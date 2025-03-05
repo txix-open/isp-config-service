@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"isp-config-service/entity"
+	"time"
+)
 
 type Variable struct {
 	Name              string
@@ -21,7 +24,7 @@ type LinkedConfig struct {
 type CreateVariableRequest struct {
 	Name        string `validate:"required"`
 	Description string
-	Type        string `validate:"required"`
+	Type        string `validate:"required,oneof=SECRET TEXT"`
 	Value       string `validate:"required"`
 }
 
@@ -34,9 +37,15 @@ type UpdateVariableRequest struct {
 type UpsertVariableRequest struct {
 	Name        string `validate:"required"`
 	Description string `validate:"required"`
+	Type        string `validate:"required,oneof=SECRET TEXT"`
 	Value       string `validate:"required"`
 }
 
 type VariableByNameRequest struct {
 	Name string `validate:"required"`
+}
+
+type VariableExtractionResult struct {
+	VariableLinks   []entity.ConfigHasVariable
+	AbsentVariables []string
 }

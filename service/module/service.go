@@ -10,9 +10,11 @@ import (
 	"github.com/txix-open/etp/v4/store"
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/log"
+	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
 	"isp-config-service/helpers"
+	"strings"
 )
 
 const (
@@ -42,6 +44,12 @@ type ConfigRepo interface {
 	GetActive(ctx context.Context, moduleId string) (*entity.Config, error)
 }
 
+type VariableService interface {
+	RenderConfig(ctx context.Context, input []byte) ([]byte, error)
+	ExtractVariables(ctx context.Context, configId string, input []byte) (*domain.VariableExtractionResult, error)
+	SaveVariableLinks(ctx context.Context, configId string, links []entity.ConfigHasVariable) error
+}
+
 type SubscriptionService interface {
 	SubscribeToConfigChanges(conn *etp.Conn, moduleId string)
 	SubscribeToBackendsChanges(ctx context.Context, conn *etp.Conn, requiredModuleNames []string) error
@@ -55,6 +63,7 @@ type Service struct {
 	configSchemaRepo    ConfigSchemaRepo
 	subscriptionService SubscriptionService
 	emitter             Emitter
+	variableService     VariableService
 	logger              log.Logger
 }
 
@@ -65,6 +74,7 @@ func NewService(
 	configSchemaRepo ConfigSchemaRepo,
 	subscriptionService SubscriptionService,
 	emitter Emitter,
+	variableService VariableService,
 	logger log.Logger,
 ) Service {
 	return Service{
@@ -74,6 +84,7 @@ func NewService(
 		configSchemaRepo:    configSchemaRepo,
 		subscriptionService: subscriptionService,
 		emitter:             emitter,
+		variableService:     variableService,
 		logger:              logger,
 	}
 }
@@ -213,10 +224,27 @@ func (s Service) OnModuleConfigSchema(
 		if err != nil {
 			return errors.WithMessage(err, "insert config in store")
 		}
+
+		result, err := s.variableService.ExtractVariables(ctx, initialConfig.Id, initialConfig.Data)
+		if err != nil {
+			return errors.WithMessage(err, "extract and save variable links in store")
+		}
+		if len(result.AbsentVariables) > 0 {
+			return errors.Errorf("missing variables in initial config: [%s]", strings.Join(result.AbsentVariables, ","))
+		}
+		err = s.variableService.SaveVariableLinks(ctx, initialConfig.Id, result.VariableLinks)
+		if err != nil {
+			return errors.WithMessage(err, "save variable links in store")
+		}
+
 		config = &initialConfig
 	}
 
-	s.emitter.Emit(ctx, conn, cluster.ConfigSendConfigWhenConnected, config.Data)
+	configData, err := s.variableService.RenderConfig(ctx, config.Data)
+	if err != nil {
+		return errors.WithMessage(err, "render config")
+	}
+	s.emitter.Emit(ctx, conn, cluster.ConfigSendConfigWhenConnected, configData)
 
 	s.subscriptionService.SubscribeToConfigChanges(conn, moduleId)
 
