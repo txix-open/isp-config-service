@@ -1,4 +1,4 @@
-module migrate
+module isp-config-service/migrate
 
 go 1.23.0
 
