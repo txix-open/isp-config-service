@@ -23,26 +23,7 @@ import (
 //nolint:funlen
 func TestAcceptance(t *testing.T) {
 	require := require.New(t)
-
-	t.Setenv("APP_CONFIG_PATH", "../conf/config.yml")
-	t.Setenv("DefaultRemoteConfigPath", "../conf/default_remote_config.json")
-	boot := bootstrap.New("1.0.0", conf.Remote{}, nil)
-	boot.MigrationsDir = "../migrations"
-	dataPath := dataDir(t)
-	boot.App.Config().Set("rqlite.DataPath", dataPath)
-	logger := boot.App.Logger()
-
-	startup, err := startup.New(boot)
-	require.NoError(err)
-	t.Cleanup(func() {
-		for _, closer := range startup.Closers() {
-			err := closer.Close()
-			require.NoError(err)
-		}
-	})
-	err = startup.Run(context.Background())
-	require.NoError(err)
-	time.Sleep(1 * time.Second)
+	logger := setupTest(t)
 
 	clientA1 := newClusterClient("A", "10.2.9.1", logger)
 	go func() {
@@ -142,7 +123,17 @@ func newClusterClient(
 	host string,
 	logger log.Logger,
 ) *cluster.Client {
-	schema := schema.NewGenerator().Generate(testModuleRemoteConfig{})
+	return newClusterClientWith(moduleName, host, testModuleRemoteConfig{}, []byte("{}"), logger)
+}
+
+func newClusterClientWith(
+	moduleName string,
+	host string,
+	config any,
+	defaultRemoteConfig []byte,
+	logger log.Logger,
+) *cluster.Client {
+	schema := schema.NewGenerator().Generate(config)
 	schemaData, err := json.Marshal(schema)
 	if err != nil {
 		panic(err)
@@ -159,6 +150,34 @@ func newClusterClient(
 	}, cluster.ConfigData{
 		Version: "1.0.0",
 		Schema:  schemaData,
-		Config:  []byte(`{}`),
+		Config:  defaultRemoteConfig,
 	}, []string{"127.0.0.1:9001"}, logger)
+}
+
+//nolint:ireturn
+func setupTest(t *testing.T) log.Logger {
+	t.Helper()
+	require := require.New(t)
+
+	t.Setenv("APP_CONFIG_PATH", "../conf/config.yml")
+	t.Setenv("DefaultRemoteConfigPath", "../conf/default_remote_config.json")
+	boot := bootstrap.New("1.0.0", conf.Remote{}, nil)
+	boot.MigrationsDir = "../migrations"
+	dataPath := dataDir(t)
+	boot.App.Config().Set("rqlite.DataPath", dataPath)
+	logger := boot.App.Logger()
+
+	startup, err := startup.New(boot)
+	require.NoError(err)
+	t.Cleanup(func() {
+		for _, closer := range startup.Closers() {
+			err := closer.Close()
+			require.NoError(err)
+		}
+	})
+	err = startup.Run(context.Background())
+	require.NoError(err)
+	time.Sleep(1 * time.Second)
+
+	return logger
 }

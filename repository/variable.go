@@ -36,7 +36,10 @@ func (r Variable) All(ctx context.Context) ([]entity.Variable, error) {
 func (r Variable) GetByName(ctx context.Context, name string) (*entity.Variable, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Variable.GetByName")
 
-	query, args, err := squirrel.Select().From(Table("variable")).Where(squirrel.Eq{"name": name}).ToSql()
+	query, args, err := squirrel.Select("*").
+		From(Table("variable")).
+		Where(squirrel.Eq{"name": name}).
+		ToSql()
 	if err != nil {
 		return nil, errors.WithMessage(err, "build query")
 	}
