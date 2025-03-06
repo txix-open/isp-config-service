@@ -7,7 +7,7 @@ create table isp_config_service__variable
     type        text    not null,
     value       text    not null,
     created_at  integer not null default (unixepoch()),
-    update_at   integer not null default (unixepoch())
+    updated_at   integer not null default (unixepoch())
 );
 
 create table isp_config_service__config_has_variable

@@ -200,7 +200,7 @@ func (s Service) RenderConfig(ctx context.Context, input []byte) ([]byte, error)
 	if err != nil {
 		return nil, errors.WithMessage(err, "parse template")
 	}
-	out := bytes.NewBuffer(make([]byte, len(input)))
+	out := bytes.NewBuffer(make([]byte, 0, len(input)))
 	err = tt.Execute(out, varsMap)
 	if err != nil {
 		return nil, errors.WithMessage(err, "execute template")
