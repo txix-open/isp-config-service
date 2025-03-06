@@ -119,27 +119,27 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 		},
 		// variables
 		{
-			Path:    "variable/all",
+			Path:    "config/variable/all",
 			Inner:   true,
 			Handler: c.VariableApi.All,
 		}, {
-			Path:    "variable/get_by_name",
+			Path:    "config/variable/get_by_name",
 			Inner:   true,
 			Handler: c.VariableApi.GetByName,
 		}, {
-			Path:    "variable/create",
+			Path:    "config/variable/create",
 			Inner:   true,
 			Handler: c.VariableApi.Create,
 		}, {
-			Path:    "variable/update",
+			Path:    "config/variable/update",
 			Inner:   true,
 			Handler: c.VariableApi.Update,
 		}, {
-			Path:    "variable/upsert",
+			Path:    "config/variable/upsert",
 			Inner:   true,
 			Handler: c.VariableApi.Upsert,
 		}, {
-			Path:    "variable/delete",
+			Path:    "config/variable/delete",
 			Inner:   true,
 			Handler: c.VariableApi.Delete,
 		},
