@@ -25,14 +25,14 @@ func TestAcceptance(t *testing.T) {
 	require := require.New(t)
 	logger := setupTest(t)
 
-	clientA1 := newClusterClient("A", "10.2.9.1", logger)
+	clientA1 := newClusterClient(t, "A", "10.2.9.1", logger)
 	go func() {
 		handler := cluster.NewEventHandler()
 		err := clientA1.Run(context.Background(), handler)
 		require.NoError(err) //nolint:testifylint
 	}()
 
-	clientA2 := newClusterClient("A", "10.2.9.2", logger)
+	clientA2 := newClusterClient(t, "A", "10.2.9.2", logger)
 	clientA2Ctx, cancelClient2 := context.WithCancel(context.Background())
 	go func() {
 		handler := cluster.NewEventHandler()
@@ -41,7 +41,7 @@ func TestAcceptance(t *testing.T) {
 	}()
 	time.Sleep(2 * time.Second)
 
-	clientB := newClusterClient("B", "10.2.9.2", logger)
+	clientB := newClusterClient(t, "B", "10.2.9.2", logger)
 	eventHandler := newClusterEventHandler()
 	go func() {
 		handler := cluster.NewEventHandler().
@@ -119,26 +119,30 @@ type testModuleRemoteConfig struct {
 }
 
 func newClusterClient(
+	t *testing.T,
 	moduleName string,
 	host string,
 	logger log.Logger,
 ) *cluster.Client {
-	return newClusterClientWith(moduleName, host, testModuleRemoteConfig{}, []byte("{}"), logger)
+	t.Helper()
+	return newClusterClientWith(t, moduleName, host, testModuleRemoteConfig{}, []byte("{}"), logger)
 }
 
 func newClusterClientWith(
+	t *testing.T,
 	moduleName string,
 	host string,
 	config any,
 	defaultRemoteConfig []byte,
 	logger log.Logger,
 ) *cluster.Client {
+	t.Helper()
 	schema := schema.NewGenerator().Generate(config)
 	schemaData, err := json.Marshal(schema)
 	if err != nil {
 		panic(err)
 	}
-	return cluster.NewClient(cluster.ModuleInfo{
+	cli := cluster.NewClient(cluster.ModuleInfo{
 		ModuleName:    moduleName,
 		ModuleVersion: "1.0.0",
 		LibVersion:    "1.0.0",
@@ -152,6 +156,10 @@ func newClusterClientWith(
 		Schema:  schemaData,
 		Config:  defaultRemoteConfig,
 	}, []string{"127.0.0.1:9001"}, logger)
+	t.Cleanup(func() {
+		_ = cli.Close()
+	})
+	return cli
 }
 
 //nolint:ireturn

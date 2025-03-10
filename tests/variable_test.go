@@ -34,14 +34,20 @@ func TestVariableAcceptance(t *testing.T) {
 	require.NoError(err)
 	apiCli.Upgrade([]string{"127.0.0.1:9002"})
 	varAValue := fake.It[string]()
+	varA := domain.CreateVariableRequest{
+		Name:        "varA",
+		Description: fake.It[string](),
+		Type:        "TEXT",
+		Value:       varAValue,
+	}
 	err = apiCli.Invoke("config/variable/create").
-		JsonRequestBody(domain.CreateVariableRequest{
-			Name:        "varA",
-			Description: fake.It[string](),
-			Type:        "TEXT",
-			Value:       varAValue,
-		}).Do(context.Background())
+		JsonRequestBody(varA).
+		Do(context.Background())
 	require.NoError(err)
+	err = apiCli.Invoke("config/variable/create").
+		JsonRequestBody(varA).
+		Do(context.Background())
+	require.Error(err)
 
 	varBValue := fake.It[int]()
 	err = apiCli.Invoke("config/variable/upsert").
@@ -56,6 +62,7 @@ func TestVariableAcceptance(t *testing.T) {
 
 	eventHandler := newClusterEventHandler()
 	clientA1 := newClusterClientWith(
+		t,
 		"A",
 		"10.2.9.1",
 		configWithVars{},
@@ -63,7 +70,7 @@ func TestVariableAcceptance(t *testing.T) {
 		logger,
 	)
 	go func() {
-		handler := cluster.NewEventHandler().RemoteConfigReceiver(eventHandler)
+		handler := cluster.NewEventHandler().RemoteConfigReceiverWithTimeout(eventHandler, 5*time.Second)
 		err := clientA1.Run(context.Background(), handler)
 		require.NoError(err) //nolint:testifylint
 	}()
@@ -109,7 +116,7 @@ func TestVariableAcceptance(t *testing.T) {
 	require.Len(allResponse, 2)
 	require.EqualValues(varAValue, allResponse[0].Value)
 	require.EqualValues("TEXT", allResponse[0].Type)
-	require.Empty(allResponse[1].Value)
+	require.Empty(allResponse[1].Value) // secret
 }
 
 func unmarshalConfig(require *require.Assertions, configData []byte) configWithVars {

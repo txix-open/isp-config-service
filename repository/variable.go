@@ -9,6 +9,7 @@ import (
 	"isp-config-service/entity"
 	"isp-config-service/middlewares/sql_metrics"
 	"isp-config-service/service/rqlite/db"
+	"strings"
 )
 
 type Variable struct {
@@ -68,6 +69,9 @@ func (r Variable) Insert(ctx context.Context, variable entity.Variable) error {
 
 	_, err = r.db.Exec(ctx, query, args...)
 	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return entity.ErrVariableAlreadyExists
+		}
 		return errors.WithMessagef(err, "exec: %s", query)
 	}
 
@@ -110,7 +114,10 @@ func (r Variable) Upsert(ctx context.Context, variables []entity.Variable) error
 			Columns("name", "description", "type", "value").
 			Values(variable.Name, variable.Description, variable.Type, variable.Value).
 			Suffix(`on conflict (name) do update 
-		set description = excluded.description, type = excluded.type, value = excluded.value, updated_at = unixepoch()`,
+		set description = excluded.description,
+		type = excluded.type,
+		value = excluded.value,
+		updated_at = unixepoch()`,
 			).ToSql()
 		if err != nil {
 			return errors.WithMessage(err, "build query")

@@ -21,7 +21,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/txix-open/etp/v4 v4.0.1
-	github.com/txix-open/isp-kit v1.43.0
+	github.com/txix-open/isp-kit v1.44.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sync v0.12.0
 	google.golang.org/grpc v1.71.0

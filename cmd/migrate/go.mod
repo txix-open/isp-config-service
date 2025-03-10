@@ -11,7 +11,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.24.1
-	github.com/txix-open/isp-kit v1.43.0
+	github.com/txix-open/isp-kit v1.44.0
 	isp-config-service v0.0.0-00010101000000-000000000000
 )
 
