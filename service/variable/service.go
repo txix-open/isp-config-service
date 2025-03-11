@@ -3,12 +3,14 @@ package variable
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/pkg/errors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
 	"regexp"
 	"text/template"
+	"text/template/parse"
 	"time"
 )
 
@@ -182,6 +184,7 @@ func (s Service) Delete(ctx context.Context, name string) error {
 	return nil
 }
 
+//nolint:funlen
 func (s Service) RenderConfig(ctx context.Context, input []byte) ([]byte, error) {
 	variables, err := s.repo.All(ctx)
 	if err != nil {
@@ -195,11 +198,48 @@ func (s Service) RenderConfig(ctx context.Context, input []byte) ([]byte, error)
 		varsMap[variable.Name] = variable.Value
 	}
 
-	tt := template.New("config")
-	_, err = tt.Parse(string(input))
+	tree := parse.New("config")
+	tree.Mode = parse.SkipFuncCheck
+	_, err = tree.Parse(string(input), "", "", make(map[string]*parse.Tree))
 	if err != nil {
 		return nil, errors.WithMessage(err, "parse template")
 	}
+
+	// hack for backward capability
+	// we use jinja templates in default remote configs, for example: {{ msp_pgsql_name }}
+	// this is a function call for Go template, so let's define function on the fly and inject its name in config render
+	funcs := make(template.FuncMap)
+	for _, node := range tree.Root.Nodes {
+		action, ok := node.(*parse.ActionNode)
+		if !ok {
+			continue
+		}
+		if action.Pipe == nil {
+			continue
+		}
+		for _, cmd := range action.Pipe.Cmds {
+			if cmd.Type() != parse.NodeCommand {
+				continue
+			}
+			if len(cmd.Args) == 0 {
+				continue
+			}
+			funcName, ok := cmd.Args[0].(*parse.IdentifierNode)
+			if !ok {
+				continue
+			}
+			funcs[funcName.Ident] = func() string {
+				return fmt.Sprintf("{{ %s }}", funcName.Ident)
+			}
+		}
+	}
+	tt := template.New("")
+	tt.Funcs(funcs)
+	tt, err = tt.AddParseTree("config", tree)
+	if err != nil {
+		return nil, errors.WithMessage(err, "add parse tree")
+	}
+
 	out := bytes.NewBuffer(make([]byte, 0, len(input)))
 	err = tt.Execute(out, varsMap)
 	if err != nil {

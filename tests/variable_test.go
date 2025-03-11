@@ -16,13 +16,15 @@ import (
 const defaultRemoteConfigsWithVariables = `
 {
    "varA": "_Var({{ .varA }})",
-   "varB": "_ToInt(_Var({{ .varB }}))"
+   "varB": "_ToInt(_Var({{ .varB }}))",
+   "varC": "{{ msp_pgsql_name }}"
 }
 `
 
 type configWithVars struct {
 	VarA string
 	VarB int
+	VarC string
 }
 
 // nolint:funlen
@@ -80,6 +82,7 @@ func TestVariableAcceptance(t *testing.T) {
 	expected := configWithVars{
 		VarA: varAValue,
 		VarB: varBValue,
+		VarC: "{{ msp_pgsql_name }}",
 	}
 	require.EqualValues(expected, firstConfig)
 
@@ -104,6 +107,7 @@ func TestVariableAcceptance(t *testing.T) {
 	expected = configWithVars{
 		VarA: varAValue,
 		VarB: varBValue,
+		VarC: "{{ msp_pgsql_name }}",
 	}
 	require.EqualValues(expected, secondConfig)
 
