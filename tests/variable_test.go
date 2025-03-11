@@ -15,8 +15,8 @@ import (
 
 const defaultRemoteConfigsWithVariables = `
 {
-   "varA": "_Var({{ .varA }})",
-   "varB": "_ToInt(_Var({{ .varB }}))",
+   "varA": "_Var(varA)",
+   "varB": "_ToInt(_Var(varB))",
    "varC": "{{ msp_pgsql_name }}"
 }
 `

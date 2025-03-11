@@ -1,16 +1,13 @@
 package variable
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"github.com/pkg/errors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
 	"regexp"
-	"text/template"
-	"text/template/parse"
+	"strings"
 	"time"
 )
 
@@ -33,12 +30,11 @@ type EventRepo interface {
 }
 
 type Service struct {
-	repo                  Repo
-	configRepo            ConfigRepo
-	eventRepo             EventRepo
-	stringToIntRegexp     *regexp.Regexp
-	extractVariableRegexp *regexp.Regexp
-	replaceVariableRegexp *regexp.Regexp
+	repo              Repo
+	configRepo        ConfigRepo
+	eventRepo         EventRepo
+	stringToIntRegexp *regexp.Regexp
+	variableRegexp    *regexp.Regexp
 }
 
 func NewService(
@@ -47,12 +43,11 @@ func NewService(
 	eventRepo EventRepo,
 ) Service {
 	return Service{
-		repo:                  repo,
-		configRepo:            configRepo,
-		eventRepo:             eventRepo,
-		stringToIntRegexp:     regexp.MustCompile(`"_ToInt\((\d+)\)"`),
-		extractVariableRegexp: regexp.MustCompile(`_Var\(\{\{ \.(.*?) \}\}\)`),
-		replaceVariableRegexp: regexp.MustCompile(`_Var\((.*?)\)`),
+		repo:              repo,
+		configRepo:        configRepo,
+		eventRepo:         eventRepo,
+		stringToIntRegexp: regexp.MustCompile(`"_ToInt\((\d+)\)"`),
+		variableRegexp:    regexp.MustCompile(`_Var\((.*?)\)`),
 	}
 }
 
@@ -198,61 +193,28 @@ func (s Service) RenderConfig(ctx context.Context, input []byte) ([]byte, error)
 		varsMap[variable.Name] = variable.Value
 	}
 
-	tree := parse.New("config")
-	tree.Mode = parse.SkipFuncCheck
-	_, err = tree.Parse(string(input), "", "", make(map[string]*parse.Tree))
-	if err != nil {
-		return nil, errors.WithMessage(err, "parse template")
-	}
+	undefinedVariables := make([]string, 0)
+	withReplacedVars := s.variableRegexp.ReplaceAllStringFunc(string(input), func(group string) string {
+		varName := s.variableRegexp.FindStringSubmatch(group)[1]
 
-	// hack for backward capability
-	// we use jinja templates in default remote configs, for example: {{ msp_pgsql_name }}
-	// this is a function call for Go template, so let's define function on the fly and inject its name in config render
-	funcs := make(template.FuncMap)
-	for _, node := range tree.Root.Nodes {
-		action, ok := node.(*parse.ActionNode)
+		value, ok := varsMap[varName]
 		if !ok {
-			continue
+			undefinedVariables = append(undefinedVariables, varName)
+			return varName
 		}
-		if action.Pipe == nil {
-			continue
-		}
-		for _, cmd := range action.Pipe.Cmds {
-			if cmd.Type() != parse.NodeCommand {
-				continue
-			}
-			if len(cmd.Args) == 0 {
-				continue
-			}
-			funcName, ok := cmd.Args[0].(*parse.IdentifierNode)
-			if !ok {
-				continue
-			}
-			funcs[funcName.Ident] = func() string {
-				return fmt.Sprintf("{{ %s }}", funcName.Ident)
-			}
-		}
-	}
-	tt := template.New("")
-	tt.Funcs(funcs)
-	tt, err = tt.AddParseTree("config", tree)
-	if err != nil {
-		return nil, errors.WithMessage(err, "add parse tree")
+		return value
+	})
+	if len(undefinedVariables) > 0 {
+		return nil, errors.Errorf("undefined variables: [%s]", strings.Join(undefinedVariables, ", "))
 	}
 
-	out := bytes.NewBuffer(make([]byte, 0, len(input)))
-	err = tt.Execute(out, varsMap)
-	if err != nil {
-		return nil, errors.WithMessage(err, "execute template")
-	}
+	result := s.stringToIntRegexp.ReplaceAll([]byte(withReplacedVars), []byte("$1"))
 
-	result := s.replaceVariableRegexp.ReplaceAll(out.Bytes(), []byte("$1"))
-	result = s.stringToIntRegexp.ReplaceAll(result, []byte("$1"))
 	return result, nil
 }
 
 func (s Service) ExtractVariables(ctx context.Context, configId string, input []byte) (*domain.VariableExtractionResult, error) {
-	matches := s.extractVariableRegexp.FindAllStringSubmatch(string(input), -1)
+	matches := s.variableRegexp.FindAllStringSubmatch(string(input), -1)
 	varNames := make([]string, len(matches))
 	for i, match := range matches {
 		varNames[i] = match[1]
