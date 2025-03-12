@@ -1,7 +1,6 @@
 package tests_test
 
 import (
-	"context"
 	"github.com/stretchr/testify/require"
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/grpc/client"
@@ -44,11 +43,11 @@ func TestVariableAcceptance(t *testing.T) {
 	}
 	err = apiCli.Invoke("config/variable/create").
 		JsonRequestBody(varA).
-		Do(context.Background())
+		Do(t.Context())
 	require.NoError(err)
 	err = apiCli.Invoke("config/variable/create").
 		JsonRequestBody(varA).
-		Do(context.Background())
+		Do(t.Context())
 	require.Error(err)
 
 	varBValue := fake.It[int]()
@@ -59,7 +58,7 @@ func TestVariableAcceptance(t *testing.T) {
 			Type:        "SECRET",
 			Value:       strconv.Itoa(varBValue),
 		}}).
-		Do(context.Background())
+		Do(t.Context())
 	require.NoError(err)
 
 	eventHandler := newClusterEventHandler()
@@ -73,7 +72,7 @@ func TestVariableAcceptance(t *testing.T) {
 	)
 	go func() {
 		handler := cluster.NewEventHandler().RemoteConfigReceiverWithTimeout(eventHandler, 5*time.Second)
-		err := clientA1.Run(context.Background(), handler)
+		err := clientA1.Run(t.Context(), handler)
 		require.NoError(err) //nolint:testifylint
 	}()
 	time.Sleep(3 * time.Second)
@@ -88,7 +87,7 @@ func TestVariableAcceptance(t *testing.T) {
 
 	err = apiCli.Invoke("config/variable/delete").
 		JsonRequestBody(domain.VariableByNameRequest{Name: "varB"}).
-		Do(context.Background())
+		Do(t.Context())
 	require.Error(err)
 
 	varBValue = fake.It[int]()
@@ -99,7 +98,7 @@ func TestVariableAcceptance(t *testing.T) {
 			Type:        "SECRET",
 			Value:       strconv.Itoa(varBValue),
 		}}).
-		Do(context.Background())
+		Do(t.Context())
 	require.NoError(err)
 	time.Sleep(3 * time.Second)
 
@@ -114,7 +113,7 @@ func TestVariableAcceptance(t *testing.T) {
 	allResponse := []domain.Variable{}
 	err = apiCli.Invoke("config/variable/all").
 		JsonResponseBody(&allResponse).
-		Do(context.Background())
+		Do(t.Context())
 	require.NoError(err)
 
 	require.Len(allResponse, 2)

@@ -28,12 +28,12 @@ func TestAcceptance(t *testing.T) {
 	clientA1 := newClusterClient(t, "A", "10.2.9.1", logger)
 	go func() {
 		handler := cluster.NewEventHandler()
-		err := clientA1.Run(context.Background(), handler)
+		err := clientA1.Run(t.Context(), handler)
 		require.NoError(err) //nolint:testifylint
 	}()
 
 	clientA2 := newClusterClient(t, "A", "10.2.9.2", logger)
-	clientA2Ctx, cancelClient2 := context.WithCancel(context.Background())
+	clientA2Ctx, cancelClient2 := context.WithCancel(t.Context())
 	go func() {
 		handler := cluster.NewEventHandler()
 		err := clientA2.Run(clientA2Ctx, handler)
@@ -48,7 +48,7 @@ func TestAcceptance(t *testing.T) {
 			RemoteConfigReceiver(eventHandler).
 			RequireModule("A", eventHandler).
 			RoutesReceiver(eventHandler)
-		err := clientB.Run(context.Background(), handler)
+		err := clientB.Run(t.Context(), handler)
 		require.NoError(err) //nolint:testifylint
 	}()
 	time.Sleep(2 * time.Second)
@@ -61,7 +61,7 @@ func TestAcceptance(t *testing.T) {
 	err = apiCli.Invoke("config/config/get_active_config_by_module_name").
 		JsonRequestBody(domain.GetByModuleNameRequest{ModuleName: "B"}).
 		JsonResponseBody(&activeConfig).
-		Do(context.Background())
+		Do(t.Context())
 	require.NoError(err)
 	updateConfigReq := domain.CreateUpdateConfigRequest{
 		Id:       activeConfig.Id,
@@ -72,7 +72,7 @@ func TestAcceptance(t *testing.T) {
 	}
 	err = apiCli.Invoke("config/config/create_update_config").
 		JsonRequestBody(updateConfigReq).
-		Do(context.Background())
+		Do(t.Context())
 	require.NoError(err)
 
 	cancelClient2()
@@ -92,7 +92,7 @@ func TestAcceptance(t *testing.T) {
 	statusResponse := make([]domain.ModuleInfo, 0)
 	err = apiCli.Invoke("config/module/get_modules_info").
 		JsonResponseBody(&statusResponse).
-		Do(context.Background())
+		Do(t.Context())
 	require.NoError(err)
 	require.Len(statusResponse, 3)
 	require.EqualValues("A", statusResponse[0].Name)
@@ -183,7 +183,7 @@ func setupTest(t *testing.T) log.Logger {
 			require.NoError(err)
 		}
 	})
-	err = startup.Run(context.Background())
+	err = startup.Run(t.Context())
 	require.NoError(err)
 	time.Sleep(1 * time.Second)
 
