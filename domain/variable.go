@@ -36,7 +36,7 @@ type UpdateVariableRequest struct {
 
 type UpsertVariableRequest struct {
 	Name        string `validate:"required"`
-	Description string `validate:"required"`
+	Description string
 	Type        string `validate:"required,oneof=SECRET TEXT"`
 	Value       string `validate:"required"`
 }

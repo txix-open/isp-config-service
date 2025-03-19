@@ -143,8 +143,8 @@ github.com/txix-open/bellows v1.2.0 h1:CXv8nQaZtB/micraeRilYyj/gtfv+bqBgP5aPYQgj
 github.com/txix-open/bellows v1.2.0/go.mod h1:qbKCy+RTgD30Qpw1fyb3y3jp5Y9mGhLLxgae1l0W92o=
 github.com/txix-open/etp/v4 v4.0.1 h1:5VSYgGsvnMz0tvUHsjVWFETI0qWBTCF1O3ARCHaCIgA=
 github.com/txix-open/etp/v4 v4.0.1/go.mod h1:FIu7TUDdwcgmtmF6tFTV1bGA2fRY/iVaPQdsGzvqYc8=
-github.com/txix-open/isp-kit v1.44.1 h1:PCQ9O0aSZpru+XJq5LL+Fkgh157D9SpDdy17sB4xMN4=
-github.com/txix-open/isp-kit v1.44.1/go.mod h1:efg4qDdAuw9Doi1OoT+OYSbr34B3j9u2ubz9R5BXYto=
+github.com/txix-open/isp-kit v1.45.0 h1:GPrr4F5SLQsrXgUTCqHL7C90vygjmNPOimUCAuXr2dw=
+github.com/txix-open/isp-kit v1.45.0/go.mod h1:efg4qDdAuw9Doi1OoT+OYSbr34B3j9u2ubz9R5BXYto=
 github.com/txix-open/validator/v10 v10.0.0-20240401163703-e83541b40f99 h1:Z0Sqf+U+Sc6hfIXtRCIZlbJprkCjwMFbS4ZbEPQ44To=
 github.com/txix-open/validator/v10 v10.0.0-20240401163703-e83541b40f99/go.mod h1:pA0NYmhL0uEkkxj55S+S7MZU4e2QIt46x9XSrzrWc3c=
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=
