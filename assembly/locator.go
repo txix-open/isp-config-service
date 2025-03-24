@@ -4,6 +4,7 @@ import (
 	"context"
 	"isp-config-service/conf"
 	"isp-config-service/service/module/backend"
+	"isp-config-service/service/variable"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -85,6 +86,10 @@ func (l Locator) Config() *Config {
 	configRepo := repository.NewConfig(l.db)
 	configSchemaRepo := repository.NewConfigSchema(l.db)
 	configHistoryRepo := repository.NewConfigHistory(l.db)
+	variableRepo := repository.NewVariable(l.db)
+
+	variableService := variable.NewService(variableRepo, configRepo, eventRepo)
+	variableController := api.NewVariable(variableService)
 
 	etpSrv := etp.NewServer(
 		etp.WithServerReadLimit(wsReadLimit),
@@ -99,6 +104,7 @@ func (l Locator) Config() *Config {
 		configRepo,
 		etpSrv.Rooms(),
 		emitter,
+		variableService,
 		l.logger,
 	)
 
@@ -119,6 +125,7 @@ func (l Locator) Config() *Config {
 		configSchemaRepo,
 		subscriptionService,
 		emitter,
+		variableService,
 		l.logger,
 	)
 	moduleController := controller.NewModule(moduleService, l.logger)
@@ -135,6 +142,7 @@ func (l Locator) Config() *Config {
 		configSchemaRepo,
 		eventRepo,
 		configHistoryApiService,
+		variableService,
 	)
 	configApiController := api.NewConfig(configApiService)
 
@@ -147,6 +155,7 @@ func (l Locator) Config() *Config {
 		ConfigApi:        configApiController,
 		ConfigHistoryApi: configHistoryController,
 		ConfigSchemaApi:  configSchemaController,
+		VariableApi:      variableController,
 	}
 	mapper := endpoint.DefaultWrapper(l.logger)
 	grpcMux := routes.GrpcHandler(mapper, controllers)

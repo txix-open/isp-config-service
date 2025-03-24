@@ -12,6 +12,9 @@ const (
 	ErrorCodeInvalidConfig         = 2003
 	ErrorCodeConfigVersionConflict = 2004
 	ErrorCodeSchemaNotFound        = 2005
+	ErrorCodeVariableNotFound      = 2006
+	ErrorCodeVariableAlreadyExists = 2007
+	ErrorCodeVariableUsedInConfigs = 2008
 )
 
 type ConfigValidationError struct {

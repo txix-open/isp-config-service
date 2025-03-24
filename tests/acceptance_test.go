@@ -23,36 +23,17 @@ import (
 //nolint:funlen
 func TestAcceptance(t *testing.T) {
 	require := require.New(t)
+	logger := setupTest(t)
 
-	t.Setenv("APP_CONFIG_PATH", "../conf/config.yml")
-	t.Setenv("DefaultRemoteConfigPath", "../conf/default_remote_config.json")
-	boot := bootstrap.New("1.0.0", conf.Remote{}, nil)
-	boot.MigrationsDir = "../migrations"
-	dataPath := dataDir(t)
-	boot.App.Config().Set("rqlite.DataPath", dataPath)
-	logger := boot.App.Logger()
-
-	startup, err := startup.New(boot)
-	require.NoError(err)
-	t.Cleanup(func() {
-		for _, closer := range startup.Closers() {
-			err := closer.Close()
-			require.NoError(err)
-		}
-	})
-	err = startup.Run(context.Background())
-	require.NoError(err)
-	time.Sleep(1 * time.Second)
-
-	clientA1 := newClusterClient("A", "10.2.9.1", logger)
+	clientA1 := newClusterClient(t, "A", "10.2.9.1", logger)
 	go func() {
 		handler := cluster.NewEventHandler()
-		err := clientA1.Run(context.Background(), handler)
+		err := clientA1.Run(t.Context(), handler)
 		require.NoError(err) //nolint:testifylint
 	}()
 
-	clientA2 := newClusterClient("A", "10.2.9.2", logger)
-	clientA2Ctx, cancelClient2 := context.WithCancel(context.Background())
+	clientA2 := newClusterClient(t, "A", "10.2.9.2", logger)
+	clientA2Ctx, cancelClient2 := context.WithCancel(t.Context())
 	go func() {
 		handler := cluster.NewEventHandler()
 		err := clientA2.Run(clientA2Ctx, handler)
@@ -60,14 +41,14 @@ func TestAcceptance(t *testing.T) {
 	}()
 	time.Sleep(2 * time.Second)
 
-	clientB := newClusterClient("B", "10.2.9.2", logger)
+	clientB := newClusterClient(t, "B", "10.2.9.2", logger)
 	eventHandler := newClusterEventHandler()
 	go func() {
 		handler := cluster.NewEventHandler().
 			RemoteConfigReceiver(eventHandler).
 			RequireModule("A", eventHandler).
 			RoutesReceiver(eventHandler)
-		err := clientB.Run(context.Background(), handler)
+		err := clientB.Run(t.Context(), handler)
 		require.NoError(err) //nolint:testifylint
 	}()
 	time.Sleep(2 * time.Second)
@@ -80,7 +61,7 @@ func TestAcceptance(t *testing.T) {
 	err = apiCli.Invoke("config/config/get_active_config_by_module_name").
 		JsonRequestBody(domain.GetByModuleNameRequest{ModuleName: "B"}).
 		JsonResponseBody(&activeConfig).
-		Do(context.Background())
+		Do(t.Context())
 	require.NoError(err)
 	updateConfigReq := domain.CreateUpdateConfigRequest{
 		Id:       activeConfig.Id,
@@ -91,7 +72,7 @@ func TestAcceptance(t *testing.T) {
 	}
 	err = apiCli.Invoke("config/config/create_update_config").
 		JsonRequestBody(updateConfigReq).
-		Do(context.Background())
+		Do(t.Context())
 	require.NoError(err)
 
 	cancelClient2()
@@ -111,7 +92,7 @@ func TestAcceptance(t *testing.T) {
 	statusResponse := make([]domain.ModuleInfo, 0)
 	err = apiCli.Invoke("config/module/get_modules_info").
 		JsonResponseBody(&statusResponse).
-		Do(context.Background())
+		Do(t.Context())
 	require.NoError(err)
 	require.Len(statusResponse, 3)
 	require.EqualValues("A", statusResponse[0].Name)
@@ -138,16 +119,30 @@ type testModuleRemoteConfig struct {
 }
 
 func newClusterClient(
+	t *testing.T,
 	moduleName string,
 	host string,
 	logger log.Logger,
 ) *cluster.Client {
-	schema := schema.NewGenerator().Generate(testModuleRemoteConfig{})
+	t.Helper()
+	return newClusterClientWith(t, moduleName, host, testModuleRemoteConfig{}, []byte("{}"), logger)
+}
+
+func newClusterClientWith(
+	t *testing.T,
+	moduleName string,
+	host string,
+	config any,
+	defaultRemoteConfig []byte,
+	logger log.Logger,
+) *cluster.Client {
+	t.Helper()
+	schema := schema.NewGenerator().Generate(config)
 	schemaData, err := json.Marshal(schema)
 	if err != nil {
 		panic(err)
 	}
-	return cluster.NewClient(cluster.ModuleInfo{
+	cli := cluster.NewClient(cluster.ModuleInfo{
 		ModuleName:    moduleName,
 		ModuleVersion: "1.0.0",
 		LibVersion:    "1.0.0",
@@ -159,6 +154,38 @@ func newClusterClient(
 	}, cluster.ConfigData{
 		Version: "1.0.0",
 		Schema:  schemaData,
-		Config:  []byte(`{}`),
+		Config:  defaultRemoteConfig,
 	}, []string{"127.0.0.1:9001"}, logger)
+	t.Cleanup(func() {
+		_ = cli.Close()
+	})
+	return cli
+}
+
+//nolint:ireturn
+func setupTest(t *testing.T) log.Logger {
+	t.Helper()
+	require := require.New(t)
+
+	t.Setenv("APP_CONFIG_PATH", "../conf/config.yml")
+	t.Setenv("DefaultRemoteConfigPath", "../conf/default_remote_config.json")
+	boot := bootstrap.New("1.0.0", conf.Remote{}, nil)
+	boot.MigrationsDir = "../migrations"
+	dataPath := dataDir(t)
+	boot.App.Config().Set("rqlite.DataPath", dataPath)
+	logger := boot.App.Logger()
+
+	startup, err := startup.New(boot)
+	require.NoError(err)
+	t.Cleanup(func() {
+		for _, closer := range startup.Closers() {
+			err := closer.Close()
+			require.NoError(err)
+		}
+	})
+	err = startup.Run(t.Context())
+	require.NoError(err)
+	time.Sleep(1 * time.Second)
+
+	return logger
 }

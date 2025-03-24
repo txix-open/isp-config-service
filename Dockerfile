@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine as builder
+FROM golang:1.24-alpine as builder
 WORKDIR /build
 ARG version
 ENV version_env=$version
@@ -10,7 +10,7 @@ RUN go build -ldflags="-X 'main.version=$version_env'" -o /main .
 WORKDIR cmd/migrate
 RUN CGO_ENABLED=1 go build -o /migrate .
 
-FROM alpine:3.20
+FROM alpine:3.21
 
 RUN apk add --no-cache tzdata
 RUN cp /usr/share/zoneinfo/Europe/Moscow /etc/localtime

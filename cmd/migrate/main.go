@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"github.com/pressly/goose/v3"
 	"github.com/txix-open/isp-kit/config"
@@ -34,6 +36,14 @@ type Cfg struct {
 	}
 }
 
+type dbClient struct {
+	*db.Client
+}
+
+func (d dbClient) ExecTransaction(ctx context.Context, requests [][]any) ([]sql.Result, error) {
+	panic("implement me")
+}
+
 func main() {
 	app, err := app.New(app.WithConfigOptions(
 		config.WithValidator(validator.Default),
@@ -58,7 +68,7 @@ func main() {
 	defer pgDb.Close()
 
 	fileName := fmt.Sprintf("db_%d.sqlite", time.Now().Unix())
-	dbClient := &db.Client{}
+	dbClient := dbClient{&db.Client{}}
 	dbClient.DB, err = sqlx.Open("sqlite3", fileName)
 	dbClient.DB.MapperFunc(db.ToSnakeCase)
 	if err != nil {
