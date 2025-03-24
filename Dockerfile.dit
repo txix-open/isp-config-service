@@ -1,5 +1,5 @@
 FROM dockerhub.mos.ru/mosos/arbat:15.5 as builder
-RUN zypper --no-gpg-checks update -y && zypper --no-gpg-checks install -y go1.23 git
+RUN zypper --no-gpg-checks update -y && zypper --no-gpg-checks install -y go1.24 git
 WORKDIR /build
 ARG version
 ENV version_env=$version

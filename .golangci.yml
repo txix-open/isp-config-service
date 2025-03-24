@@ -35,6 +35,7 @@ linters:
     - gomoddirectives #требует rqlite
     - tagliatelle
     - gomnd
+    - paralleltest
 linters-settings:
   funlen:
     lines: 80

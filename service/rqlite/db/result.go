@@ -20,4 +20,5 @@ func (r Result) RowsAffected() (int64, error) {
 type Response struct {
 	Results []*Result `json:"results"`
 	Time    float64   `json:"time"`
+	Error   string    `json:"error"`
 }

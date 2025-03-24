@@ -16,6 +16,14 @@ type Config struct {
 	UpdatedAt xtypes.Time `json:"updated_at"`
 }
 
+type ConfigMetaWithVariable struct {
+	Id           string      `json:"id"`
+	Name         string      `json:"name"`
+	ModuleId     string      `json:"module_id"`
+	VariableName string      `json:"variable_name"`
+	Active       xtypes.Bool `json:"active"`
+}
+
 type ConfigHistory struct {
 	Id        string      `json:"id"`
 	ConfigId  string      `json:"config_id"`
