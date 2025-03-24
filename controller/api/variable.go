@@ -139,7 +139,7 @@ func (c Variable) Upsert(ctx context.Context, req []domain.UpsertVariableRequest
 func (c Variable) Delete(ctx context.Context, req domain.VariableByNameRequest) error {
 	err := c.service.Delete(ctx, req.Name)
 	switch {
-	case errors.Is(err, entity.ErrConfigNotFound):
+	case errors.Is(err, entity.ErrVariableNotFound):
 		return apierrors.NewBusinessError(domain.ErrorCodeVariableNotFound, "variable by name not found", err)
 	case errors.Is(err, entity.ErrVariableUsedInConfigs):
 		return apierrors.NewBusinessError(domain.ErrorCodeVariableUsedInConfigs, "variable used in configs", err)

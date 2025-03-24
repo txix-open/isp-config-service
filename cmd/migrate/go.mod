@@ -2,8 +2,6 @@ module isp-config-service/migrate
 
 go 1.24
 
-toolchain go1.24.1
-
 replace isp-config-service => ../..
 
 require (
