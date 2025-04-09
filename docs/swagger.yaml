@@ -100,6 +100,9 @@ definitions:
       name:
         type: string
       type:
+        enum:
+        - SECRET
+        - TEXT
         type: string
       value:
         type: string
@@ -189,11 +192,16 @@ definitions:
         type: string
       name:
         type: string
+      type:
+        enum:
+        - SECRET
+        - TEXT
+        type: string
       value:
         type: string
     required:
-    - description
     - name
+    - type
     - value
     type: object
   domain.Variable:
@@ -628,8 +636,6 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            $ref: '#/definitions/domain.Variable'
         "400":
           description: '`errorCode: 2007` - переменная с таким именем уже существует<br/>'
           schema:
@@ -716,8 +722,6 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            $ref: '#/definitions/domain.Variable'
         "400":
           description: '`errorCode: 2006` - переменная по имени не найдена<br/>'
           schema:
