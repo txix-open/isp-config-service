@@ -20,6 +20,7 @@ type ConfigRepo interface {
 	Insert(ctx context.Context, cfg entity.Config) error
 	UpdateByVersion(ctx context.Context, cfg entity.Config) (bool, error)
 	SetActive(ctx context.Context, configId string, active xtypes.Bool) error
+	UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) (bool, error)
 }
 
 type EventRepo interface {
@@ -237,6 +238,18 @@ func (c Config) DeleteConfig(ctx context.Context, configId string) error {
 	if !deleted {
 		return entity.ErrConfigNotFoundOrActive
 	}
+	return nil
+}
+
+func (c Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) error {
+	exist, err := c.configRepo.UpdateConfigName(ctx, req)
+	if err != nil {
+		return errors.WithMessage(err, "update config")
+	}
+	if !exist {
+		return entity.ErrConfigNotFound
+	}
+
 	return nil
 }
 

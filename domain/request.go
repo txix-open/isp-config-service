@@ -24,3 +24,8 @@ type CreateUpdateConfigRequest struct {
 	Data     json.RawMessage `swaggertype:"object"`
 	Unsafe   bool
 }
+
+type UpdateConfigNameRequest struct {
+	OldConfigName string `validate:"required"`
+	NewConfigName string `validate:"required"`
+}

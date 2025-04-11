@@ -20,6 +20,7 @@ type ConfigService interface {
 	GetConfigById(ctx context.Context, configId string) (*domain.Config, error)
 	MarkConfigAsActive(ctx context.Context, configId string) error
 	DeleteConfig(ctx context.Context, id string) error
+	UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) error
 }
 
 type Config struct {
@@ -232,5 +233,21 @@ func (c Config) DeleteConfigs(ctx context.Context, identities []string) (*domain
 		return &domain.DeleteResponse{
 			Deleted: 1,
 		}, nil
+	}
+}
+
+func (c Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) error {
+	err := c.service.UpdateConfigName(ctx, req)
+	switch {
+	case errors.Is(err, entity.ErrConfigNotFound):
+		return apierrors.NewBusinessError(
+			domain.ErrorCodeConfigNotFound,
+			"config not found",
+			err,
+		)
+	case err != nil:
+		return apierrors.NewInternalServiceError(err)
+	default:
+		return nil
 	}
 }

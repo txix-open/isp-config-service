@@ -64,6 +64,7 @@ func HttpHandler(etpSrv *etp.Server, conf conf.Local, rqliteProxy http.Handler) 
 	return httpMux
 }
 
+// nolint:funlen
 func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 	return []cluster.EndpointDescriptor{
 		// modules
@@ -101,6 +102,10 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 			Path:    "config/config/mark_config_as_active",
 			Inner:   true,
 			Handler: c.ConfigApi.MarkConfigAsActive,
+		}, {
+			Path:    "config/config/update_config_name",
+			Inner:   true,
+			Handler: c.ConfigApi.UpdateConfigName,
 		}, {
 			Path:    "config/config/delete_config",
 			Inner:   true,

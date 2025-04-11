@@ -46,18 +46,21 @@ func (s ConfigHistory) GetAllVersions(ctx context.Context, configId string) ([]d
 	if err != nil {
 		return nil, errors.WithMessage(err, "get config versions")
 	}
-	actual, err := s.configRepo.GetById(ctx, configId)
+	actualCfg, err := s.configRepo.GetById(ctx, configId)
 	if err != nil {
 		return nil, errors.WithMessage(err, "get actual config by id")
+	}
+	if actualCfg == nil {
+		return nil, entity.ErrConfigNotFound
 	}
 
 	result := make([]domain.ConfigVersion, 0, len(versions)+1)
 	result = append(result, domain.ConfigVersion{
 		Id:            uuid.NewString(),
-		ConfigId:      actual.Id,
-		ConfigVersion: actual.Version,
-		Data:          actual.Data,
-		CreatedAt:     time.Time(actual.CreatedAt),
+		ConfigId:      actualCfg.Id,
+		ConfigVersion: actualCfg.Version,
+		Data:          actualCfg.Data,
+		CreatedAt:     time.Time(actualCfg.CreatedAt),
 	})
 
 	for _, version := range versions {
