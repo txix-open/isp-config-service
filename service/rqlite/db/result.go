@@ -1,5 +1,6 @@
 package db
 
+// nolint:tagliatelle
 type Result struct {
 	LastInsertIdValue int64             `json:"last_insert_id"`
 	RowsAffectedValue int64             `json:"rows_affected"`

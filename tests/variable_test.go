@@ -27,7 +27,7 @@ type configWithVars struct {
 	VarC string
 }
 
-// nolint:funlen
+// nolint:funlen,paralleltest
 func TestVariableAcceptance(t *testing.T) {
 	require := require.New(t)
 	logger := setupTest(t)
