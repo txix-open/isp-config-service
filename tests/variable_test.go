@@ -1,15 +1,16 @@
 package tests_test
 
 import (
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/require"
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/grpc/client"
 	"github.com/txix-open/isp-kit/json"
 	"github.com/txix-open/isp-kit/test/fake"
 	"isp-config-service/domain"
-	"strconv"
-	"testing"
-	"time"
 )
 
 const defaultRemoteConfigsWithVariables = `

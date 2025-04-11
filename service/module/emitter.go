@@ -2,9 +2,10 @@ package module
 
 import (
 	"context"
-	"github.com/txix-open/etp/v4"
 	"strings"
 	"time"
+
+	"github.com/txix-open/etp/v4"
 
 	"github.com/pkg/errors"
 	"github.com/txix-open/isp-kit/cluster"

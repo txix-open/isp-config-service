@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/pressly/goose/v3"
 	"github.com/txix-open/isp-kit/config"
 	"github.com/txix-open/isp-kit/dbx"
@@ -12,8 +15,6 @@ import (
 	"github.com/txix-open/isp-kit/log"
 	"github.com/txix-open/isp-kit/validator"
 	"isp-config-service/service/rqlite/goose_store"
-	"os"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"

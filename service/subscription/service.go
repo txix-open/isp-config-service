@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"context"
+
 	"github.com/txix-open/etp/v4"
 
 	"github.com/pkg/errors"

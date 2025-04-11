@@ -4,12 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"isp-config-service/entity"
 	"isp-config-service/middlewares/sql_metrics"
 	"isp-config-service/service/rqlite/db"
-	"strings"
 )
 
 type Variable struct {
