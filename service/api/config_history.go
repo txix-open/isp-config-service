@@ -83,11 +83,12 @@ func (s ConfigHistory) Delete(ctx context.Context, id string) error {
 
 func (s ConfigHistory) OnUpdateConfig(ctx context.Context, oldConfig entity.Config) error {
 	history := entity.ConfigHistory{
-		Id:       uuid.NewString(),
-		ConfigId: oldConfig.Id,
-		Data:     oldConfig.Data,
-		Version:  oldConfig.Version,
-		AdminId:  oldConfig.AdminId,
+		Id:        uuid.NewString(),
+		ConfigId:  oldConfig.Id,
+		Data:      oldConfig.Data,
+		Version:   oldConfig.Version,
+		AdminId:   oldConfig.AdminId,
+		CreatedAt: oldConfig.UpdatedAt,
 	}
 	err := s.repo.Insert(ctx, history)
 	if err != nil {
