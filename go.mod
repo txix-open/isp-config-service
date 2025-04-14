@@ -2,7 +2,10 @@ module isp-config-service
 
 go 1.24
 
-replace github.com/armon/go-metrics => github.com/hashicorp/go-metrics v0.5.1
+replace (
+	github.com/armon/go-metrics => github.com/hashicorp/go-metrics v0.5.1
+	golang.org/x/text => golang.org/x/text v0.3.8
+)
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
