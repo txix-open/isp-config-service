@@ -3,8 +3,10 @@ package api
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/txix-open/isp-kit/grpc/apierrors"
 	"isp-config-service/domain"
+	"isp-config-service/entity"
 )
 
 type ConfigHistoryService interface {
@@ -35,10 +37,18 @@ func NewConfigHistory(service ConfigHistoryService) ConfigHistory {
 // @Router /config/get_all_version [POST]
 func (c ConfigHistory) GetAllVersion(ctx context.Context, req domain.IdRequest) ([]domain.ConfigVersion, error) {
 	versions, err := c.service.GetAllVersions(ctx, req.Id)
-	if err != nil {
+	switch {
+	case errors.Is(err, entity.ErrConfigNotFound):
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeConfigNotFound,
+			"config not found",
+			err,
+		)
+	case err != nil:
 		return nil, apierrors.NewInternalServiceError(err)
+	default:
+		return versions, nil
 	}
-	return versions, nil
 }
 
 // DeleteConfigVersion
