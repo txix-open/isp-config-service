@@ -236,6 +236,17 @@ func (c Config) DeleteConfigs(ctx context.Context, identities []string) (*domain
 	}
 }
 
+// UpdateConfigName
+// @Summary Метод переименования объекта конфигурации
+// @Description Изменеяет название конфигурации без повышения версии и без рассылки события
+// @Tags Конфигурация
+// @Accept json
+// @Produce json
+// @Param body body domain.UpdateConfigNameRequest true "старое и новое название конфигурации"
+// @Success 200
+// @Failure 400 {object} apierrors.Error "`errorCode: 2002` - конфиг не найден<br/>"
+// @Failure 500 {object} apierrors.Error
+// @Router /config/update_config_name [POST]
 func (c Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) error {
 	err := c.service.UpdateConfigName(ctx, req)
 	switch {
