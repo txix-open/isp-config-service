@@ -26,6 +26,6 @@ type CreateUpdateConfigRequest struct {
 }
 
 type UpdateConfigNameRequest struct {
-	OldConfigName string `validate:"required"`
+	ConfigId      string `validate:"required"`
 	NewConfigName string `validate:"required"`
 }

@@ -60,7 +60,7 @@ func (s ConfigHistory) GetAllVersions(ctx context.Context, configId string) ([]d
 		ConfigId:      actualCfg.Id,
 		ConfigVersion: actualCfg.Version,
 		Data:          actualCfg.Data,
-		CreatedAt:     time.Time(actualCfg.CreatedAt),
+		CreatedAt:     time.Time(actualCfg.UpdatedAt),
 	})
 
 	for _, version := range versions {

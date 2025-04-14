@@ -242,7 +242,7 @@ func (c Config) DeleteConfigs(ctx context.Context, identities []string) (*domain
 // @Tags Конфигурация
 // @Accept json
 // @Produce json
-// @Param body body domain.UpdateConfigNameRequest true "старое и новое название конфигурации"
+// @Param body body domain.UpdateConfigNameRequest true "id конфигурации и новое название"
 // @Success 200
 // @Failure 400 {object} apierrors.Error "`errorCode: 2002` - конфиг не найден<br/>"
 // @Failure 500 {object} apierrors.Error

@@ -207,7 +207,7 @@ func (r Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNam
 		Set("name", req.NewConfigName).
 		Set("updated_at", squirrel.Expr("unixepoch()")).
 		Where(squirrel.Eq{
-			"name": req.OldConfigName,
+			"id": req.ConfigId,
 		}).
 		ToSql()
 	if err != nil {

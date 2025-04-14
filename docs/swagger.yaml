@@ -176,13 +176,13 @@ definitions:
     type: object
   domain.UpdateConfigNameRequest:
     properties:
+      configId:
+        type: string
       newConfigName:
         type: string
-      oldConfigName:
-        type: string
     required:
+    - configId
     - newConfigName
-    - oldConfigName
     type: object
   domain.UpdateVariableRequest:
     properties:
@@ -515,7 +515,7 @@ paths:
       description: Изменеяет название конфигурации без повышения версии и без рассылки
         события
       parameters:
-      - description: старое и новое название конфигурации
+      - description: id конфигурации и новое название
         in: body
         name: body
         required: true
