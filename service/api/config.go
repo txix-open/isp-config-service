@@ -6,6 +6,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/txix-open/go-cmp/cmp"
+	"github.com/txix-open/isp-kit/json"
 	"github.com/txix-open/isp-kit/log"
 	"github.com/xeipuuv/gojsonschema"
 	"isp-config-service/domain"
@@ -144,7 +146,11 @@ func (c Config) CreateUpdateConfig(
 		return nil, entity.ErrConfigNotFound
 	}
 
-	if oldConfig.Name == req.Name && isEqualData(oldConfig.Data, req.Data) {
+	isMatch, err := isEqualConfigs(oldConfig, req)
+	if err != nil {
+		return nil, errors.WithMessage(err, "compare data configs")
+	}
+	if isMatch {
 		c.logger.Info(ctx, "no changes in config; skip update")
 		result := configToDto(*oldConfig, nil)
 		return &result, nil
@@ -391,16 +397,22 @@ func validateConfig(config []byte, schema []byte) (map[string]string, error) {
 	return details, nil
 }
 
-func isEqualData(oldData, reqData []byte) bool {
-	if len(oldData) != len(reqData) {
-		return false
+func isEqualConfigs(oldConfig *entity.Config, reqConfig domain.CreateUpdateConfigRequest) (bool, error) {
+	if oldConfig.Name != reqConfig.Name {
+		return false, nil
 	}
 
-	for i := range oldData {
-		if oldData[i] != reqData[i] {
-			return false
-		}
+	oldDataMap := make(map[string]any)
+	err := json.Unmarshal(oldConfig.Data, &oldDataMap)
+	if err != nil {
+		return false, errors.WithMessage(err, "unmarshal actual config data")
 	}
 
-	return true
+	reqDataMap := make(map[string]any)
+	err = json.Unmarshal(reqConfig.Data, &reqDataMap)
+	if err != nil {
+		return false, errors.WithMessage(err, "unmarshal request config data")
+	}
+
+	return cmp.Equal(oldDataMap, reqDataMap), nil
 }
