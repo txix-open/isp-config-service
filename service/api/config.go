@@ -254,7 +254,7 @@ func (c Config) DeleteConfig(ctx context.Context, configId string) error {
 func (c Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) error {
 	exist, err := c.configRepo.UpdateConfigName(ctx, req)
 	if err != nil {
-		return errors.WithMessage(err, "update config")
+		return errors.WithMessage(err, "update config name")
 	}
 	if !exist {
 		return entity.ErrConfigNotFound
