@@ -176,12 +176,12 @@ definitions:
     type: object
   domain.UpdateConfigNameRequest:
     properties:
-      configId:
+      id:
         type: string
       newConfigName:
         type: string
     required:
-    - configId
+    - id
     - newConfigName
     type: object
   domain.UpdateVariableRequest:
