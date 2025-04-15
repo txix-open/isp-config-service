@@ -144,6 +144,7 @@ func (l Locator) Config() *Config {
 		eventRepo,
 		configHistoryApiService,
 		variableService,
+		l.logger,
 	)
 	configApiController := api.NewConfig(configApiService)
 

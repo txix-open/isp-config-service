@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/log"
 	"github.com/xeipuuv/gojsonschema"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
@@ -43,6 +44,7 @@ type Config struct {
 	eventRepo            EventRepo
 	configHistoryService ConfigHistoryService
 	variableService      VariableService
+	logger               log.Logger
 }
 
 func NewConfig(
@@ -52,6 +54,7 @@ func NewConfig(
 	eventRepo EventRepo,
 	configHistoryService ConfigHistoryService,
 	variableService VariableService,
+	logger log.Logger,
 ) Config {
 	return Config{
 		configRepo:           configRepo,
@@ -60,6 +63,7 @@ func NewConfig(
 		eventRepo:            eventRepo,
 		configHistoryService: configHistoryService,
 		variableService:      variableService,
+		logger:               logger,
 	}
 }
 
@@ -138,6 +142,12 @@ func (c Config) CreateUpdateConfig(
 	}
 	if oldConfig == nil {
 		return nil, entity.ErrConfigNotFound
+	}
+
+	if oldConfig.Name == req.Name && isEqualData(oldConfig.Data, req.Data) {
+		c.logger.Info(ctx, "no changes in config; skip update")
+		result := configToDto(*oldConfig, nil)
+		return &result, nil
 	}
 
 	config := entity.Config{
@@ -361,4 +371,18 @@ func validateConfig(config []byte, schema []byte) (map[string]string, error) {
 		details[resultError.Field()] = resultError.Description()
 	}
 	return details, nil
+}
+
+func isEqualData(oldData, reqData []byte) bool {
+	if len(oldData) != len(reqData) {
+		return false
+	}
+
+	for i := range oldData {
+		if oldData[i] != reqData[i] {
+			return false
+		}
+	}
+
+	return true
 }
