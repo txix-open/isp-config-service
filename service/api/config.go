@@ -263,6 +263,24 @@ func (c Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNam
 	return nil
 }
 
+func (c Config) SyncConfig(ctx context.Context, moduleName string) error {
+	modules, err := c.moduleRepo.GetByNames(ctx, []string{moduleName})
+	if err != nil {
+		return errors.WithMessage(err, "get config by module name")
+	}
+	if len(modules) == 0 {
+		return entity.ErrModuleNotFound
+	}
+
+	moduleId := modules[0].Id
+	err = c.emitChangeActiveConfigEvent(ctx, moduleId)
+	if err != nil {
+		return errors.WithMessage(err, "emit change active config event")
+	}
+
+	return nil
+}
+
 func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (*domain.Config, error) {
 	config := entity.Config{
 		Id:       uuid.NewString(),

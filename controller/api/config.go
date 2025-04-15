@@ -21,6 +21,7 @@ type ConfigService interface {
 	MarkConfigAsActive(ctx context.Context, configId string) error
 	DeleteConfig(ctx context.Context, id string) error
 	UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) error
+	SyncConfig(ctx context.Context, moduleName string) error
 }
 
 type Config struct {
@@ -254,6 +255,33 @@ func (c Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNam
 		return apierrors.NewBusinessError(
 			domain.ErrorCodeConfigNotFound,
 			"config not found",
+			err,
+		)
+	case err != nil:
+		return apierrors.NewInternalServiceError(err)
+	default:
+		return nil
+	}
+}
+
+// SyncConfig
+// @Summary Метод синхронизации актуальной конфигурации пришедешего модуля
+// @Description Метод синхронизации актуальной конфигурации пришедешего модуля
+// @Tags Конфигурация
+// @Accept json
+// @Produce json
+// @Param body body domain.SyncConfigRequest true "название модуля"
+// @Success 200 {object} domain.Config
+// @Failure 400 {object} apierrors.Error "`errorCode: 2001` - модуль не найден<br/>`errorCode: 2002` - конфиг не найден"
+// @Failure 500 {object} apierrors.Error
+// @Router /config/sync_config [POST]
+func (c Config) SyncConfig(ctx context.Context, req domain.SyncConfigRequest) error {
+	err := c.service.SyncConfig(ctx, req.ModuleName)
+	switch {
+	case errors.Is(err, entity.ErrModuleNotFound):
+		return apierrors.NewBusinessError(
+			domain.ErrorCodeModuleNotFound,
+			"module not found",
 			err,
 		)
 	case err != nil:

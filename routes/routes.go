@@ -111,6 +111,10 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 			Inner:   true,
 			Handler: c.ConfigApi.DeleteConfigs,
 		}, {
+			Path:    "config/config/sync_config",
+			Inner:   true,
+			Handler: c.ConfigApi.SyncConfig,
+		}, {
 			Path:    "config/config/get_all_version",
 			Inner:   true,
 			Handler: c.ConfigHistoryApi.GetAllVersion,

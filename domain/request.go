@@ -29,3 +29,7 @@ type UpdateConfigNameRequest struct {
 	Id            string `validate:"required"`
 	NewConfigName string `validate:"required"`
 }
+
+type SyncConfigRequest struct {
+	ModuleName string `validate:"required"`
+}
