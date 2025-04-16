@@ -93,6 +93,13 @@ definitions:
     - moduleId
     - name
     type: object
+  domain.CreateUpdateConfigResponse:
+    properties:
+      config:
+        $ref: '#/definitions/domain.Config'
+      isChanged:
+        type: boolean
+    type: object
   domain.CreateVariableRequest:
     properties:
       description:
@@ -286,7 +293,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.Config'
+            $ref: '#/definitions/domain.CreateUpdateConfigResponse'
         "400":
           description: '`errorCode: 2003` - конфиг не соотвествует текущей схеме<br/>`errorCode:
             2002` - указанного id не сущесвует<br/>`errorCode: 2004` - кто-то уже

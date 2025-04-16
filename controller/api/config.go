@@ -16,7 +16,7 @@ import (
 type ConfigService interface {
 	GetActiveConfigByModuleName(ctx context.Context, moduleName string) (*domain.Config, error)
 	GetConfigsByModuleId(ctx context.Context, moduleId string) ([]domain.Config, error)
-	CreateUpdateConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (*domain.Config, error)
+	CreateUpdateConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (*domain.CreateUpdateConfigResponse, error)
 	GetConfigById(ctx context.Context, configId string) (*domain.Config, error)
 	MarkConfigAsActive(ctx context.Context, configId string) error
 	DeleteConfig(ctx context.Context, id string) error
@@ -96,7 +96,7 @@ func (c Config) GetConfigsByModuleId(ctx context.Context, req domain.GetByModule
 // @Accept json
 // @Produce json
 // @Param body body domain.CreateUpdateConfigRequest true "объект для сохранения"
-// @Success 200 {object} domain.Config
+// @Success 200 {object} domain.CreateUpdateConfigResponse
 // @Failure 400 {object} apierrors.Error "`errorCode: 2003` - конфиг не соотвествует текущей схеме<br/>`errorCode: 2002` - указанного id не сущесвует<br/>`errorCode: 2004` - кто-то уже обновил конфигурацию<br/>`errorCode: 2005` - схема конфигурации не найдена<br/>"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/create_update_config [POST]
@@ -104,14 +104,14 @@ func (c Config) CreateUpdateConfig(
 	ctx context.Context,
 	authData grpc.AuthData,
 	req domain.CreateUpdateConfigRequest,
-) (*domain.Config, error) {
+) (*domain.CreateUpdateConfigResponse, error) {
 	adminIdValue, _ := grpc.StringFromMd("x-admin-id", metadata.MD(authData))
 	var adminId int
 	if adminIdValue != "" {
 		adminId, _ = strconv.Atoi(adminIdValue)
 	}
 
-	config, err := c.service.CreateUpdateConfig(ctx, adminId, req)
+	resp, err := c.service.CreateUpdateConfig(ctx, adminId, req)
 
 	var validationError domain.ConfigValidationError
 	switch {
@@ -146,7 +146,7 @@ func (c Config) CreateUpdateConfig(
 	case err != nil:
 		return nil, apierrors.NewInternalServiceError(err)
 	default:
-		return config, nil
+		return resp, nil
 	}
 }
 

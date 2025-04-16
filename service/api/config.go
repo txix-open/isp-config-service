@@ -121,7 +121,7 @@ func (c Config) CreateUpdateConfig(
 	ctx context.Context,
 	adminId int,
 	req domain.CreateUpdateConfigRequest,
-) (*domain.Config, error) {
+) (*domain.CreateUpdateConfigResponse, error) {
 	if !req.Unsafe {
 		err := c.validateConfigUpdate(ctx, req.ModuleId, req.Data)
 		if err != nil {
@@ -130,7 +130,9 @@ func (c Config) CreateUpdateConfig(
 	}
 
 	if req.Id == "" {
-		return c.insertNewConfig(ctx, adminId, req)
+		newConfig, err := c.insertNewConfig(ctx, adminId, req)
+		return &domain.CreateUpdateConfigResponse{
+			Config: newConfig, IsChanged: true}, err
 	}
 
 	variableExtractionResult, err := c.extractAndCheckVariables(ctx, req.Id, req.Data)
@@ -152,8 +154,7 @@ func (c Config) CreateUpdateConfig(
 	}
 	if isMatch {
 		c.logger.Info(ctx, "no changes in config; skip update")
-		result := configToDto(*oldConfig, nil)
-		return &result, nil
+		return &domain.CreateUpdateConfigResponse{Config: configToDto(*oldConfig, nil), IsChanged: false}, nil
 	}
 
 	config := entity.Config{
@@ -175,7 +176,6 @@ func (c Config) CreateUpdateConfig(
 	if err != nil {
 		return nil, errors.WithMessage(err, "change config history")
 	}
-
 	err = c.variableService.SaveVariableLinks(ctx, config.Id, variableExtractionResult.VariableLinks)
 	if err != nil {
 		return nil, errors.WithMessage(err, "save variable links")
@@ -196,8 +196,8 @@ func (c Config) CreateUpdateConfig(
 		Version:  req.Version + 1,
 		Active:   oldConfig.Active,
 	}
-	result := configToDto(newConfig, nil)
-	return &result, nil
+	return &domain.CreateUpdateConfigResponse{
+		Config: configToDto(newConfig, nil), IsChanged: true}, nil
 }
 
 func (c Config) GetConfigById(ctx context.Context, configId string) (*domain.Config, error) {
@@ -287,7 +287,7 @@ func (c Config) SyncConfig(ctx context.Context, moduleName string) error {
 	return nil
 }
 
-func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (*domain.Config, error) {
+func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (domain.Config, error) {
 	config := entity.Config{
 		Id:       uuid.NewString(),
 		Name:     req.Name,
@@ -299,20 +299,20 @@ func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.Cre
 	}
 	err := c.configRepo.Insert(ctx, config)
 	if err != nil {
-		return nil, errors.WithMessage(err, "insert new config")
+		return domain.Config{}, errors.WithMessage(err, "insert new config")
 	}
 
 	extractResult, err := c.extractAndCheckVariables(ctx, config.Id, config.Data)
 	if err != nil {
-		return nil, err
+		return domain.Config{}, err
 	}
 	err = c.variableService.SaveVariableLinks(ctx, config.Id, extractResult.VariableLinks)
 	if err != nil {
-		return nil, errors.WithMessage(err, "save variable links")
+		return domain.Config{}, errors.WithMessage(err, "save variable links")
 	}
 
 	result := configToDto(config, nil)
-	return &result, nil
+	return result, nil
 }
 
 func (c Config) extractAndCheckVariables(ctx context.Context, configId string, input []byte) (*domain.VariableExtractionResult, error) {

@@ -10,6 +10,11 @@ type DeleteResponse struct {
 	Deleted int
 }
 
+type CreateUpdateConfigResponse struct {
+	IsChanged bool
+	Config    Config
+}
+
 type ModuleInfo struct {
 	Id                 string
 	Name               string
