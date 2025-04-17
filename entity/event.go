@@ -32,6 +32,7 @@ func (e Event) Key() string {
 	}
 }
 
+// nolint:tagliatelle
 type EventPayload struct {
 	ConfigUpdated      *PayloadConfigUpdated      `json:",omitempty"`
 	ModuleReady        *PayloadModuleReady        `json:",omitempty"`

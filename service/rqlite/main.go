@@ -7,10 +7,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/rqlite/rqlite-disco-clients/dns"
-	"github.com/rqlite/rqlite-disco-clients/dnssrv"
-	"github.com/txix-open/isp-kit/config"
 	"log"
 	"net"
 	"os"
@@ -19,6 +15,11 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/rqlite/rqlite-disco-clients/dns"
+	"github.com/rqlite/rqlite-disco-clients/dnssrv"
+	"github.com/txix-open/isp-kit/config"
 
 	"github.com/rqlite/rqlite/v8/auth"
 	"github.com/rqlite/rqlite/v8/cluster"

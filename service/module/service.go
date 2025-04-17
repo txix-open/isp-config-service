@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/txix-open/etp/v4"
@@ -14,7 +16,6 @@ import (
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
 	"isp-config-service/helpers"
-	"strings"
 )
 
 const (
