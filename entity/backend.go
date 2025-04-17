@@ -5,6 +5,7 @@ import (
 	"isp-config-service/entity/xtypes"
 )
 
+// nolint: tagliatelle
 type Backend struct {
 	WsConnectionId      string                                    `json:"ws_connection_id"`
 	ModuleId            string                                    `json:"module_id"`

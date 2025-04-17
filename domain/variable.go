@@ -1,8 +1,9 @@
 package domain
 
 import (
-	"isp-config-service/entity"
 	"time"
+
+	"isp-config-service/entity"
 )
 
 type Variable struct {

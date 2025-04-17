@@ -4,6 +4,7 @@ import (
 	"isp-config-service/entity/xtypes"
 )
 
+// nolint:tagliatelle
 type Module struct {
 	Id                 string       `json:"id"`
 	Name               string       `json:"name"`

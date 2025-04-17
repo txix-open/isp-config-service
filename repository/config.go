@@ -3,8 +3,10 @@ package repository
 import (
 	"context"
 	"fmt"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
+	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
 	"isp-config-service/middlewares/sql_metrics"
@@ -196,4 +198,30 @@ func (r Config) GetMetaByVariables(ctx context.Context, variables []string) (map
 	}
 
 	return result, nil
+}
+
+func (r Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) (bool, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Config.UpdateConfigName")
+
+	query, args, err := squirrel.Update(Table("config")).
+		Set("name", req.NewConfigName).
+		Where(squirrel.Eq{
+			"id": req.Id,
+		}).
+		ToSql()
+	if err != nil {
+		return false, errors.WithMessage(err, "build query")
+	}
+
+	result, err := r.db.Exec(ctx, query, args...)
+	if err != nil {
+		return false, errors.WithMessagef(err, "exec: %s", query)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, errors.WithMessage(err, "get rows affected")
+	}
+
+	return affected > 0, nil
 }

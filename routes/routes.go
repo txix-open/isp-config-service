@@ -1,9 +1,10 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/txix-open/etp/v4"
 	"isp-config-service/conf"
-	"net/http"
 
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/grpc"
@@ -63,6 +64,7 @@ func HttpHandler(etpSrv *etp.Server, conf conf.Local, rqliteProxy http.Handler) 
 	return httpMux
 }
 
+// nolint:funlen
 func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 	return []cluster.EndpointDescriptor{
 		// modules
@@ -101,9 +103,17 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 			Inner:   true,
 			Handler: c.ConfigApi.MarkConfigAsActive,
 		}, {
+			Path:    "config/config/update_config_name",
+			Inner:   true,
+			Handler: c.ConfigApi.UpdateConfigName,
+		}, {
 			Path:    "config/config/delete_config",
 			Inner:   true,
 			Handler: c.ConfigApi.DeleteConfigs,
+		}, {
+			Path:    "config/config/sync",
+			Inner:   true,
+			Handler: c.ConfigApi.SyncConfig,
 		}, {
 			Path:    "config/config/get_all_version",
 			Inner:   true,

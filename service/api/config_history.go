@@ -3,9 +3,10 @@ package api
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/txix-open/isp-kit/log"
-	"time"
 
 	"github.com/pkg/errors"
 	"isp-config-service/domain"
@@ -20,18 +21,21 @@ type ConfigHistoryRepo interface {
 }
 
 type ConfigHistory struct {
+	configRepo   ConfigRepo
 	repo         ConfigHistoryRepo
 	keepVersions int
 	logger       log.Logger
 }
 
 func NewConfigHistory(
+	configRepo ConfigRepo,
 	repo ConfigHistoryRepo,
 	keepVersions int,
 	logger log.Logger,
 ) ConfigHistory {
 	return ConfigHistory{
 		repo:         repo,
+		configRepo:   configRepo,
 		keepVersions: keepVersions,
 		logger:       logger,
 	}
@@ -42,8 +46,23 @@ func (s ConfigHistory) GetAllVersions(ctx context.Context, configId string) ([]d
 	if err != nil {
 		return nil, errors.WithMessage(err, "get config versions")
 	}
+	actualCfg, err := s.configRepo.GetById(ctx, configId)
+	if err != nil {
+		return nil, errors.WithMessage(err, "get actual config by id")
+	}
+	if actualCfg == nil {
+		return nil, entity.ErrConfigNotFound
+	}
 
-	result := make([]domain.ConfigVersion, 0, len(versions))
+	result := make([]domain.ConfigVersion, 0, len(versions)+1)
+	result = append(result, domain.ConfigVersion{
+		Id:            uuid.NewString(),
+		ConfigId:      actualCfg.Id,
+		ConfigVersion: actualCfg.Version,
+		Data:          actualCfg.Data,
+		CreatedAt:     time.Time(actualCfg.UpdatedAt),
+	})
+
 	for _, version := range versions {
 		result = append(result, domain.ConfigVersion{
 			Id:            version.Id,
@@ -67,11 +86,12 @@ func (s ConfigHistory) Delete(ctx context.Context, id string) error {
 
 func (s ConfigHistory) OnUpdateConfig(ctx context.Context, oldConfig entity.Config) error {
 	history := entity.ConfigHistory{
-		Id:       uuid.NewString(),
-		ConfigId: oldConfig.Id,
-		Data:     oldConfig.Data,
-		Version:  oldConfig.Version,
-		AdminId:  oldConfig.AdminId,
+		Id:        uuid.NewString(),
+		ConfigId:  oldConfig.Id,
+		Data:      oldConfig.Data,
+		Version:   oldConfig.Version,
+		AdminId:   oldConfig.AdminId,
+		CreatedAt: oldConfig.UpdatedAt,
 	}
 	err := s.repo.Insert(ctx, history)
 	if err != nil {

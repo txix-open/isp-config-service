@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
+
 	"github.com/rqlite/rqlite/v8/auth"
 	"github.com/txix-open/isp-kit/http/httpcli"
-	"time"
 
 	"github.com/pkg/errors"
 	_ "github.com/rqlite/gorqlite/stdlib"

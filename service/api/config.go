@@ -6,6 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/txix-open/go-cmp/cmp"
+	"github.com/txix-open/isp-kit/json"
+	"github.com/txix-open/isp-kit/log"
 	"github.com/xeipuuv/gojsonschema"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
@@ -20,6 +23,7 @@ type ConfigRepo interface {
 	Insert(ctx context.Context, cfg entity.Config) error
 	UpdateByVersion(ctx context.Context, cfg entity.Config) (bool, error)
 	SetActive(ctx context.Context, configId string, active xtypes.Bool) error
+	UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) (bool, error)
 }
 
 type EventRepo interface {
@@ -42,6 +46,7 @@ type Config struct {
 	eventRepo            EventRepo
 	configHistoryService ConfigHistoryService
 	variableService      VariableService
+	logger               log.Logger
 }
 
 func NewConfig(
@@ -51,6 +56,7 @@ func NewConfig(
 	eventRepo EventRepo,
 	configHistoryService ConfigHistoryService,
 	variableService VariableService,
+	logger log.Logger,
 ) Config {
 	return Config{
 		configRepo:           configRepo,
@@ -59,6 +65,7 @@ func NewConfig(
 		eventRepo:            eventRepo,
 		configHistoryService: configHistoryService,
 		variableService:      variableService,
+		logger:               logger,
 	}
 }
 
@@ -114,7 +121,7 @@ func (c Config) CreateUpdateConfig(
 	ctx context.Context,
 	adminId int,
 	req domain.CreateUpdateConfigRequest,
-) (*domain.Config, error) {
+) (*domain.CreateUpdateConfigResponse, error) {
 	if !req.Unsafe {
 		err := c.validateConfigUpdate(ctx, req.ModuleId, req.Data)
 		if err != nil {
@@ -123,7 +130,9 @@ func (c Config) CreateUpdateConfig(
 	}
 
 	if req.Id == "" {
-		return c.insertNewConfig(ctx, adminId, req)
+		newConfig, err := c.insertNewConfig(ctx, adminId, req)
+		return &domain.CreateUpdateConfigResponse{
+			Config: newConfig, IsChanged: true}, err
 	}
 
 	variableExtractionResult, err := c.extractAndCheckVariables(ctx, req.Id, req.Data)
@@ -137,6 +146,15 @@ func (c Config) CreateUpdateConfig(
 	}
 	if oldConfig == nil {
 		return nil, entity.ErrConfigNotFound
+	}
+
+	isMatch, err := isEqualConfigs(oldConfig, req)
+	if err != nil {
+		return nil, errors.WithMessage(err, "compare data configs")
+	}
+	if isMatch {
+		c.logger.Info(ctx, "no changes in config; skip update")
+		return &domain.CreateUpdateConfigResponse{Config: configToDto(*oldConfig, nil), IsChanged: false}, nil
 	}
 
 	config := entity.Config{
@@ -158,7 +176,6 @@ func (c Config) CreateUpdateConfig(
 	if err != nil {
 		return nil, errors.WithMessage(err, "change config history")
 	}
-
 	err = c.variableService.SaveVariableLinks(ctx, config.Id, variableExtractionResult.VariableLinks)
 	if err != nil {
 		return nil, errors.WithMessage(err, "save variable links")
@@ -179,8 +196,8 @@ func (c Config) CreateUpdateConfig(
 		Version:  req.Version + 1,
 		Active:   oldConfig.Active,
 	}
-	result := configToDto(newConfig, nil)
-	return &result, nil
+	return &domain.CreateUpdateConfigResponse{
+		Config: configToDto(newConfig, nil), IsChanged: true}, nil
 }
 
 func (c Config) GetConfigById(ctx context.Context, configId string) (*domain.Config, error) {
@@ -240,7 +257,37 @@ func (c Config) DeleteConfig(ctx context.Context, configId string) error {
 	return nil
 }
 
-func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (*domain.Config, error) {
+func (c Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) error {
+	exist, err := c.configRepo.UpdateConfigName(ctx, req)
+	if err != nil {
+		return errors.WithMessage(err, "update config name")
+	}
+	if !exist {
+		return entity.ErrConfigNotFound
+	}
+
+	return nil
+}
+
+func (c Config) SyncConfig(ctx context.Context, moduleName string) error {
+	modules, err := c.moduleRepo.GetByNames(ctx, []string{moduleName})
+	if err != nil {
+		return errors.WithMessage(err, "get config by module name")
+	}
+	if len(modules) == 0 {
+		return entity.ErrModuleNotFound
+	}
+
+	moduleId := modules[0].Id
+	err = c.emitChangeActiveConfigEvent(ctx, moduleId)
+	if err != nil {
+		return errors.WithMessage(err, "emit change active config event")
+	}
+
+	return nil
+}
+
+func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (domain.Config, error) {
 	config := entity.Config{
 		Id:       uuid.NewString(),
 		Name:     req.Name,
@@ -252,20 +299,20 @@ func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.Cre
 	}
 	err := c.configRepo.Insert(ctx, config)
 	if err != nil {
-		return nil, errors.WithMessage(err, "insert new config")
+		return domain.Config{}, errors.WithMessage(err, "insert new config")
 	}
 
 	extractResult, err := c.extractAndCheckVariables(ctx, config.Id, config.Data)
 	if err != nil {
-		return nil, err
+		return domain.Config{}, err
 	}
 	err = c.variableService.SaveVariableLinks(ctx, config.Id, extractResult.VariableLinks)
 	if err != nil {
-		return nil, errors.WithMessage(err, "save variable links")
+		return domain.Config{}, errors.WithMessage(err, "save variable links")
 	}
 
 	result := configToDto(config, nil)
-	return &result, nil
+	return result, nil
 }
 
 func (c Config) extractAndCheckVariables(ctx context.Context, configId string, input []byte) (*domain.VariableExtractionResult, error) {
@@ -348,4 +395,24 @@ func validateConfig(config []byte, schema []byte) (map[string]string, error) {
 		details[resultError.Field()] = resultError.Description()
 	}
 	return details, nil
+}
+
+func isEqualConfigs(oldConfig *entity.Config, reqConfig domain.CreateUpdateConfigRequest) (bool, error) {
+	if oldConfig.Name != reqConfig.Name {
+		return false, nil
+	}
+
+	oldDataMap := make(map[string]any)
+	err := json.Unmarshal(oldConfig.Data, &oldDataMap)
+	if err != nil {
+		return false, errors.WithMessage(err, "unmarshal actual config data")
+	}
+
+	reqDataMap := make(map[string]any)
+	err = json.Unmarshal(reqConfig.Data, &reqDataMap)
+	if err != nil {
+		return false, errors.WithMessage(err, "unmarshal request config data")
+	}
+
+	return cmp.Equal(oldDataMap, reqDataMap), nil
 }

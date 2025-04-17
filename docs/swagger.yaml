@@ -93,6 +93,29 @@ definitions:
     - moduleId
     - name
     type: object
+  domain.CreateUpdateConfigResponse:
+    properties:
+      active:
+        type: boolean
+      createdAt:
+        type: string
+      data:
+        type: object
+      id:
+        type: string
+      isChanged:
+        type: boolean
+      moduleId:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+      valid:
+        type: boolean
+      version:
+        type: integer
+    type: object
   domain.CreateVariableRequest:
     properties:
       description:
@@ -100,6 +123,9 @@ definitions:
       name:
         type: string
       type:
+        enum:
+        - SECRET
+        - TEXT
         type: string
       value:
         type: string
@@ -171,6 +197,23 @@ definitions:
           $ref: '#/definitions/domain.Connection'
         type: array
     type: object
+  domain.SyncConfigRequest:
+    properties:
+      moduleName:
+        type: string
+    required:
+    - moduleName
+    type: object
+  domain.UpdateConfigNameRequest:
+    properties:
+      id:
+        type: string
+      newConfigName:
+        type: string
+    required:
+    - id
+    - newConfigName
+    type: object
   domain.UpdateVariableRequest:
     properties:
       description:
@@ -189,11 +232,16 @@ definitions:
         type: string
       name:
         type: string
+      type:
+        enum:
+        - SECRET
+        - TEXT
+        type: string
       value:
         type: string
     required:
-    - description
     - name
+    - type
     - value
     type: object
   domain.Variable:
@@ -261,7 +309,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.Config'
+            $ref: '#/definitions/domain.CreateUpdateConfigResponse'
         "400":
           description: '`errorCode: 2003` - конфиг не соотвествует текущей схеме<br/>`errorCode:
             2002` - указанного id не сущесвует<br/>`errorCode: 2004` - кто-то уже
@@ -490,6 +538,66 @@ paths:
       summary: Метод активации конфигурации для модуля
       tags:
       - Конфигурация
+  /config/sync_config:
+    post:
+      consumes:
+      - application/json
+      description: Метод синхронизации актуальной конфигурации пришедешего модуля
+      parameters:
+      - description: название модуля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.SyncConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Config'
+        "400":
+          description: '`errorCode: 2001` - модуль не найден<br/>`errorCode: 2002`
+            - конфиг не найден'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод синхронизации актуальной конфигурации пришедешего модуля
+      tags:
+      - Конфигурация
+  /config/update_config_name:
+    post:
+      consumes:
+      - application/json
+      description: Изменеяет название конфигурации без повышения версии и без рассылки
+        события
+      parameters:
+      - description: id конфигурации и новое название
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateConfigNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: '`errorCode: 2002` - конфиг не найден<br/>'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод переименования объекта конфигурации
+      tags:
+      - Конфигурация
   /module/delete_module:
     post:
       consumes:
@@ -628,8 +736,6 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            $ref: '#/definitions/domain.Variable'
         "400":
           description: '`errorCode: 2007` - переменная с таким именем уже существует<br/>'
           schema:
@@ -716,8 +822,6 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            $ref: '#/definitions/domain.Variable'
         "400":
           description: '`errorCode: 2006` - переменная по имени не найдена<br/>'
           schema:

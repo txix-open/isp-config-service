@@ -2,6 +2,7 @@ package rqlite
 
 import (
 	"bytes"
+
 	"github.com/pkg/errors"
 	"github.com/rqlite/rqlite/v8/auth"
 	"github.com/txix-open/isp-kit/json"

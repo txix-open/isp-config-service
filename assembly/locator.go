@@ -2,13 +2,14 @@ package assembly
 
 import (
 	"context"
-	"isp-config-service/conf"
-	"isp-config-service/service/module/backend"
-	"isp-config-service/service/variable"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"time"
+
+	"isp-config-service/conf"
+	"isp-config-service/service/module/backend"
+	"isp-config-service/service/variable"
 
 	"github.com/txix-open/etp/v4"
 	"github.com/txix-open/isp-kit/grpc"
@@ -130,7 +131,7 @@ func (l Locator) Config() *Config {
 	)
 	moduleController := controller.NewModule(moduleService, l.logger)
 
-	configHistoryApiService := apisvs.NewConfigHistory(configHistoryRepo, l.cfg.Local.KeepConfigVersions, l.logger)
+	configHistoryApiService := apisvs.NewConfigHistory(configRepo, configHistoryRepo, l.cfg.Local.KeepConfigVersions, l.logger)
 	configHistoryController := api.NewConfigHistory(configHistoryApiService)
 
 	moduleApiService := apisvs.NewModule(moduleRepo, backendRepo, configSchemaRepo)
@@ -143,6 +144,7 @@ func (l Locator) Config() *Config {
 		eventRepo,
 		configHistoryApiService,
 		variableService,
+		l.logger,
 	)
 	configApiController := api.NewConfig(configApiService)
 

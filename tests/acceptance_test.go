@@ -20,7 +20,7 @@ import (
 	"isp-config-service/service/startup"
 )
 
-//nolint:funlen
+//nolint:funlen,paralleltest
 func TestAcceptance(t *testing.T) {
 	require := require.New(t)
 	logger := setupTest(t)
