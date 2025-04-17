@@ -12,7 +12,7 @@ type DeleteResponse struct {
 
 type CreateUpdateConfigResponse struct {
 	IsChanged bool
-	Config    Config
+	Config
 }
 
 type ModuleInfo struct {

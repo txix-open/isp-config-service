@@ -95,10 +95,26 @@ definitions:
     type: object
   domain.CreateUpdateConfigResponse:
     properties:
-      config:
-        $ref: '#/definitions/domain.Config'
+      active:
+        type: boolean
+      createdAt:
+        type: string
+      data:
+        type: object
+      id:
+        type: string
       isChanged:
         type: boolean
+      moduleId:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+      valid:
+        type: boolean
+      version:
+        type: integer
     type: object
   domain.CreateVariableRequest:
     properties:
