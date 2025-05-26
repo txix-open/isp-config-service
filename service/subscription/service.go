@@ -147,6 +147,25 @@ func (s Service) NotifyBackendsChanged(ctx context.Context, moduleId string) err
 	return s.notifyBackendsChanged(ctx, moduleId, module.Name, conns)
 }
 
+func (s Service) SubscribeToRoutingChanges(ctx context.Context, conn *etp.Conn) error {
+	err := s.notifyRoutingChanged(ctx, cluster.ConfigSendRoutesWhenConnected, []*etp.Conn{conn})
+	if err != nil {
+		return errors.WithMessage(err, "notify routing changed")
+	}
+
+	s.rooms.Join(conn, RoutingChangingRoom())
+
+	return nil
+}
+
+func (s Service) NotifyRoutingChanged(ctx context.Context) error {
+	conns := s.rooms.ToBroadcast(RoutingChangingRoom())
+	if len(conns) == 0 {
+		return nil
+	}
+	return s.notifyRoutingChanged(ctx, cluster.ConfigSendRoutesChanged, conns)
+}
+
 func (s Service) notifyBackendsChanged(
 	ctx context.Context,
 	moduleId string,
@@ -171,25 +190,6 @@ func (s Service) notifyBackendsChanged(
 	s.emitModuleConnectedEvent(ctx, conns, moduleName, addresses)
 
 	return nil
-}
-
-func (s Service) SubscribeToRoutingChanges(ctx context.Context, conn *etp.Conn) error {
-	err := s.notifyRoutingChanged(ctx, cluster.ConfigSendRoutesWhenConnected, []*etp.Conn{conn})
-	if err != nil {
-		return errors.WithMessage(err, "notify routing changed")
-	}
-
-	s.rooms.Join(conn, RoutingChangingRoom())
-
-	return nil
-}
-
-func (s Service) NotifyRoutingChanged(ctx context.Context) error {
-	conns := s.rooms.ToBroadcast(RoutingChangingRoom())
-	if len(conns) == 0 {
-		return nil
-	}
-	return s.notifyRoutingChanged(ctx, cluster.ConfigSendRoutesChanged, conns)
 }
 
 func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns []*etp.Conn) error {
