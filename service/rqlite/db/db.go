@@ -83,7 +83,7 @@ func (d Adapter) SelectRow(ctx context.Context, ptr any, query string, args ...a
 		return err
 	}
 
-	body, _ := httpResp.Body()
+	body, _ := httpResp.UnsafeBody()
 	rows := gjson.GetBytes(body, "results.0.rows")
 	elems := rows.Array()
 	if len(elems) == 0 {

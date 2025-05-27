@@ -273,7 +273,7 @@ definitions:
   github_com_txix-open_isp-kit_grpc_apierrors.Error:
     properties:
       details:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       errorCode:
         type: integer
