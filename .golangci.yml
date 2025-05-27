@@ -1,52 +1,69 @@
+version: "2"
 run:
   allow-parallel-runners: true
-issues:
-  exclude-rules:
-    - path: controller #достаточное кол-во контекса на уровне контроллеров
-      linters:
-        - wrapcheck
-    - path: transaction #транзакции прозрачны
-      linters:
-        - wrapcheck
 linters:
-  enable-all: true
+  default: all
   disable:
-    - goimports #у нас собственные правила форматирования импортов
-    - wsl #расставление пробелов очень индивидуально
-    - varnamelen #очень индивидуально (db)
-    - exhaustruct #не имеет смысла
-    - contextcheck #не имеет смысла
-    - gci #у нас собственные правила форматирования импортов
-    - gofumpt #у нас собственные правила форматирования импортов
-    - nolintlint #Goland все равно форматирует с отступом
-    - nlreturn #не всегда имеет смысл
-    - godot #не актуально для свагера
-    - godox #не позволяет оставлять todo
-    - depguard #не всегда имеет смысл
-    - dupword #не имеет смысла
-    - tagalign #не всегда имеет смысл
-    - musttag #у нас собственные правило: не используем теги, если работаем с пакетом isp-kit/json и с внутренними структурами(между нашими сервисами), при этом теги обязательный для всех внених для нас структур
-    - perfsprint #мнимая производительность в угоду читаемости
-    - tenv #устарел
+    - contextcheck # не имеет смысла
+    - depguard # не всегда имеет смысл
+    - dupword # не имеет смысла
+    - exhaustruct # не имеет смысла
+    - godot # не актуально для swagger
+    - godox # не позволяет оставлять todo
     - gomoddirectives
-linters-settings:
-  funlen:
-    lines: 80
-  lll:
-    line-length: 150
-  cyclop:
-    max-complexity: 15 #по умолчанию 10 мало
-  revive:
+    - musttag # у нас собственное правило: не используем теги, если работаем с пакетом isp-kit/json и с внутренними структурами(между нашими сервисами), при этом теги обязательный для всех внешних для нас структур
+    - nlreturn # не всегда имеет смысл
+    - nolintlint # Goland все равно форматирует с отступом
+    - perfsprint # мнимая производительность в угоду читаемости
+    - tagalign # не всегда имеет смысл
+    - varnamelen # очень индивидуально (db)
+    - wsl # расставление пробелов очень индивидуально
+  settings:
+    cyclop:
+      max-complexity: 15 # по умолчанию 10 мало
+    funlen:
+      lines: 80
+    lll:
+      line-length: 150
+    revive:
+      rules:
+        - name: var-naming # отключаем Id -> ID
+          disabled: true
+    staticcheck:
+      checks: # отключаем Id -> ID
+        - -ST1000
+        - -ST1016
+        - -ST1020
+        - -ST1021
+        - -ST1022
+    testifylint:
+      disable:
+        - compares
+        - equal-values
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: var-naming #отключаем Id -> ID
-        disabled: true
-  stylecheck:
-    checks: #отключаем Id -> ID
-      - "-ST1000"
-      - "-ST1016"
-      - "-ST1020"
-      - "-ST1021"
-      - "-ST1022"
-  testifylint:
-    disable:
-      - compares
+      - linters:
+          - wrapcheck
+        path: controller # достаточное кол-во контекста на уровне контроллеров
+      - linters:
+          - wrapcheck
+        path: transaction # транзакции прозрачны
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
