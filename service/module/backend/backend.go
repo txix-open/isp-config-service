@@ -53,18 +53,25 @@ func (s Backend) Connect(
 	moduleId string,
 	declaration cluster.BackendDeclaration,
 ) (*entity.Backend, error) {
-	backend := entity.Backend{
-		WsConnectionId:      connId,
-		ModuleId:            moduleId,
-		Address:             fmt.Sprintf("%s:%s", declaration.Address.IP, declaration.Address.Port),
-		Version:             declaration.Version,
-		LibVersion:          declaration.LibVersion,
-		ModuleName:          declaration.ModuleName,
-		ConfigServiceNodeId: s.nodeId,
-		Endpoints:           xtypes.Json[[]cluster.EndpointDescriptor]{Value: declaration.Endpoints},
-		RequiredModules:     xtypes.Json[[]cluster.ModuleDependency]{Value: declaration.RequiredModules},
-		CreatedAt:           xtypes.Time{},
+	var metricsAd *xtypes.Json[cluster.MetricsAutodiscovery]
+	if declaration.MetricsAutodiscovery != nil {
+		metricsAd = &xtypes.Json[cluster.MetricsAutodiscovery]{Value: *declaration.MetricsAutodiscovery}
 	}
+
+	backend := entity.Backend{
+		WsConnectionId:       connId,
+		ModuleId:             moduleId,
+		Address:              fmt.Sprintf("%s:%s", declaration.Address.IP, declaration.Address.Port),
+		Version:              declaration.Version,
+		LibVersion:           declaration.LibVersion,
+		ModuleName:           declaration.ModuleName,
+		ConfigServiceNodeId:  s.nodeId,
+		Endpoints:            xtypes.Json[[]cluster.EndpointDescriptor]{Value: declaration.Endpoints},
+		RequiredModules:      xtypes.Json[[]cluster.ModuleDependency]{Value: declaration.RequiredModules},
+		CreatedAt:            xtypes.Time{},
+		MetricsAutodiscovery: metricsAd,
+	}
+
 	err := s.backendRepo.Insert(ctx, backend)
 	if err != nil {
 		return nil, errors.WithMessage(err, "upsert backend in store")
