@@ -30,8 +30,6 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
-RUN mkdir -p /app/data && chown 10001:10001 /app/data
-
 USER appuser
 
 WORKDIR /app
