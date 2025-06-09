@@ -69,6 +69,7 @@ func TestVariableAcceptance(t *testing.T) {
 		"10.2.9.1",
 		configWithVars{},
 		[]byte(defaultRemoteConfigsWithVariables),
+		nil,
 		logger,
 	)
 	go func() {

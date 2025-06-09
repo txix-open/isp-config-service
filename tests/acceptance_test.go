@@ -1,3 +1,4 @@
+// nolint:ireturn
 package tests_test
 
 import (
@@ -125,7 +126,7 @@ func newClusterClient(
 	logger log.Logger,
 ) *cluster.Client {
 	t.Helper()
-	return newClusterClientWith(t, moduleName, host, testModuleRemoteConfig{}, []byte("{}"), logger)
+	return newClusterClientWith(t, moduleName, host, testModuleRemoteConfig{}, []byte("{}"), nil, logger)
 }
 
 func newClusterClientWith(
@@ -134,6 +135,7 @@ func newClusterClientWith(
 	host string,
 	config any,
 	defaultRemoteConfig []byte,
+	metricsAd *cluster.MetricsAutodiscovery,
 	logger log.Logger,
 ) *cluster.Client {
 	t.Helper()
@@ -150,7 +152,8 @@ func newClusterClientWith(
 			IP:   host,
 			Port: "9999",
 		},
-		Endpoints: nil,
+		Endpoints:            nil,
+		MetricsAutodiscovery: metricsAd,
 	}, cluster.ConfigData{
 		Version: "1.0.0",
 		Schema:  schemaData,
@@ -162,7 +165,6 @@ func newClusterClientWith(
 	return cli
 }
 
-//nolint:ireturn
 func setupTest(t *testing.T) log.Logger {
 	t.Helper()
 	require := require.New(t)
