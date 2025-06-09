@@ -36,3 +36,6 @@ rqlite:
   FKConstraints: true
   AutoVacInterval: 12h
   JoinAs: default
+
+metricsAutodiscovery:
+  enable: true
