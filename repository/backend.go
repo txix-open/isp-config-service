@@ -27,10 +27,10 @@ func (r Backend) Insert(ctx context.Context, backend entity.Backend) error {
 	query, args, err := squirrel.Insert(Table("backend")).
 		Columns("ws_connection_id", "module_id", "address",
 			"version", "lib_version", "module_name", "config_service_node_id",
-			"endpoints", "required_modules").
+			"endpoints", "required_modules", "metrics_autodiscovery").
 		Values(backend.WsConnectionId, backend.ModuleId, backend.Address,
 			backend.Version, backend.LibVersion, backend.ModuleName, backend.ConfigServiceNodeId,
-			backend.Endpoints, backend.RequiredModules,
+			backend.Endpoints, backend.RequiredModules, backend.MetricsAutodiscovery,
 		).
 		ToSql()
 	if err != nil {
@@ -139,6 +139,24 @@ func (r Backend) GetByModuleId(ctx context.Context, moduleId string) ([]entity.B
 	err = r.db.Select(ctx, &result, query, args...)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+
+	return result, nil
+}
+
+func (r Backend) AllMetricsAutodiscovery(ctx context.Context) ([]entity.MetricsAdWrapper, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.AllMetricsAutodiscovery")
+
+	result := make([]entity.MetricsAdWrapper, 0)
+	query := fmt.Sprintf(`
+		SELECT metrics_autodiscovery FROM %s
+		WHERE metrics_autodiscovery IS NOT NULL
+        ORDER BY module_name, created_at DESC`,
+		Table("backend"),
+	)
+	err := r.db.Select(ctx, &result, query)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select %s", query)
 	}
 
 	return result, nil

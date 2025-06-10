@@ -1,3 +1,7 @@
+## v3.4.0
+* добавлено поле `metrics_autodiscovery` в таблицу `isp_config_service__backend`
+* реализован внутренний метод `/internal/metrics/autodiscovery`, формирующий конфигурацию для `HTTP-based service discovery` механизма `Prometheus` 
+* обновлены зависимости
 ## v3.3.1
 * добавлен скрипт для сборки и публикации образа в `GitHub Contaier Registry`
 * обновлены зависимости

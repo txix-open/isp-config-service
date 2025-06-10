@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"time"
 
+	httpEndpoint "github.com/txix-open/isp-kit/http/endpoint"
+	"github.com/txix-open/isp-kit/http/endpoint/httplog"
 	"isp-config-service/conf"
 	"isp-config-service/service/module/backend"
 	"isp-config-service/service/variable"
@@ -22,6 +24,7 @@ import (
 	"isp-config-service/routes"
 	apisvs "isp-config-service/service/api"
 	"isp-config-service/service/event"
+	"isp-config-service/service/metrics"
 	"isp-config-service/service/module"
 	"isp-config-service/service/rqlite/db"
 	"isp-config-service/service/subscription"
@@ -72,6 +75,7 @@ func NewLocator(
 type Config struct {
 	GrpcMux                   *grpc.Mux
 	HttpMux                   http.Handler
+	MetricsAdHandler          http.Handler
 	EtpSrv                    *etp.Server
 	HandleEventWorker         *worker.Worker
 	CleanEventWorker          *worker.Worker
@@ -178,10 +182,15 @@ func (l Locator) Config() *Config {
 	cleanerJob := event.NewCleaner(eventRepo, l.leaderChecker, eventTtl, l.logger)
 	cleanEventWorker := worker.New(cleanerJob, worker.WithInterval(cleanEventInterval))
 
+	metricsSvc := metrics.New(backendRepo)
+	metricsController := controller.NewMetrics(metricsSvc)
+	httpWrapper := httpEndpoint.DefaultWrapper(l.logger, httplog.Log(l.logger, false))
+
 	return &Config{
 		GrpcMux:                   grpcMux,
 		EtpSrv:                    etpSrv,
 		HttpMux:                   httpMux,
+		MetricsAdHandler:          httpWrapper.Endpoint(metricsController.Autodiscovery),
 		HandleEventWorker:         handleEventWorker,
 		CleanEventWorker:          cleanEventWorker,
 		CleanPhantomBackendWorker: cleanPhantomBackendWorker,

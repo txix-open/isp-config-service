@@ -132,6 +132,7 @@ func (s *Service) Run(ctx context.Context) error {
 	s.locatorConfig = assembly.NewLocator(db, s.rqlite, cfg, s.logger).Config()
 	s.grpcSrv.Upgrade(s.locatorConfig.GrpcMux)
 	s.httpSrv.Upgrade(s.locatorConfig.HttpMux)
+	s.boot.InfraServer.Handle("/internal/metrics/autodiscovery", s.locatorConfig.MetricsAdHandler)
 
 	s.locatorConfig.HandleEventWorker.Run(ctx)
 	s.locatorConfig.CleanEventWorker.Run(ctx)

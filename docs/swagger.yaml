@@ -197,6 +197,17 @@ definitions:
           $ref: '#/definitions/domain.Connection'
         type: array
     type: object
+  domain.PrometheusTargets:
+    properties:
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      targets:
+        items:
+          type: string
+        type: array
+    type: object
   domain.SyncConfigRequest:
     properties:
       moduleName:
@@ -271,6 +282,16 @@ definitions:
     - name
     type: object
   github_com_txix-open_isp-kit_grpc_apierrors.Error:
+    properties:
+      details:
+        additionalProperties: {}
+        type: object
+      errorCode:
+        type: integer
+      errorMessage:
+        type: string
+    type: object
+  github_com_txix-open_isp-kit_http_apierrors.Error:
     properties:
       details:
         additionalProperties: {}
@@ -598,6 +619,27 @@ paths:
       summary: Метод переименования объекта конфигурации
       tags:
       - Конфигурация
+  /internal/metrics/autodiscovery:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.PrometheusTargets'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_http_apierrors.Error'
+      summary: Метод получения конфигурации для HTTP-based service discovery механизма
+        Prometheus
+      tags:
+      - Метрики
   /module/delete_module:
     post:
       consumes:
