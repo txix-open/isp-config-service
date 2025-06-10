@@ -33,3 +33,10 @@ type UpdateConfigNameRequest struct {
 type SyncConfigRequest struct {
 	ModuleName string `validate:"required"`
 }
+
+type PrometheusTargets struct {
+	Targets []string
+	Labels  map[string]string
+}
+
+type AutodiscoveryResponse []PrometheusTargets
