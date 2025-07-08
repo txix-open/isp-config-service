@@ -255,10 +255,6 @@ func (s Service) ExtractVariables(ctx context.Context, configId string, input []
 }
 
 func (s Service) SaveVariableLinks(ctx context.Context, configId string, links []entity.ConfigHasVariable) error {
-	if len(links) == 0 {
-		return nil
-	}
-
 	err := s.repo.UpsertLinks(ctx, configId, links)
 	if err != nil {
 		return errors.WithMessage(err, "upsert links")

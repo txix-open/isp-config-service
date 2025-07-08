@@ -48,8 +48,8 @@ func (r ConfigHistory) Insert(ctx context.Context, history entity.ConfigHistory)
 	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigHistory.Insert")
 
 	query, args, err := squirrel.Insert(Table("config_history")).
-		Columns("id", "config_id", "data", "version", "admin_id").
-		Values(history.Id, history.ConfigId, history.Data, history.Version, history.AdminId).
+		Columns("id", "config_id", "data", "version", "admin_id", "created_at").
+		Values(history.Id, history.ConfigId, history.Data, history.Version, history.AdminId, history.CreatedAt).
 		ToSql()
 	if err != nil {
 		return errors.WithMessage(err, "build query")

@@ -10,7 +10,7 @@ RUN go build -ldflags="-X 'main.version=$version_env'" -o /main .
 WORKDIR cmd/migrate
 RUN CGO_ENABLED=1 go build -o /migrate .
 
-FROM alpine:3.21
+FROM alpine:3.22
 
 RUN apk add --no-cache tzdata
 RUN cp /usr/share/zoneinfo/Europe/Moscow /etc/localtime
