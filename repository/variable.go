@@ -146,6 +146,7 @@ func (r Variable) UpsertLinks(ctx context.Context, configId string, links []enti
 	requests := [][]any{
 		db.Request(deleteQuery, args...),
 	}
+
 	for _, variable := range links {
 		query, args, err := squirrel.Insert(Table("config_has_variable")).
 			Columns("config_id", "variable_name").
