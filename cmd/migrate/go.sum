@@ -151,6 +151,7 @@ github.com/txix-open/etp/v4 v4.0.1/go.mod h1:FIu7TUDdwcgmtmF6tFTV1bGA2fRY/iVaPQd
 github.com/txix-open/isp-kit v1.52.1 h1:OjwfUNL50RyhEedFc7ZI+X6YXg47yF88bQyfghbbyag=
 github.com/txix-open/isp-kit v1.52.1/go.mod h1:OkscabRkpFGjUOFrbPM7yTKD/Br2/iv5/PWr/T2Jtd4=
 github.com/txix-open/isp-kit v1.54.0/go.mod h1:sVUjen989u4yz5SYAZ4LRCQzRfwlU/uJ5ogiU31zmks=
+github.com/txix-open/isp-kit v1.54.1/go.mod h1:sVUjen989u4yz5SYAZ4LRCQzRfwlU/uJ5ogiU31zmks=
 github.com/txix-open/validator/v10 v10.0.0-20250506161033-f8ce404fffdb h1:UJgT4u/QMv5QHKOQeJ7igShHa36c2/vIRqJiRLdDlf0=
 github.com/txix-open/validator/v10 v10.0.0-20250506161033-f8ce404fffdb/go.mod h1:0biAFE0bgbcKeBBAwgEDhbZz6uT1vuSETCrFQlv2RiA=
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=
