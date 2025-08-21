@@ -73,7 +73,7 @@ func TestVariableAcceptance(t *testing.T) {
 		logger,
 	)
 	go func() {
-		handler := cluster.NewEventHandler().RemoteConfigReceiverWithTimeout(eventHandler, 5*time.Second)
+		handler := cluster.NewEventHandler().RemoteConfigReceiver(eventHandler)
 		err := clientA1.Run(t.Context(), handler)
 		require.NoError(err) //nolint:testifylint
 	}()
