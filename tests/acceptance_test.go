@@ -158,7 +158,7 @@ func newClusterClientWith(
 		Version: "1.0.0",
 		Schema:  schemaData,
 		Config:  defaultRemoteConfig,
-	}, []string{"127.0.0.1:9001"}, logger)
+	}, []string{"127.0.0.1:9001"}, 5*time.Second, logger)
 	t.Cleanup(func() {
 		_ = cli.Close()
 	})
