@@ -3,15 +3,17 @@ package api
 import (
 	"context"
 
-	"github.com/pkg/errors"
-	"github.com/txix-open/isp-kit/grpc/apierrors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
+
+	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/grpc/apierrors"
 )
 
 type ConfigHistoryService interface {
 	GetAllVersions(ctx context.Context, configId string) ([]domain.ConfigVersion, error)
 	Delete(ctx context.Context, id string) error
+	Purge(ctx context.Context, configId string, keepVersions int) (int, error)
 }
 
 type ConfigHistory struct {
@@ -69,5 +71,26 @@ func (c ConfigHistory) DeleteConfigVersion(ctx context.Context, req domain.IdReq
 	}
 	return &domain.DeleteResponse{
 		Deleted: 1,
+	}, nil
+}
+
+// PurgeConfigVersions
+// @Summary Метод удаления всех версий конфигурации, за исключением n последних
+// @Description Возвращает количество удаленных версий
+// @Tags Конфигурация
+// @Accept json
+// @Produce json
+// @Param body body domain.PurgeConfigVersionsRequest true "id конфигурации, количество оставленных версий конфигурации"
+// @Success 200 {object} domain.DeleteResponse
+// @Failure 400 {object} apierrors.Error "не указан массив идентификаторов"
+// @Failure 500 {object} apierrors.Error
+// @Router /config/purge_versions [POST]
+func (c ConfigHistory) PurgeConfigVersions(ctx context.Context, req domain.PurgeConfigVersionsRequest) (*domain.DeleteResponse, error) {
+	deleted, err := c.service.Purge(ctx, req.ConfigId, req.KeepVersions)
+	if err != nil {
+		return nil, apierrors.NewInternalServiceError(err)
+	}
+	return &domain.DeleteResponse{
+		Deleted: deleted,
 	}, nil
 }

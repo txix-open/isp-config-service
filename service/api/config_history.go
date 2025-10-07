@@ -8,9 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/txix-open/isp-kit/log"
 
-	"github.com/pkg/errors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
+
+	"github.com/pkg/errors"
 )
 
 type ConfigHistoryRepo interface {
@@ -82,6 +83,16 @@ func (s ConfigHistory) Delete(ctx context.Context, id string) error {
 		return errors.WithMessage(err, "delete config version")
 	}
 	return nil
+}
+
+func (s ConfigHistory) Purge(ctx context.Context, configId string, keepVersions int) (int, error) {
+	deletedCount, err := s.repo.DeleteOld(ctx, configId, keepVersions)
+	if err != nil {
+		return 0, errors.WithMessage(err, "delete old config versions")
+	}
+
+	s.logger.Debug(ctx, fmt.Sprintf("delete '%d' old config versions", deletedCount))
+	return deletedCount, nil
 }
 
 func (s ConfigHistory) OnUpdateConfig(ctx context.Context, oldConfig entity.Config) error {
