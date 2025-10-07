@@ -13,7 +13,7 @@ import (
 type ConfigHistoryService interface {
 	GetAllVersions(ctx context.Context, configId string) ([]domain.ConfigVersion, error)
 	Delete(ctx context.Context, id string) error
-	Purge(ctx context.Context, configId string, keepVersions int) (int, error)
+	Purge(ctx context.Context, moduleName string, keepVersions int) (map[string]int, error)
 }
 
 type ConfigHistory struct {
@@ -75,22 +75,20 @@ func (c ConfigHistory) DeleteConfigVersion(ctx context.Context, req domain.IdReq
 }
 
 // PurgeConfigVersions
-// @Summary Метод удаления всех версий конфигурации, за исключением n последних
-// @Description Возвращает количество удаленных версий
+// @Summary Метод удаления старых версий всех конфигураций модуля, оставляет keepVersions последних версий каждой конфигурации
+// @Description Возвращает количество удаленных версий каждой конфигурации
 // @Tags Конфигурация
 // @Accept json
 // @Produce json
-// @Param body body domain.PurgeConfigVersionsRequest true "id конфигурации, количество оставленных версий конфигурации"
+// @Param body body domain.PurgeConfigVersionsRequest true "Название модуля, количество оставленных версий конфигурации"
 // @Success 200 {object} domain.DeleteResponse
 // @Failure 400 {object} apierrors.Error "не указан массив идентификаторов"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/purge_versions [POST]
-func (c ConfigHistory) PurgeConfigVersions(ctx context.Context, req domain.PurgeConfigVersionsRequest) (*domain.DeleteResponse, error) {
-	deleted, err := c.service.Purge(ctx, req.ConfigId, req.KeepVersions)
+func (c ConfigHistory) PurgeConfigVersions(ctx context.Context, req domain.PurgeConfigVersionsRequest) (map[string]int, error) {
+	result, err := c.service.Purge(ctx, req.ModuleName, req.KeepVersions)
 	if err != nil {
 		return nil, apierrors.NewInternalServiceError(err)
 	}
-	return &domain.DeleteResponse{
-		Deleted: deleted,
-	}, nil
+	return result, nil
 }

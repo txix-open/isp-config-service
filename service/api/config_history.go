@@ -23,6 +23,7 @@ type ConfigHistoryRepo interface {
 
 type ConfigHistory struct {
 	configRepo   ConfigRepo
+	moduleRepo   ModuleRepo
 	repo         ConfigHistoryRepo
 	keepVersions int
 	logger       log.Logger
@@ -30,12 +31,14 @@ type ConfigHistory struct {
 
 func NewConfigHistory(
 	configRepo ConfigRepo,
+	moduleRepo ModuleRepo,
 	repo ConfigHistoryRepo,
 	keepVersions int,
 	logger log.Logger,
 ) ConfigHistory {
 	return ConfigHistory{
 		repo:         repo,
+		moduleRepo:   moduleRepo,
 		configRepo:   configRepo,
 		keepVersions: keepVersions,
 		logger:       logger,
@@ -85,14 +88,32 @@ func (s ConfigHistory) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s ConfigHistory) Purge(ctx context.Context, configId string, keepVersions int) (int, error) {
-	deletedCount, err := s.repo.DeleteOld(ctx, configId, keepVersions)
+func (s ConfigHistory) Purge(ctx context.Context, moduleName string, keepVersions int) (map[string]int, error) {
+	modules, err := s.moduleRepo.GetByNames(ctx, []string{moduleName})
 	if err != nil {
-		return 0, errors.WithMessage(err, "delete old config versions")
+		return nil, errors.WithMessage(err, "get config by module name")
+	}
+	if len(modules) == 0 {
+		return nil, entity.ErrModuleNotFound
 	}
 
-	s.logger.Debug(ctx, fmt.Sprintf("delete '%d' old config versions", deletedCount))
-	return deletedCount, nil
+	configs, err := s.configRepo.GetByModuleId(ctx, modules[0].Id)
+	if err != nil {
+		return nil, errors.WithMessage(err, "get configs by module id")
+	}
+
+	result := make(map[string]int)
+	for _, config := range configs {
+		deletedCount, err := s.repo.DeleteOld(ctx, config.Id, keepVersions)
+		if err != nil {
+			return nil, errors.WithMessage(err, "delete old config")
+		}
+		s.logger.Debug(ctx, fmt.Sprintf("delete '%d' old version of config '%s'", deletedCount, config.Id))
+
+		result[config.Id] = deletedCount
+	}
+
+	return result, nil
 }
 
 func (s ConfigHistory) OnUpdateConfig(ctx context.Context, oldConfig entity.Config) error {

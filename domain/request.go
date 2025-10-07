@@ -9,7 +9,7 @@ type IdRequest struct {
 }
 
 type PurgeConfigVersionsRequest struct {
-	ConfigId     string `validate:"required"`
+	ModuleName   string `validate:"required"`
 	KeepVersions int    `validate:"required"`
 }
 

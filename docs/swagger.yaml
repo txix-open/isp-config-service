@@ -210,13 +210,13 @@ definitions:
     type: object
   domain.PurgeConfigVersionsRequest:
     properties:
-      configId:
-        type: string
       keepVersions:
         type: integer
+      moduleName:
+        type: string
     required:
-    - configId
     - keepVersions
+    - moduleName
     type: object
   domain.SyncConfigRequest:
     properties:
@@ -573,9 +573,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает количество удаленных версий
+      description: Возвращает количество удаленных версий каждой конфигурации
       parameters:
-      - description: id конфигурации, количество оставленных версий конфигурации
+      - description: Название модуля, количество оставленных версий конфигурации
         in: body
         name: body
         required: true
@@ -596,7 +596,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
-      summary: Метод удаления всех версий конфигурации, за исключением n последних
+      summary: Метод удаления старых версий всех конфигураций модуля, оставляет keepVersions
+        последних версий каждой конфигурации
       tags:
       - Конфигурация
   /config/sync_config:
