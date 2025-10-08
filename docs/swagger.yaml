@@ -587,9 +587,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.DeleteResponse'
+            additionalProperties:
+              type: integer
+            type: object
         "400":
-          description: не указан массив идентификаторов
+          description: '`errorCode: 2001` - модуль не найден'
           schema:
             $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
         "500":

@@ -81,14 +81,22 @@ func (c ConfigHistory) DeleteConfigVersion(ctx context.Context, req domain.IdReq
 // @Accept json
 // @Produce json
 // @Param body body domain.PurgeConfigVersionsRequest true "Название модуля, количество оставленных версий конфигурации"
-// @Success 200 {object} domain.DeleteResponse
-// @Failure 400 {object} apierrors.Error "не указан массив идентификаторов"
+// @Success 200 {object} map[string]int
+// @Failure 400 {object} apierrors.Error "`errorCode: 2001` - модуль не найден"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/purge_versions [POST]
 func (c ConfigHistory) PurgeConfigVersions(ctx context.Context, req domain.PurgeConfigVersionsRequest) (map[string]int, error) {
 	result, err := c.service.Purge(ctx, req.ModuleName, req.KeepVersions)
-	if err != nil {
+	switch {
+	case errors.Is(err, entity.ErrModuleNotFound):
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeModuleNotFound,
+			"module not found",
+			err,
+		)
+	case err != nil:
 		return nil, apierrors.NewInternalServiceError(err)
+	default:
+		return result, nil
 	}
-	return result, nil
 }
