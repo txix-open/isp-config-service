@@ -7,17 +7,13 @@ import (
 	"net/url"
 	"time"
 
-	httpEndpoint "github.com/txix-open/isp-kit/http/endpoint"
-	"github.com/txix-open/isp-kit/http/endpoint/httplog"
 	"isp-config-service/conf"
 	"isp-config-service/service/module/backend"
 	"isp-config-service/service/variable"
 
-	"github.com/txix-open/etp/v4"
-	"github.com/txix-open/isp-kit/grpc"
-	"github.com/txix-open/isp-kit/grpc/endpoint"
-	"github.com/txix-open/isp-kit/log"
-	"github.com/txix-open/isp-kit/worker"
+	httpEndpoint "github.com/txix-open/isp-kit/http/endpoint"
+	"github.com/txix-open/isp-kit/http/endpoint/httplog"
+
 	"isp-config-service/controller"
 	"isp-config-service/controller/api"
 	"isp-config-service/repository"
@@ -28,6 +24,12 @@ import (
 	"isp-config-service/service/module"
 	"isp-config-service/service/rqlite/db"
 	"isp-config-service/service/subscription"
+
+	"github.com/txix-open/etp/v4"
+	"github.com/txix-open/isp-kit/grpc"
+	"github.com/txix-open/isp-kit/grpc/endpoint"
+	"github.com/txix-open/isp-kit/log"
+	"github.com/txix-open/isp-kit/worker"
 )
 
 const (
@@ -135,7 +137,8 @@ func (l Locator) Config() *Config {
 	)
 	moduleController := controller.NewModule(moduleService, l.logger)
 
-	configHistoryApiService := apisvs.NewConfigHistory(configRepo, configHistoryRepo, l.cfg.Local.KeepConfigVersions, l.logger)
+	configHistoryApiService := apisvs.NewConfigHistory(configRepo, moduleRepo, configHistoryRepo,
+		l.cfg.Local.KeepConfigVersions, l.logger)
 	configHistoryController := api.NewConfigHistory(configHistoryApiService)
 
 	moduleApiService := apisvs.NewModule(moduleRepo, backendRepo, configSchemaRepo)

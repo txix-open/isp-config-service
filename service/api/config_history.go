@@ -8,9 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/txix-open/isp-kit/log"
 
-	"github.com/pkg/errors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
+
+	"github.com/pkg/errors"
 )
 
 type ConfigHistoryRepo interface {
@@ -22,6 +23,7 @@ type ConfigHistoryRepo interface {
 
 type ConfigHistory struct {
 	configRepo   ConfigRepo
+	moduleRepo   ModuleRepo
 	repo         ConfigHistoryRepo
 	keepVersions int
 	logger       log.Logger
@@ -29,12 +31,14 @@ type ConfigHistory struct {
 
 func NewConfigHistory(
 	configRepo ConfigRepo,
+	moduleRepo ModuleRepo,
 	repo ConfigHistoryRepo,
 	keepVersions int,
 	logger log.Logger,
 ) ConfigHistory {
 	return ConfigHistory{
 		repo:         repo,
+		moduleRepo:   moduleRepo,
 		configRepo:   configRepo,
 		keepVersions: keepVersions,
 		logger:       logger,
@@ -82,6 +86,34 @@ func (s ConfigHistory) Delete(ctx context.Context, id string) error {
 		return errors.WithMessage(err, "delete config version")
 	}
 	return nil
+}
+
+func (s ConfigHistory) Purge(ctx context.Context, moduleName string, keepVersions int) (map[string]int, error) {
+	modules, err := s.moduleRepo.GetByNames(ctx, []string{moduleName})
+	if err != nil {
+		return nil, errors.WithMessage(err, "get config by module name")
+	}
+	if len(modules) == 0 {
+		return nil, entity.ErrModuleNotFound
+	}
+
+	configs, err := s.configRepo.GetByModuleId(ctx, modules[0].Id)
+	if err != nil {
+		return nil, errors.WithMessage(err, "get configs by module id")
+	}
+
+	result := make(map[string]int)
+	for _, config := range configs {
+		deletedCount, err := s.repo.DeleteOld(ctx, config.Id, keepVersions)
+		if err != nil {
+			return nil, errors.WithMessage(err, "delete old config")
+		}
+		s.logger.Debug(ctx, fmt.Sprintf("delete '%d' old version of config '%s'", deletedCount, config.Id))
+
+		result[config.Id] = deletedCount
+	}
+
+	return result, nil
 }
 
 func (s ConfigHistory) OnUpdateConfig(ctx context.Context, oldConfig entity.Config) error {

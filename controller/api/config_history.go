@@ -3,15 +3,17 @@ package api
 import (
 	"context"
 
-	"github.com/pkg/errors"
-	"github.com/txix-open/isp-kit/grpc/apierrors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
+
+	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/grpc/apierrors"
 )
 
 type ConfigHistoryService interface {
 	GetAllVersions(ctx context.Context, configId string) ([]domain.ConfigVersion, error)
 	Delete(ctx context.Context, id string) error
+	Purge(ctx context.Context, moduleName string, keepVersions int) (map[string]int, error)
 }
 
 type ConfigHistory struct {
@@ -70,4 +72,31 @@ func (c ConfigHistory) DeleteConfigVersion(ctx context.Context, req domain.IdReq
 	return &domain.DeleteResponse{
 		Deleted: 1,
 	}, nil
+}
+
+// PurgeConfigVersions
+// @Summary Метод удаления старых версий всех конфигураций модуля, оставляет keepVersions последних версий каждой конфигурации
+// @Description Возвращает количество удаленных версий каждой конфигурации
+// @Tags Конфигурация
+// @Accept json
+// @Produce json
+// @Param body body domain.PurgeConfigVersionsRequest true "Название модуля, количество оставленных версий конфигурации"
+// @Success 200 {object} map[string]int
+// @Failure 400 {object} apierrors.Error "`errorCode: 2001` - модуль не найден"
+// @Failure 500 {object} apierrors.Error
+// @Router /config/purge_versions [POST]
+func (c ConfigHistory) PurgeConfigVersions(ctx context.Context, req domain.PurgeConfigVersionsRequest) (map[string]int, error) {
+	result, err := c.service.Purge(ctx, req.ModuleName, req.KeepVersions)
+	switch {
+	case errors.Is(err, entity.ErrModuleNotFound):
+		return nil, apierrors.NewBusinessError(
+			domain.ErrorCodeModuleNotFound,
+			"module not found",
+			err,
+		)
+	case err != nil:
+		return nil, apierrors.NewInternalServiceError(err)
+	default:
+		return result, nil
+	}
 }
