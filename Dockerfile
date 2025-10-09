@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine as builder
+FROM golang:1.25-alpine as builder
 WORKDIR /build
 ARG version
 ENV version_env=$version

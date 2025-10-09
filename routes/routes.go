@@ -3,16 +3,18 @@ package routes
 import (
 	"net/http"
 
-	"github.com/txix-open/etp/v4"
 	"isp-config-service/conf"
+
+	"github.com/txix-open/etp/v4"
+
+	"isp-config-service/controller"
+	"isp-config-service/controller/api"
+	mws "isp-config-service/middlewares"
 
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/grpc/endpoint"
 	"github.com/txix-open/isp-kit/log"
-	"isp-config-service/controller"
-	"isp-config-service/controller/api"
-	mws "isp-config-service/middlewares"
 )
 
 type Controllers struct {
@@ -122,6 +124,10 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 			Path:    "config/config/delete_version",
 			Inner:   true,
 			Handler: c.ConfigHistoryApi.DeleteConfigVersion,
+		}, {
+			Path:    "config/config/purge_versions",
+			Inner:   true,
+			Handler: c.ConfigHistoryApi.PurgeConfigVersions,
 		}, {
 			Path:    "config/schema/get_by_module_id",
 			Inner:   true,

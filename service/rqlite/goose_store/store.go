@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 
+	"isp-config-service/repository"
+
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3/database"
-	"isp-config-service/repository"
 )
 
 type Store struct {
@@ -30,7 +31,8 @@ func (s Store) Tablename() string {
 
 func (s Store) CreateVersionTable(ctx context.Context, db database.DBTxConn) error {
 	q := s.querier.CreateTable(s.tablename)
-	if _, err := s.db.ExecContext(ctx, q); err != nil {
+	_, err := s.db.ExecContext(ctx, q)
+	if err != nil {
 		return fmt.Errorf("failed to create version table %q: %w", s.tablename, err)
 	}
 	return nil
@@ -38,7 +40,8 @@ func (s Store) CreateVersionTable(ctx context.Context, db database.DBTxConn) err
 
 func (s Store) Insert(ctx context.Context, db database.DBTxConn, req database.InsertRequest) error {
 	q := s.querier.InsertVersion(s.tablename)
-	if _, err := s.db.ExecContext(ctx, q, req.Version, true); err != nil {
+	_, err := s.db.ExecContext(ctx, q, req.Version, true)
+	if err != nil {
 		return fmt.Errorf("failed to insert version %d: %w", req.Version, err)
 	}
 	return nil
@@ -46,7 +49,8 @@ func (s Store) Insert(ctx context.Context, db database.DBTxConn, req database.In
 
 func (s Store) Delete(ctx context.Context, db database.DBTxConn, version int64) error {
 	q := s.querier.DeleteVersion(s.tablename)
-	if _, err := s.db.ExecContext(ctx, q, version); err != nil {
+	_, err := s.db.ExecContext(ctx, q, version)
+	if err != nil {
 		return fmt.Errorf("failed to delete version %d: %w", version, err)
 	}
 	return nil
@@ -85,14 +89,16 @@ func (s Store) ListMigrations(ctx context.Context, db database.DBTxConn) ([]*dat
 		var result database.ListMigrationsResult
 		isApplied := float64(0)
 		version := float64(0)
-		if err := rows.Scan(&version, &isApplied); err != nil {
+		err = rows.Scan(&version, &isApplied)
+		if err != nil {
 			return nil, fmt.Errorf("failed to scan list migrations result: %w", err)
 		}
 		result.IsApplied = isApplied == 0
 		result.Version = int64(version)
 		migrations = append(migrations, &result)
 	}
-	if err := rows.Err(); err != nil {
+	err = rows.Err()
+	if err != nil {
 		return nil, errors.WithMessage(err, "fetch rows")
 	}
 	return migrations, nil

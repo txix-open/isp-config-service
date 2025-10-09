@@ -208,6 +208,16 @@ definitions:
           type: string
         type: array
     type: object
+  domain.PurgeConfigVersionsRequest:
+    properties:
+      keepVersions:
+        type: integer
+      moduleName:
+        type: string
+    required:
+    - keepVersions
+    - moduleName
+    type: object
   domain.SyncConfigRequest:
     properties:
       moduleName:
@@ -557,6 +567,39 @@ paths:
           schema:
             $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
       summary: Метод активации конфигурации для модуля
+      tags:
+      - Конфигурация
+  /config/purge_versions:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает количество удаленных версий каждой конфигурации
+      parameters:
+      - description: Название модуля, количество оставленных версий конфигурации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.PurgeConfigVersionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+        "400":
+          description: '`errorCode: 2001` - модуль не найден'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод удаления старых версий всех конфигураций модуля, оставляет keepVersions
+        последних версий каждой конфигурации
       tags:
       - Конфигурация
   /config/sync_config:

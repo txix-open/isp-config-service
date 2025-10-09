@@ -18,6 +18,7 @@ linters:
     - tagalign # не всегда имеет смысл
     - varnamelen # очень индивидуально (db)
     - wsl # расставление пробелов очень индивидуально
+    - wsl_v5
   settings:
     cyclop:
       max-complexity: 15 # по умолчанию 10 мало
