@@ -9,6 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"isp-config-service/conf"
+	"isp-config-service/domain"
+	"isp-config-service/service/startup"
+
 	"github.com/stretchr/testify/require"
 	"github.com/txix-open/isp-kit/bootstrap"
 	"github.com/txix-open/isp-kit/cluster"
@@ -16,9 +20,6 @@ import (
 	"github.com/txix-open/isp-kit/json"
 	"github.com/txix-open/isp-kit/log"
 	"github.com/txix-open/isp-kit/rc/schema"
-	"isp-config-service/conf"
-	"isp-config-service/domain"
-	"isp-config-service/service/startup"
 )
 
 //nolint:funlen,paralleltest
@@ -175,6 +176,7 @@ func setupTest(t *testing.T) log.Logger {
 	boot.MigrationsDir = "../migrations"
 	dataPath := dataDir(t)
 	boot.App.Config().Set("rqlite.DataPath", dataPath)
+	boot.App.Config().Set("backup.Enabled", false)
 	logger := boot.App.Logger()
 
 	startup, err := startup.New(boot)
