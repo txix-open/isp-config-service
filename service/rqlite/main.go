@@ -48,7 +48,7 @@ func init() {
 
 type localConfig struct {
 	Rqlite *Config
-	Backup *Backup
+	Backup Backup
 }
 
 func main(ctx context.Context, r *Rqlite) error {
@@ -189,7 +189,7 @@ func main(ctx context.Context, r *Rqlite) error {
 	log.Printf("connect using the command-line tool via 'rqlite -H %s -p %s'", h, p)
 
 	// Start any requested auto-backups
-	backupSrv, err := startAutoBackups(mainCtx, localCfg.Backup, str)
+	backupSrv, err := startAutoBackups(mainCtx, &localCfg.Backup, str)
 	if err != nil {
 		log.Fatalf("failed to start auto-backups: %s", err.Error())
 	}
@@ -238,6 +238,7 @@ func startAutoBackups(ctx context.Context, cfg *Backup, str *store.Store) (*back
 		return nil, nil
 	}
 
+	cfg.SetParams()
 	b, err := json.Marshal(cfg)
 	if err != nil {
 		return nil, errors.Errorf("failed to marshal auto-backup settings: %s", err.Error())
@@ -404,7 +405,7 @@ func startNodeMux(cfg *Config, ln net.Listener) (*tcp.Mux, error) {
 		mux, err = tcp.NewMux(ln, adv)
 	}
 	if err != nil {
-		return nil, errors.Errorf("failed to create node-to-node mux: %s", err.Error())
+		return nil, errors.WithMessage(err, "failed to create node-to-node mux")
 	}
 	go mux.Serve()
 	return mux, nil
@@ -434,13 +435,13 @@ func createClusterClient(cfg *Config, clstr *cluster.Service) (*cluster.Client, 
 		dialerTLSConfig, err = rtls.CreateClientConfig(cfg.NodeX509Cert, cfg.NodeX509Key,
 			cfg.NodeX509CACert, cfg.NodeVerifyServerName, cfg.NoNodeVerify)
 		if err != nil {
-			return nil, errors.Errorf("failed to create TLS config for cluster dialer: %s", err.Error())
+			return nil, errors.WithMessage(err, "failed to create TLS config for cluster dialer")
 		}
 	}
 	clstrDialer := tcp.NewDialer(cluster.MuxClusterHeader, dialerTLSConfig)
 	clstrClient := cluster.NewClient(clstrDialer, cfg.ClusterConnectTimeout)
 	if err := clstrClient.SetLocal(cfg.RaftAdv, clstr); err != nil {
-		return nil, errors.Errorf("failed to set cluster client local parameters: %s", err.Error())
+		return nil, errors.WithMessage(err, "failed to set cluster client local parameters")
 	}
 	return clstrClient, nil
 }
@@ -459,7 +460,7 @@ func createCluster(ctx context.Context, cfg *Config, hasPeers bool, client *clus
 		// Brand new node, told to bootstrap itself. So do it.
 		log.Println("bootstrapping single new node")
 		if err := str.Bootstrap(store.NewServer(str.ID(), cfg.RaftAdv, true)); err != nil {
-			return errors.Errorf("failed to bootstrap single new node: %s", err.Error())
+			return errors.WithMessage(err, "failed to bootstrap single new node")
 		}
 		return nil
 	}
@@ -477,7 +478,7 @@ func createCluster(ctx context.Context, cfg *Config, hasPeers bool, client *clus
 		// Explicit join operation requested, so do it.
 		j, err := joiner.Do(ctx, joins, str.ID(), cfg.RaftAdv, clusterSuf)
 		if err != nil {
-			return errors.Errorf("failed to join cluster: %s", err.Error())
+			return errors.WithMessage(err, "failed to join cluster")
 		}
 		log.Println("successfully joined cluster at", j)
 		return nil
@@ -516,14 +517,14 @@ func createCluster(ctx context.Context, cfg *Config, hasPeers bool, client *clus
 		if cfg.DiscoMode == DiscoModeDNS {
 			dnsCfg, err := dns.NewConfigFromReader(rc)
 			if err != nil {
-				return errors.Errorf("error reading DNS configuration: %s", err.Error())
+				return errors.WithMessage(err, "error reading DNS configuration")
 			}
 			provider = dns.NewWithPort(dnsCfg, cfg.RaftPort())
 
 		} else {
 			dnssrvCfg, err := dnssrv.NewConfigFromReader(rc)
 			if err != nil {
-				return errors.Errorf("error reading DNS configuration: %s", err.Error())
+				return errors.WithMessage(err, "error reading DNS configuration")
 			}
 			provider = dnssrv.New(dnssrvCfg)
 		}

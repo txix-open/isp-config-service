@@ -13,13 +13,13 @@ import (
 
 type BackupCleaner struct {
 	leaderChecker LeaderChecker
-	cfg           *rqlite.Backup
+	cfg           rqlite.Backup
 	logger        log.Logger
 }
 
 func NewBackupCleaner(
 	leaderChecker LeaderChecker,
-	cfg *rqlite.Backup,
+	cfg rqlite.Backup,
 	logger log.Logger,
 ) BackupCleaner {
 	return BackupCleaner{
@@ -66,7 +66,6 @@ func (c BackupCleaner) Do(ctx context.Context) {
 		}
 
 		deleted++
-		c.logger.Debug(ctx, fmt.Sprintf("delete backup %s", backups[i].Name()))
 	}
 
 	c.logger.Debug(ctx, fmt.Sprintf("delete %d old backups", deleted))

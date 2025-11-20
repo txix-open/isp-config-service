@@ -217,6 +217,12 @@ type Sub struct {
 	Name string
 }
 
+func (b *Backup) SetParams() {
+	b.Version = 1
+	b.Type = "file"
+	b.Timestamp = true
+}
+
 // Validate checks the configuration for internal consistency, and activates
 // important rqlite policies. It must be called at least once on a Config
 // object before the Config object is used. It is OK to call more than

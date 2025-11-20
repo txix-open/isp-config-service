@@ -14,7 +14,7 @@ type Local struct {
 	KeepConfigVersions       int    `validate:"required"`
 	InternalClientCredential string `validate:"required"`
 	Rqlite                   Rqlite
-	Backup                   *rqlite.Backup
+	Backup                   rqlite.Backup
 }
 
 type Rqlite struct {
