@@ -27,7 +27,8 @@ import (
 )
 
 const (
-	waitForLeaderTimeout = 30 * time.Second
+	waitForLeaderTimeout = 180 * time.Second
+	waitingLogsTimeout   = 30 * time.Second
 )
 
 type Service struct {
@@ -98,8 +99,11 @@ func (s *Service) Run(ctx context.Context) error {
 	}()
 	time.Sleep(1 * time.Second) // optimistically wait for store initialization
 
-	s.logger.Debug(ctx, fmt.Sprintf("waiting for cluster startup for %s...", waitForLeaderTimeout))
+	waitingCtx, stopWaiting := context.WithCancel(ctx)
+	go s.writeWaitingLogs(waitingCtx)
+
 	err := s.rqlite.WaitForLeader(waitForLeaderTimeout)
+	stopWaiting()
 	if err != nil {
 		return errors.WithMessage(err, "wait for leader")
 	}
@@ -229,4 +233,20 @@ func internalClientCredentials(cfg conf.Local) (*httpcli.BasicAuth, error) {
 		}
 	}
 	return nil, errors.Errorf("internal client credential '%s' not found", cfg.InternalClientCredential)
+}
+
+func (s *Service) writeWaitingLogs(ctx context.Context) {
+	s.logger.Debug(ctx, fmt.Sprintf("waiting for cluster startup for %s...", waitForLeaderTimeout))
+
+	t := time.NewTicker(waitingLogsTimeout)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			s.logger.Debug(ctx, fmt.Sprintf("continue waiting for cluster startup for %s...", waitForLeaderTimeout))
+		}
+	}
 }
