@@ -37,5 +37,17 @@ rqlite:
   AutoVacInterval: 12h
   JoinAs: default
 
+backup:
+  Enabled: true
+  Num: 10
+  Version: 1
+  Type: "file"
+  Interval: "2m"
+  ClearIntervalDays: 7
+  Timestamp: true
+  Sub:
+    Dir: "app/data/backups/rqlite"
+    Name: "backup.sqlite.gz"
+
 metricsAutodiscovery:
   enable: true

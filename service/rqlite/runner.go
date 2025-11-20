@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rqlite/rqlite/v8/auth"
+	"github.com/rqlite/rqlite/v9/auth"
 	"github.com/txix-open/isp-kit/http/httpcli"
 
 	"github.com/pkg/errors"
 	_ "github.com/rqlite/gorqlite/stdlib"
-	"github.com/rqlite/rqlite/v8/store"
+	"github.com/rqlite/rqlite/v9/store"
 	"github.com/txix-open/isp-kit/config"
 )
 

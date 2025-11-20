@@ -5,6 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"isp-config-service/assembly"
+	"isp-config-service/conf"
+	"isp-config-service/middlewares"
+	"isp-config-service/service/rqlite"
+	"isp-config-service/service/rqlite/db"
+	"isp-config-service/service/rqlite/goose_store"
+
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3"
 	"github.com/txix-open/isp-kit/app"
@@ -17,12 +24,6 @@ import (
 	"github.com/txix-open/isp-kit/http/httpclix"
 	"github.com/txix-open/isp-kit/log"
 	"github.com/txix-open/isp-kit/observability/sentry"
-	"isp-config-service/assembly"
-	"isp-config-service/conf"
-	"isp-config-service/middlewares"
-	"isp-config-service/service/rqlite"
-	"isp-config-service/service/rqlite/db"
-	"isp-config-service/service/rqlite/goose_store"
 )
 
 const (
@@ -35,7 +36,7 @@ type Service struct {
 	rqlite     *rqlite.Rqlite
 	grpcSrv    *grpc.Server
 	httpSrv    *http.Server
-	clusterCli *cluster.Client
+	clusterCli bootstrap.ClusterClient
 	logger     log.Logger
 
 	// initialized in Run
@@ -137,6 +138,10 @@ func (s *Service) Run(ctx context.Context) error {
 	s.locatorConfig.HandleEventWorker.Run(ctx)
 	s.locatorConfig.CleanEventWorker.Run(ctx)
 	s.locatorConfig.CleanPhantomBackendWorker.Run(ctx)
+
+	if cfg.Local.Backup.Enabled {
+		s.locatorConfig.CleanBackupsWorker.Run(ctx)
+	}
 
 	go func() {
 		s.logger.Debug(ctx, fmt.Sprintf("starting grpc server on %s", s.boot.BindingAddress))
