@@ -21,26 +21,6 @@ type CertReloader struct {
 	cert *tls.Certificate
 }
 
-// NewCertReloader creates a new CertReloader instance.
-func NewCertReloader(cert, key string) (*CertReloader, error) {
-	cr := &CertReloader{
-		certPath: cert,
-		keyPath:  key,
-		logger:   log.New(os.Stderr, "[cert-reloader] ", log.LstdFlags),
-	}
-	pair, err := loadKeyPair(cr.certPath, cr.keyPath)
-	if err != nil {
-		return nil, err
-	}
-	cr.cert = &pair
-	latestTime, err := latestModTime(cr.certPath, cr.keyPath)
-	if err != nil {
-		return nil, err
-	}
-	cr.modTime = latestTime
-	return cr, nil
-}
-
 // GetCertificate returns the current certificate. It reloads the certificate
 // if it has been modified since the last load. GetCertificate is thread-safe
 // and if the cert has not changed this function will execute concurrently with
