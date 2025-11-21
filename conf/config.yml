@@ -41,7 +41,7 @@ backup:
   Enabled: true
   Amount: 5
   Interval: "24h"
-  ClearIntervalDays: 7
+  ClearInterval: "168h"
   Sub:
     Dir: "/app/data/backups/rqlite"
     Name: "backup.sqlite.gz"

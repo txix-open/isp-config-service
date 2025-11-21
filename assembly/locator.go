@@ -187,8 +187,7 @@ func (l Locator) Config() *Config {
 	cleanEventWorker := worker.New(cleanerJob, worker.WithInterval(cleanEventInterval))
 
 	cleanBackupsJob := event.NewBackupCleaner(l.leaderChecker, l.cfg.Local.Backup, l.logger)
-	cleanBackupsWorker := worker.New(cleanBackupsJob,
-		worker.WithInterval(time.Duration(l.cfg.Local.Backup.ClearIntervalDays)*24*time.Hour))
+	cleanBackupsWorker := worker.New(cleanBackupsJob, worker.WithInterval(l.cfg.Local.Backup.ClearInterval))
 
 	metricsSvc := metrics.New(backendRepo)
 	metricsController := controller.NewMetrics(metricsSvc)

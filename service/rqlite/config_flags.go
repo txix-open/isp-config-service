@@ -201,15 +201,15 @@ type Config struct {
 }
 
 type Backup struct {
-	Enabled           bool
-	Amount            int
-	Version           int
-	Type              string
-	Interval          string
-	ClearIntervalDays int
-	Timestamp         bool
-	Vacuum            bool
-	Sub               Sub
+	Enabled       bool
+	Amount        int
+	Version       int
+	Type          string
+	Interval      string
+	ClearInterval time.Duration
+	Timestamp     bool
+	Vacuum        bool
+	Sub           Sub
 }
 
 type Sub struct {
