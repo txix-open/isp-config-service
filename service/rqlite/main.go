@@ -405,7 +405,7 @@ func startNodeMux(cfg *Config, ln net.Listener) (*tcp.Mux, error) {
 		mux, err = tcp.NewMux(ln, adv)
 	}
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to create node-to-node mux")
+		return nil, fmt.Errorf("failed to create node-to-node mux: %s", err.Error())
 	}
 	go mux.Serve()
 	return mux, nil
@@ -435,13 +435,13 @@ func createClusterClient(cfg *Config, clstr *cluster.Service) (*cluster.Client, 
 		dialerTLSConfig, err = rtls.CreateClientConfig(cfg.NodeX509Cert, cfg.NodeX509Key,
 			cfg.NodeX509CACert, cfg.NodeVerifyServerName, cfg.NoNodeVerify)
 		if err != nil {
-			return nil, errors.WithMessage(err, "failed to create TLS config for cluster dialer")
+			return nil, fmt.Errorf("failed to create TLS config for cluster dialer: %s", err.Error())
 		}
 	}
 	clstrDialer := tcp.NewDialer(cluster.MuxClusterHeader, dialerTLSConfig)
 	clstrClient := cluster.NewClient(clstrDialer, cfg.ClusterConnectTimeout)
 	if err := clstrClient.SetLocal(cfg.RaftAdv, clstr); err != nil {
-		return nil, errors.WithMessage(err, "failed to set cluster client local parameters")
+		return nil, fmt.Errorf("failed to set cluster client local parameters: %s", err.Error())
 	}
 	return clstrClient, nil
 }
@@ -454,13 +454,13 @@ func createCluster(ctx context.Context, cfg *Config, hasPeers bool, client *clus
 	}
 	if joins == nil && cfg.DiscoMode == "" && !hasPeers {
 		if cfg.RaftNonVoter {
-			return errors.Errorf("cannot create a new non-voting node without joining it to an existing cluster")
+			return fmt.Errorf("cannot create a new non-voting node without joining it to an existing cluster")
 		}
 
 		// Brand new node, told to bootstrap itself. So do it.
 		log.Println("bootstrapping single new node")
 		if err := str.Bootstrap(store.NewServer(str.ID(), cfg.RaftAdv, true)); err != nil {
-			return errors.WithMessage(err, "failed to bootstrap single new node")
+			return fmt.Errorf("failed to bootstrap single new node: %s", err.Error())
 		}
 		return nil
 	}
@@ -478,7 +478,7 @@ func createCluster(ctx context.Context, cfg *Config, hasPeers bool, client *clus
 		// Explicit join operation requested, so do it.
 		j, err := joiner.Do(ctx, joins, str.ID(), cfg.RaftAdv, clusterSuf)
 		if err != nil {
-			return errors.WithMessage(err, "failed to join cluster")
+			return fmt.Errorf("failed to join cluster: %s", err.Error())
 		}
 		log.Println("successfully joined cluster at", j)
 		return nil
@@ -517,14 +517,14 @@ func createCluster(ctx context.Context, cfg *Config, hasPeers bool, client *clus
 		if cfg.DiscoMode == DiscoModeDNS {
 			dnsCfg, err := dns.NewConfigFromReader(rc)
 			if err != nil {
-				return errors.WithMessage(err, "error reading DNS configuration")
+				return fmt.Errorf("error reading DNS configuration: %s", err.Error())
 			}
 			provider = dns.NewWithPort(dnsCfg, cfg.RaftPort())
 
 		} else {
 			dnssrvCfg, err := dnssrv.NewConfigFromReader(rc)
 			if err != nil {
-				return errors.WithMessage(err, "error reading DNS configuration")
+				return fmt.Errorf("error reading DNS configuration: %s", err.Error())
 			}
 			provider = dnssrv.New(dnssrvCfg)
 		}
@@ -534,7 +534,7 @@ func createCluster(ctx context.Context, cfg *Config, hasPeers bool, client *clus
 		httpServ.RegisterStatus("disco", provider)
 		return bs.Boot(ctx, str.ID(), cfg.RaftAdv, clusterSuf, bootDoneFn, cfg.BootstrapExpectTimeout)
 	default:
-		return errors.Errorf("invalid disco mode %s", cfg.DiscoMode)
+		return fmt.Errorf("invalid disco mode %s", cfg.DiscoMode)
 	}
 }
 
@@ -542,7 +542,7 @@ func networkCheckJoinAddrs(joinAddrs []string) error {
 	if len(joinAddrs) > 0 {
 		log.Println("checking that supplied join addresses don't serve HTTP(S)")
 		if addr, ok := httpd.AnyServingHTTP(joinAddrs); ok {
-			return errors.Errorf("join address %s appears to be serving HTTP when it should be Raft", addr)
+			return fmt.Errorf("join address %s appears to be serving HTTP when it should be Raft", addr)
 		}
 	}
 	return nil

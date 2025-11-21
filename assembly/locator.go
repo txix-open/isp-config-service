@@ -177,7 +177,14 @@ func (l Locator) Config() *Config {
 		panic(err)
 	}
 	rqliteProxy := httputil.NewSingleHostReverseProxy(rqliteUrl)
-	httpMux := routes.HttpHandler(etpSrv, l.cfg.Local, rqliteProxy)
+
+	rqliteBackupUrl, err := url.Parse(l.cfg.RqliteAddress + "/db/backup")
+	if err != nil {
+		panic(err)
+	}
+	rqliteBackupProxy := httputil.NewSingleHostReverseProxy(rqliteBackupUrl)
+
+	httpMux := routes.HttpHandler(etpSrv, l.cfg.Local, rqliteProxy, rqliteBackupProxy)
 
 	eventHandler := event.NewHandler(subscriptionService, l.logger)
 	handleEventJob := event.NewWorker(eventRepo, eventHandler, l.logger)
