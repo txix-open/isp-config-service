@@ -123,7 +123,7 @@ func main(ctx context.Context, r *Rqlite) error {
 		log.Fatalf("failed to create store: %s", err.Error())
 	}
 
-	r.store = str
+	r.storePtr.Store(str)
 
 	credStr, err := credentialsStore(r.credentials)
 	if err != nil {

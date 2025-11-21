@@ -99,11 +99,11 @@ func (s *Service) Run(ctx context.Context) error {
 	}()
 	time.Sleep(1 * time.Second) // optimistically wait for store initialization
 
-	waitingCtx, stopWaiting := context.WithCancel(ctx)
+	waitingCtx, waitingDone := context.WithCancel(ctx)
 	go s.writeWaitingLogs(waitingCtx)
 
 	err := s.rqlite.WaitForLeader(waitForLeaderTimeout)
-	stopWaiting()
+	waitingDone()
 	if err != nil {
 		return errors.WithMessage(err, "wait for leader")
 	}

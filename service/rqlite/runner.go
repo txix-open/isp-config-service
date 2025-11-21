@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/rqlite/rqlite/v9/auth"
@@ -25,7 +26,7 @@ type Rqlite struct {
 	credentials              []auth.Credential
 
 	localHttpAddr string
-	store         *store.Store
+	storePtr      *atomic.Pointer[store.Store]
 	closed        chan struct{}
 	cancel        context.CancelFunc
 }
@@ -40,6 +41,7 @@ func New(
 		internalClientCredential: internalClientCredential,
 		credentials:              credentials,
 		closed:                   make(chan struct{}),
+		storePtr:                 &atomic.Pointer[store.Store]{},
 	}
 }
 
@@ -51,10 +53,10 @@ func (r *Rqlite) Run(ctx context.Context) error {
 }
 
 func (r *Rqlite) WaitForLeader(timeout time.Duration) error {
-	if r.store == nil {
+	if r.storePtr.Load() == nil {
 		return ErrNotRun
 	}
-	_, err := r.store.WaitForLeader(timeout)
+	_, err := r.storePtr.Load().WaitForLeader(timeout)
 	if err != nil {
 		return errors.WithMessage(err, "wait for leader in rqlite store")
 	}
@@ -62,14 +64,14 @@ func (r *Rqlite) WaitForLeader(timeout time.Duration) error {
 }
 
 func (r *Rqlite) IsLeader() bool {
-	if r.store == nil {
+	if r.storePtr.Load() == nil {
 		return false
 	}
-	return r.store.IsLeader()
+	return r.storePtr.Load().IsLeader()
 }
 
 func (r *Rqlite) SqlDB() (*sql.DB, error) {
-	if r.store == nil {
+	if r.storePtr.Load() == nil {
 		return nil, ErrNotRun
 	}
 
