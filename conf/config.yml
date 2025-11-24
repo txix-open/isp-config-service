@@ -35,6 +35,7 @@ rqlite:
   JoinAddrs: "127.0.0.1:9008"
   FKConstraints: true
   AutoVacInterval: 12h
+  AutoOptimizeInterval: 23h
   JoinAs: default
 
 backup:
