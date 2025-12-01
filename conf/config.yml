@@ -35,7 +35,17 @@ rqlite:
   JoinAddrs: "127.0.0.1:9008"
   FKConstraints: true
   AutoVacInterval: 12h
+  AutoOptimizeInterval: 23h
   JoinAs: default
+
+backup:
+  Enable: true
+  Amount: 5
+  Interval: "24h"
+  ClearInterval: "168h"
+  Sub:
+    Dir: "/app/data/backups/rqlite"
+    Name: "backup.sqlite.gz"
 
 metricsAutodiscovery:
   enable: true
