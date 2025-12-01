@@ -143,7 +143,7 @@ func (s *Service) Run(ctx context.Context) error {
 	s.locatorConfig.CleanEventWorker.Run(ctx)
 	s.locatorConfig.CleanPhantomBackendWorker.Run(ctx)
 
-	if cfg.Local.Backup.Enabled {
+	if cfg.Local.Backup.Enable {
 		s.locatorConfig.CleanBackupsWorker.Run(ctx)
 	}
 

@@ -39,7 +39,7 @@ rqlite:
   JoinAs: default
 
 backup:
-  Enabled: true
+  Enable: true
   Amount: 5
   Interval: "24h"
   ClearInterval: "168h"

@@ -176,7 +176,7 @@ func setupTest(t *testing.T) log.Logger {
 	boot.MigrationsDir = "../migrations"
 	dataPath := dataDir(t)
 	boot.App.Config().Set("rqlite.DataPath", dataPath)
-	boot.App.Config().Set("backup.Enabled", false)
+	boot.App.Config().Set("backup.Enable", false)
 	logger := boot.App.Logger()
 
 	startup, err := startup.New(boot)

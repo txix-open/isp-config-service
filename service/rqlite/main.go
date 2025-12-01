@@ -233,13 +233,13 @@ func main(ctx context.Context, r *Rqlite) error {
 	return nil
 }
 
-func startAutoBackups(ctx context.Context, cfg *Backup, str *store.Store) (*backup.Uploader, error) {
-	if !cfg.Enabled {
+func startAutoBackups(ctx context.Context, backupCfg *Backup, str *store.Store) (*backup.Uploader, error) {
+	if !backupCfg.Enable {
 		return nil, nil
 	}
 
-	cfg.SetParams()
-	b, err := json.Marshal(cfg)
+	backupCfg.SetParams()
+	b, err := json.Marshal(backupCfg)
 	if err != nil {
 		return nil, errors.Errorf("failed to marshal auto-backup settings: %s", err.Error())
 	}

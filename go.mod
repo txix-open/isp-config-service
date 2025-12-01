@@ -16,12 +16,12 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rqlite/gorqlite v0.0.0-20250609141355-ac86a4a1c9a8
 	github.com/rqlite/rqlite-disco-clients v0.0.0-20250205044118-8ada2b350099
-	github.com/rqlite/rqlite/v9 v9.3.1
+	github.com/rqlite/rqlite/v9 v9.3.2
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/txix-open/etp/v4 v4.0.1
 	github.com/txix-open/go-cmp v0.0.0-20240401171944-16b203530f60
-	github.com/txix-open/isp-kit v1.63.2
+	github.com/txix-open/isp-kit v1.63.3
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sync v0.18.0
 	google.golang.org/grpc v1.77.0
@@ -119,7 +119,7 @@ require (
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20251111163417-95abcf5c77ba // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251111163417-95abcf5c77ba // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251124214823-79d6a2a48846 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

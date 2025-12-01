@@ -201,7 +201,7 @@ type Config struct {
 }
 
 type Backup struct {
-	Enabled       bool
+	Enable        bool
 	Amount        int
 	Version       int
 	Type          string
