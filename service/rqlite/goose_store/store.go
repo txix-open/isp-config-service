@@ -3,7 +3,6 @@ package goose_store
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"isp-config-service/repository"
 
@@ -33,7 +32,7 @@ func (s Store) CreateVersionTable(ctx context.Context, db database.DBTxConn) err
 	q := s.querier.CreateTable(s.tablename)
 	_, err := s.db.ExecContext(ctx, q)
 	if err != nil {
-		return fmt.Errorf("failed to create version table %q: %w", s.tablename, err)
+		return errors.WithMessagef(err, "failed to create version table %q", s.tablename)
 	}
 	return nil
 }
@@ -42,7 +41,7 @@ func (s Store) Insert(ctx context.Context, db database.DBTxConn, req database.In
 	q := s.querier.InsertVersion(s.tablename)
 	_, err := s.db.ExecContext(ctx, q, req.Version, true)
 	if err != nil {
-		return fmt.Errorf("failed to insert version %d: %w", req.Version, err)
+		return errors.WithMessagef(err, "failed to insert version %d", req.Version)
 	}
 	return nil
 }
@@ -51,7 +50,7 @@ func (s Store) Delete(ctx context.Context, db database.DBTxConn, version int64) 
 	q := s.querier.DeleteVersion(s.tablename)
 	_, err := s.db.ExecContext(ctx, q, version)
 	if err != nil {
-		return fmt.Errorf("failed to delete version %d: %w", version, err)
+		return errors.WithMessagef(err, "failed to delete version %d", version)
 	}
 	return nil
 }
@@ -63,10 +62,10 @@ func (s Store) GetMigration(ctx context.Context, db database.DBTxConn, version i
 	isApplied := float64(0)
 	err := s.db.QueryRowContext(ctx, q, version).Scan(&result.Timestamp, &isApplied)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("%w: %d", database.ErrVersionNotFound, version)
+		return nil, errors.WithMessagef(database.ErrVersionNotFound, "%d", version)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get migration %d: %w", version, err)
+		return nil, errors.WithMessagef(err, "failed to get migration %d", version)
 	}
 	result.IsApplied = isApplied == 0
 	return &result, nil
@@ -80,7 +79,7 @@ func (s Store) ListMigrations(ctx context.Context, db database.DBTxConn) ([]*dat
 	q := s.querier.ListMigrations(s.tablename)
 	rows, err := s.db.QueryContext(ctx, q)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list migrations: %w", err)
+		return nil, errors.WithMessage(err, "failed to list migrations")
 	}
 	defer rows.Close()
 
@@ -91,7 +90,7 @@ func (s Store) ListMigrations(ctx context.Context, db database.DBTxConn) ([]*dat
 		version := float64(0)
 		err = rows.Scan(&version, &isApplied)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan list migrations result: %w", err)
+			return nil, errors.WithMessage(err, "failed to scan list migrations result")
 		}
 		result.IsApplied = isApplied == 0
 		result.Version = int64(version)

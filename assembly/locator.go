@@ -82,6 +82,7 @@ type Config struct {
 	HandleEventWorker         *worker.Worker
 	CleanEventWorker          *worker.Worker
 	CleanPhantomBackendWorker *worker.Worker
+	CleanBackupsWorker        *worker.Worker
 	OwnBackendsCleaner        OwnBackendsCleaner
 }
 
@@ -176,7 +177,14 @@ func (l Locator) Config() *Config {
 		panic(err)
 	}
 	rqliteProxy := httputil.NewSingleHostReverseProxy(rqliteUrl)
-	httpMux := routes.HttpHandler(etpSrv, l.cfg.Local, rqliteProxy)
+
+	rqliteBackupUrl, err := url.Parse(l.cfg.RqliteAddress + "/db/backup")
+	if err != nil {
+		panic(err)
+	}
+	rqliteBackupProxy := httputil.NewSingleHostReverseProxy(rqliteBackupUrl)
+
+	httpMux := routes.HttpHandler(etpSrv, l.cfg.Local, rqliteProxy, rqliteBackupProxy)
 
 	eventHandler := event.NewHandler(subscriptionService, l.logger)
 	handleEventJob := event.NewWorker(eventRepo, eventHandler, l.logger)
@@ -184,6 +192,9 @@ func (l Locator) Config() *Config {
 
 	cleanerJob := event.NewCleaner(eventRepo, l.leaderChecker, eventTtl, l.logger)
 	cleanEventWorker := worker.New(cleanerJob, worker.WithInterval(cleanEventInterval))
+
+	cleanBackupsJob := event.NewBackupCleaner(l.leaderChecker, l.cfg.Local.Backup, l.logger)
+	cleanBackupsWorker := worker.New(cleanBackupsJob, worker.WithInterval(l.cfg.Local.Backup.ClearInterval))
 
 	metricsSvc := metrics.New(backendRepo)
 	metricsController := controller.NewMetrics(metricsSvc)
@@ -197,6 +208,7 @@ func (l Locator) Config() *Config {
 		HandleEventWorker:         handleEventWorker,
 		CleanEventWorker:          cleanEventWorker,
 		CleanPhantomBackendWorker: cleanPhantomBackendWorker,
+		CleanBackupsWorker:        cleanBackupsWorker,
 		OwnBackendsCleaner:        backendService,
 	}
 }

@@ -16,21 +16,22 @@ import (
 	"strings"
 	"time"
 
+	"isp-config-service/service/rqlite/internal/rarchive"
+	"isp-config-service/service/rqlite/internal/rtls"
+
 	"github.com/pkg/errors"
 	"github.com/rqlite/rqlite-disco-clients/dns"
 	"github.com/rqlite/rqlite-disco-clients/dnssrv"
+	"github.com/rqlite/rqlite/v9/auth"
+	"github.com/rqlite/rqlite/v9/auto/backup"
+	"github.com/rqlite/rqlite/v9/cluster"
+	"github.com/rqlite/rqlite/v9/cmd"
+	"github.com/rqlite/rqlite/v9/db"
+	"github.com/rqlite/rqlite/v9/db/extensions"
+	httpd "github.com/rqlite/rqlite/v9/http"
+	"github.com/rqlite/rqlite/v9/store"
+	"github.com/rqlite/rqlite/v9/tcp"
 	"github.com/txix-open/isp-kit/config"
-
-	"github.com/rqlite/rqlite/v8/auth"
-	"github.com/rqlite/rqlite/v8/cluster"
-	"github.com/rqlite/rqlite/v8/cmd"
-	"github.com/rqlite/rqlite/v8/db"
-	"github.com/rqlite/rqlite/v8/extensions"
-	httpd "github.com/rqlite/rqlite/v8/http"
-	"github.com/rqlite/rqlite/v8/rarchive"
-	"github.com/rqlite/rqlite/v8/rtls"
-	"github.com/rqlite/rqlite/v8/store"
-	"github.com/rqlite/rqlite/v8/tcp"
 )
 
 const name = `rqlite`
@@ -47,6 +48,7 @@ func init() {
 
 type localConfig struct {
 	Rqlite *Config
+	Backup Backup
 }
 
 func main(ctx context.Context, r *Rqlite) error {
@@ -121,7 +123,7 @@ func main(ctx context.Context, r *Rqlite) error {
 		log.Fatalf("failed to create store: %s", err.Error())
 	}
 
-	r.store = str
+	r.storePtr.Store(str)
 
 	credStr, err := credentialsStore(r.credentials)
 	if err != nil {
@@ -186,6 +188,15 @@ func main(ctx context.Context, r *Rqlite) error {
 	h, p, _ := net.SplitHostPort(cfg.HTTPAdv)
 	log.Printf("connect using the command-line tool via 'rqlite -H %s -p %s'", h, p)
 
+	// Start any requested auto-backups
+	backupSrv, err := startAutoBackups(mainCtx, &localCfg.Backup, str)
+	if err != nil {
+		log.Fatalf("failed to start auto-backups: %s", err.Error())
+	}
+	if backupSrv != nil {
+		httpServ.RegisterStatus("auto_backups", backupSrv)
+	}
+
 	// Block until done.
 	<-mainCtx.Done()
 
@@ -210,7 +221,7 @@ func main(ctx context.Context, r *Rqlite) error {
 			log.Printf("stepping down as Leader before shutdown")
 		}
 		// Perform a stepdown, ignore any errors.
-		str.Stepdown(true)
+		str.Stepdown(true, "")
 	}
 	muxLn.Close()
 
@@ -220,6 +231,27 @@ func main(ctx context.Context, r *Rqlite) error {
 
 	log.Println("rqlite server stopped")
 	return nil
+}
+
+func startAutoBackups(ctx context.Context, backupCfg *Backup, str *store.Store) (*backup.Uploader, error) {
+	if !backupCfg.Enable {
+		return nil, nil
+	}
+
+	backupCfg.SetParams()
+	b, err := json.Marshal(backupCfg)
+	if err != nil {
+		return nil, errors.Errorf("failed to marshal auto-backup settings: %s", err.Error())
+	}
+
+	uCfg, sc, err := backup.NewStorageClient(b)
+	if err != nil {
+		return nil, errors.Errorf("failed to parse auto-backup file: %s", err.Error())
+	}
+	provider := store.NewProvider(str, uCfg.Vacuum, !uCfg.NoCompress)
+	u := backup.NewUploader(sc, provider, time.Duration(uCfg.Interval))
+	u.Start(ctx, str.IsLeader)
+	return u, nil
 }
 
 func evaluateAdvAddresses(cfg *config.Config) error {
@@ -290,11 +322,11 @@ func createStore(cfg *Config, ln *tcp.Layer, extensions []string) (*store.Store,
 	dbConf.FKConstraints = cfg.FKConstraints
 	dbConf.Extensions = extensions
 
-	str := store.New(ln, &store.Config{
+	str := store.New(&store.Config{
 		DBConf: dbConf,
 		Dir:    cfg.DataPath,
 		ID:     cfg.NodeID,
-	})
+	}, ln)
 
 	// Set optional parameters on store.
 	str.RaftLogLevel = cfg.RaftLogLevel
@@ -363,12 +395,12 @@ func startNodeMux(cfg *Config, ln net.Listener) (*tcp.Mux, error) {
 		}
 		if cfg.NodeVerifyClient {
 			b.WriteString(", mutual TLS enabled")
+			mux, err = tcp.NewMutualTLSMux(ln, adv, cfg.NodeX509Cert, cfg.NodeX509Key, cfg.NodeX509CACert)
 		} else {
 			b.WriteString(", mutual TLS disabled")
+			mux, err = tcp.NewTLSMux(ln, adv, cfg.NodeX509Cert, cfg.NodeX509Key)
 		}
 		log.Println(b.String())
-		mux, err = tcp.NewTLSMux(ln, adv, cfg.NodeX509Cert, cfg.NodeX509Key, cfg.NodeX509CACert,
-			cfg.NoNodeVerify, cfg.NodeVerifyClient)
 	} else {
 		mux, err = tcp.NewMux(ln, adv)
 	}

@@ -5,6 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"isp-config-service/assembly"
+	"isp-config-service/conf"
+	"isp-config-service/middlewares"
+	"isp-config-service/service/rqlite"
+	"isp-config-service/service/rqlite/db"
+	"isp-config-service/service/rqlite/goose_store"
+
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3"
 	"github.com/txix-open/isp-kit/app"
@@ -17,16 +24,11 @@ import (
 	"github.com/txix-open/isp-kit/http/httpclix"
 	"github.com/txix-open/isp-kit/log"
 	"github.com/txix-open/isp-kit/observability/sentry"
-	"isp-config-service/assembly"
-	"isp-config-service/conf"
-	"isp-config-service/middlewares"
-	"isp-config-service/service/rqlite"
-	"isp-config-service/service/rqlite/db"
-	"isp-config-service/service/rqlite/goose_store"
 )
 
 const (
-	waitForLeaderTimeout = 30 * time.Second
+	waitForLeaderTimeout = 180 * time.Second
+	waitingLogsTimeout   = 30 * time.Second
 )
 
 type Service struct {
@@ -35,7 +37,7 @@ type Service struct {
 	rqlite     *rqlite.Rqlite
 	grpcSrv    *grpc.Server
 	httpSrv    *http.Server
-	clusterCli *cluster.Client
+	clusterCli bootstrap.ClusterClient
 	logger     log.Logger
 
 	// initialized in Run
@@ -97,8 +99,11 @@ func (s *Service) Run(ctx context.Context) error {
 	}()
 	time.Sleep(1 * time.Second) // optimistically wait for store initialization
 
-	s.logger.Debug(ctx, fmt.Sprintf("waiting for cluster startup for %s...", waitForLeaderTimeout))
+	waitingCtx, waitingDone := context.WithCancel(ctx)
+	go s.writeWaitingLogs(waitingCtx)
+
 	err := s.rqlite.WaitForLeader(waitForLeaderTimeout)
+	waitingDone()
 	if err != nil {
 		return errors.WithMessage(err, "wait for leader")
 	}
@@ -137,6 +142,10 @@ func (s *Service) Run(ctx context.Context) error {
 	s.locatorConfig.HandleEventWorker.Run(ctx)
 	s.locatorConfig.CleanEventWorker.Run(ctx)
 	s.locatorConfig.CleanPhantomBackendWorker.Run(ctx)
+
+	if cfg.Local.Backup.Enable {
+		s.locatorConfig.CleanBackupsWorker.Run(ctx)
+	}
 
 	go func() {
 		s.logger.Debug(ctx, fmt.Sprintf("starting grpc server on %s", s.boot.BindingAddress))
@@ -224,4 +233,20 @@ func internalClientCredentials(cfg conf.Local) (*httpcli.BasicAuth, error) {
 		}
 	}
 	return nil, errors.Errorf("internal client credential '%s' not found", cfg.InternalClientCredential)
+}
+
+func (s *Service) writeWaitingLogs(ctx context.Context) {
+	s.logger.Debug(ctx, fmt.Sprintf("waiting for cluster startup for %s...", waitForLeaderTimeout))
+
+	t := time.NewTicker(waitingLogsTimeout)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			s.logger.Debug(ctx, fmt.Sprintf("continue waiting for cluster startup for %s...", waitForLeaderTimeout))
+		}
+	}
 }
