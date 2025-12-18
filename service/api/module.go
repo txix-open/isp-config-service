@@ -27,6 +27,7 @@ type BackendsRepo interface {
 type SchemaRepo interface {
 	All(ctx context.Context) ([]entity.ConfigSchema, error)
 	GetByModuleId(ctx context.Context, moduleId string) (*entity.ConfigSchema, error)
+	UpdateByModuleId(ctx context.Context, moduleId string, data []byte) error
 }
 
 type Module struct {

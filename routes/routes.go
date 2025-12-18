@@ -133,6 +133,10 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 			Path:    "config/schema/get_by_module_id",
 			Inner:   true,
 			Handler: c.ConfigSchemaApi.SchemaByModuleId,
+		}, {
+			Path:    "config/schema/update_by_module_name",
+			Inner:   true,
+			Handler: c.ConfigSchemaApi.UpdateSchemaByModuleName,
 		},
 		// variables
 		{
