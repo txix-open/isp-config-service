@@ -73,6 +73,7 @@ func (r ConfigSchema) UpdateByModuleId(ctx context.Context, moduleId string, dat
 	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigSchema.UpdateByModuleId")
 	query, args, err := squirrel.Update(Table("config_schema")).
 		Set("data", data).
+		Set("updated_at", squirrel.Expr("unixepoch()")).
 		Where(squirrel.Eq{"module_id": moduleId}).
 		ToSql()
 	if err != nil {
