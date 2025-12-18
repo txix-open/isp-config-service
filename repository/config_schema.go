@@ -69,6 +69,23 @@ func (r ConfigSchema) GetByModuleId(ctx context.Context, moduleId string) (*enti
 	return selectRow[entity.ConfigSchema](ctx, r.db, query, args...)
 }
 
+func (r ConfigSchema) UpdateByModuleId(ctx context.Context, moduleId string, data []byte) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigSchema.UpdateByModuleId")
+	query, args, err := squirrel.Update(Table("config_schema")).
+		Set("data", data).
+		Where(squirrel.Eq{"module_id": moduleId}).
+		ToSql()
+	if err != nil {
+		return errors.WithMessage(err, "build query")
+	}
+
+	_, err = r.db.Exec(ctx, query, args...)
+	if err != nil {
+		return errors.WithMessagef(err, "exec: %s", query)
+	}
+	return nil
+}
+
 //nolint:nilnil
 func selectRow[T any](ctx context.Context, db db.DB, query string, args ...interface{}) (*T, error) {
 	var result T
