@@ -1,3 +1,9 @@
+### v3.9.0
+* Обновлены зависимости
+* Добавлено поле `transport` в таблицу `isp_config_service__backend`
+* Расширен ответ по `/routing/get_routes` и `/module/get_modules_info`:
+    * Добавлено поле `httpMethod` в `domain.EndpointDescriptor`
+    * Добавлено поле `transport` в `domain.Connection`
 ### v3.8.0
 * Добавлен новый endpoint `config/schema/update_by_module_name` для обновления схемы модуля по его названию
 ## v3.7.0
