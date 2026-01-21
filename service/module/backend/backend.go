@@ -3,13 +3,15 @@ package backend
 import (
 	"context"
 	"fmt"
+	"net/http"
+
+	"isp-config-service/entity"
+	"isp-config-service/entity/xtypes"
 
 	"github.com/pkg/errors"
 	"github.com/txix-open/etp/v4"
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/log"
-	"isp-config-service/entity"
-	"isp-config-service/entity/xtypes"
 )
 
 type Repo interface {
@@ -58,6 +60,17 @@ func (s Backend) Connect(
 		metricsAd = &xtypes.Json[cluster.MetricsAutodiscovery]{Value: *declaration.MetricsAutodiscovery}
 	}
 
+	if declaration.Transport == "" {
+		declaration.Transport = cluster.GrpcTransport
+	}
+	if declaration.Transport == cluster.GrpcTransport {
+		for i := range declaration.Endpoints {
+			if declaration.Endpoints[i].HttpMethod == "" {
+				declaration.Endpoints[i].HttpMethod = http.MethodPost
+			}
+		}
+	}
+
 	backend := entity.Backend{
 		WsConnectionId:       connId,
 		ModuleId:             moduleId,
@@ -65,6 +78,7 @@ func (s Backend) Connect(
 		Version:              declaration.Version,
 		LibVersion:           declaration.LibVersion,
 		ModuleName:           declaration.ModuleName,
+		Transport:            declaration.Transport,
 		ConfigServiceNodeId:  s.nodeId,
 		Endpoints:            xtypes.Json[[]cluster.EndpointDescriptor]{Value: declaration.Endpoints},
 		RequiredModules:      xtypes.Json[[]cluster.ModuleDependency]{Value: declaration.RequiredModules},

@@ -172,7 +172,7 @@ func setupTest(t *testing.T) log.Logger {
 
 	t.Setenv("APP_CONFIG_PATH", "../conf/config.yml")
 	t.Setenv("DefaultRemoteConfigPath", "../conf/default_remote_config.json")
-	boot := bootstrap.New("1.0.0", conf.Remote{}, nil)
+	boot := bootstrap.New("1.0.0", conf.Remote{}, nil, cluster.GrpcTransport)
 	boot.MigrationsDir = "../migrations"
 	dataPath := dataDir(t)
 	boot.App.Config().Set("rqlite.DataPath", dataPath)

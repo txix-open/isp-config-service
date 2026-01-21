@@ -72,6 +72,8 @@ definitions:
         type: string
       moduleName:
         type: string
+      transport:
+        type: string
       version:
         type: string
     type: object
@@ -141,6 +143,8 @@ definitions:
     type: object
   domain.EndpointDescriptor:
     properties:
+      httpMethod:
+        type: string
       inner:
         type: boolean
       path:
