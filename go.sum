@@ -172,8 +172,8 @@ github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHm
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/julienschmidt/httprouter v1.3.0 h1:U0609e9tgbseu3rBINet9P48AI/D3oJs4dN7jwJOQ1U=
 github.com/julienschmidt/httprouter v1.3.0/go.mod h1:JR6WtHb+2LUe8TCKY3cZOxFyyO8IZAc4RVcycCCAKdM=
-github.com/klauspost/compress v1.18.0 h1:c/Cqfb0r+Yi+JtIEq73FWXVkRonBlf0CRNYc8Zttxdo=
-github.com/klauspost/compress v1.18.0/go.mod h1:2Pp+KzxcywXVXMr50+X0Q/Lsb43OQHYWRCY2AiWywWQ=
+github.com/klauspost/compress v1.18.1 h1:bcSGx7UbpBqMChDtsF28Lw6v/G94LPrrbMbdC3JH2co=
+github.com/klauspost/compress v1.18.1/go.mod h1:ZQFFVG+MdnR0P+l6wpXgIL4NTtwiKIdBnrBd8Nrxr+0=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
@@ -313,8 +313,8 @@ github.com/txix-open/go-cmp v0.0.0-20240401171944-16b203530f60 h1:7SZ72lNU69g8ei
 github.com/txix-open/go-cmp v0.0.0-20240401171944-16b203530f60/go.mod h1:jzpq0uwcdGq0OSNXZ6vv6UJkCOU/fLPgeoz+KkGDYgo=
 github.com/txix-open/grmq v1.9.0 h1:ArDbJJcFX9zXKEcPf49rp9nYiRyGMJxGKJAxdbSsfaM=
 github.com/txix-open/grmq v1.9.0/go.mod h1:EyFOP17KrwEFOUjR+PH8iH3LCtiN9TSQ8t0ysyk62po=
-github.com/txix-open/isp-kit v1.63.3 h1:UJLgR4z8sYXUX6r1sl6Ww1aijPx6b7ieMeB+elZoViM=
-github.com/txix-open/isp-kit v1.63.3/go.mod h1:rwqKqB3PyZxaoep6iH1PKL89LS9nzRklA6+S4II72M4=
+github.com/txix-open/isp-kit v1.31.5-0.20260122130000-6a7f11644724 h1:Fo/MFRZo2UVrE8q9aLWE+1076cQlK+xveWNIWW/gC7M=
+github.com/txix-open/isp-kit v1.31.5-0.20260122130000-6a7f11644724/go.mod h1:GvBsX5p2U3/ugK6PuWANYzSy/4YgawROm3eAKb35G6o=
 github.com/txix-open/jsonschema v1.3.0 h1:XGuOTg22G7PdqfKypjajM20/i5FyGfFYsJKmheebKi4=
 github.com/txix-open/jsonschema v1.3.0/go.mod h1:l8YDZ1nvJrw6uxWowSVOxCV/ebiMJyapffW87ZEqH00=
 github.com/txix-open/validator/v10 v10.0.0-20250506161033-f8ce404fffdb h1:UJgT4u/QMv5QHKOQeJ7igShHa36c2/vIRqJiRLdDlf0=
