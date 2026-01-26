@@ -21,6 +21,11 @@ type GetByModuleNameRequest struct {
 	ModuleName string `validate:"required"`
 }
 
+type UpdateSchemaRequest struct {
+	ModuleName string          `validate:"required"`
+	Schema     json.RawMessage `validate:"required" swaggertype:"object"`
+}
+
 type CreateUpdateConfigRequest struct {
 	Id       string
 	Name     string `validate:"required"`

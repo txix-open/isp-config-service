@@ -235,6 +235,16 @@ definitions:
     - id
     - newConfigName
     type: object
+  domain.UpdateSchemaRequest:
+    properties:
+      moduleName:
+        type: string
+      schema:
+        type: object
+    required:
+    - moduleName
+    - schema
+    type: object
   domain.UpdateVariableRequest:
     properties:
       description:
@@ -782,6 +792,35 @@ paths:
           schema:
             $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
       summary: Метод получения схемы конфигурации модуля
+      tags:
+      - Схема
+  /schema/update_by_module_name:
+    post:
+      consumes:
+      - application/json
+      description: Меняет схему конфигурации модуля на переданную
+      parameters:
+      - description: название модуля и схема конфига
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateSchemaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+        "400":
+          description: '`errorCode: 2001` - модуль не найден'
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
+      summary: Метод обновления схемы конфигурации модуля
       tags:
       - Схема
   /variable/all:

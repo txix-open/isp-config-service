@@ -156,7 +156,7 @@ func (l Locator) Config() *Config {
 	)
 	configApiController := api.NewConfig(configApiService)
 
-	configSchemaApiService := apisvs.NewConfigSchema(configSchemaRepo)
+	configSchemaApiService := apisvs.NewConfigSchema(configSchemaRepo, moduleRepo)
 	configSchemaController := api.NewConfigSchema(configSchemaApiService)
 
 	controllers := routes.Controllers{
