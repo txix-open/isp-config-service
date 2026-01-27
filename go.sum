@@ -313,8 +313,8 @@ github.com/txix-open/go-cmp v0.0.0-20240401171944-16b203530f60 h1:7SZ72lNU69g8ei
 github.com/txix-open/go-cmp v0.0.0-20240401171944-16b203530f60/go.mod h1:jzpq0uwcdGq0OSNXZ6vv6UJkCOU/fLPgeoz+KkGDYgo=
 github.com/txix-open/grmq v1.9.0 h1:ArDbJJcFX9zXKEcPf49rp9nYiRyGMJxGKJAxdbSsfaM=
 github.com/txix-open/grmq v1.9.0/go.mod h1:EyFOP17KrwEFOUjR+PH8iH3LCtiN9TSQ8t0ysyk62po=
-github.com/txix-open/isp-kit v1.31.5-0.20260122130000-6a7f11644724 h1:Fo/MFRZo2UVrE8q9aLWE+1076cQlK+xveWNIWW/gC7M=
-github.com/txix-open/isp-kit v1.31.5-0.20260122130000-6a7f11644724/go.mod h1:GvBsX5p2U3/ugK6PuWANYzSy/4YgawROm3eAKb35G6o=
+github.com/txix-open/isp-kit v1.64.10 h1:lAowLtShBbICZbOWQJ4ptr9LaKKRZ7CE5DBK+7LcLqM=
+github.com/txix-open/isp-kit v1.64.10/go.mod h1:GvBsX5p2U3/ugK6PuWANYzSy/4YgawROm3eAKb35G6o=
 github.com/txix-open/jsonschema v1.3.0 h1:XGuOTg22G7PdqfKypjajM20/i5FyGfFYsJKmheebKi4=
 github.com/txix-open/jsonschema v1.3.0/go.mod h1:l8YDZ1nvJrw6uxWowSVOxCV/ebiMJyapffW87ZEqH00=
 github.com/txix-open/validator/v10 v10.0.0-20250506161033-f8ce404fffdb h1:UJgT4u/QMv5QHKOQeJ7igShHa36c2/vIRqJiRLdDlf0=
