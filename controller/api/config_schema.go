@@ -3,14 +3,16 @@ package api
 import (
 	"context"
 
-	"github.com/pkg/errors"
-	"github.com/txix-open/isp-kit/grpc/apierrors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
+
+	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/grpc/apierrors"
 )
 
 type ConfigSchemaService interface {
 	SchemaByModuleId(ctx context.Context, moduleId string) (*domain.ConfigSchema, error)
+	UpdateSchemaByModuleName(ctx context.Context, request domain.UpdateSchemaRequest) error
 }
 
 type ConfigSchema struct {
@@ -47,5 +49,32 @@ func (c ConfigSchema) SchemaByModuleId(ctx context.Context, request domain.GetBy
 		return nil, apierrors.NewInternalServiceError(err)
 	default:
 		return schema, nil
+	}
+}
+
+// UpdateSchemaByModuleName
+// @Summary Метод обновления схемы конфигурации модуля
+// @Description Меняет схему конфигурации модуля на переданную
+// @Tags Схема
+// @Accept json
+// @Produce json
+// @Param body body domain.UpdateSchemaRequest true "название модуля и схема конфига"
+// @Success 200 {object} any
+// @Failure 400 {object} apierrors.Error "`errorCode: 2001` - модуль не найден"
+// @Failure 500 {object} apierrors.Error
+// @Router /schema/update_by_module_name [POST]
+func (c ConfigSchema) UpdateSchemaByModuleName(ctx context.Context, request domain.UpdateSchemaRequest) error {
+	err := c.service.UpdateSchemaByModuleName(ctx, request)
+	switch {
+	case errors.Is(err, entity.ErrModuleNotFound):
+		return apierrors.NewBusinessError(
+			domain.ErrorCodeModuleNotFound,
+			"module not found",
+			err,
+		)
+	case err != nil:
+		return apierrors.NewInternalServiceError(err)
+	default:
+		return nil
 	}
 }
