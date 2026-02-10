@@ -167,7 +167,7 @@ func main() {
 			AdminId:   0,
 			CreatedAt: xtypes.Time(history.CreatedAt),
 		}
-		err := configHistoryRepo.Insert(ctx, result)
+		err := configHistoryRepo.InsertV2(ctx, result)
 		if err != nil {
 			panic(errors.WithMessagef(err, "err inserting config_history: %s", history.Id))
 		}
@@ -194,7 +194,7 @@ func main() {
 		Header("Content-Type", "application/octet-stream").
 		RequestBody(sqliteFile).
 		StatusCodeToError().
-		Timeout(60 * time.Second).
+		Timeout(120 * time.Second).
 		DoWithoutResponse(ctx)
 	if err != nil {
 		panic(errors.WithMessage(err, "load sqlite file"))
