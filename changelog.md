@@ -1,3 +1,5 @@
+### v3.8.1
+* исправлена миграция для `config-history`
 ### v3.8.0
 * Добавлен новый endpoint `config/schema/update_by_module_name` для обновления схемы модуля по его названию
 ## v3.7.0
