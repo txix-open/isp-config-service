@@ -6,6 +6,7 @@ import (
 	"isp-config-service/service/startup"
 
 	"github.com/txix-open/isp-kit/bootstrap"
+	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/shutdown"
 )
 
@@ -25,7 +26,7 @@ var (
 //go:generate swag init --parseDependency
 //go:generate rm -f docs/swagger.json docs/docs.go
 func main() {
-	boot := bootstrap.New(version, conf.Remote{}, routes.EndpointDescriptors())
+	boot := bootstrap.New(version, conf.Remote{}, routes.EndpointDescriptors(), cluster.GrpcTransport)
 	app := boot.App
 	logger := app.Logger()
 
