@@ -33,6 +33,7 @@ type Connection struct {
 	LibVersion    string
 	Version       string
 	Address       Address
+	Transport     string
 	Endpoints     []EndpointDescriptor
 	EstablishedAt time.Time
 }
@@ -43,8 +44,9 @@ type Address struct {
 }
 
 type EndpointDescriptor struct {
-	Path  string
-	Inner bool
+	HttpMethod string
+	Path       string
+	Inner      bool
 }
 
 type Config struct {

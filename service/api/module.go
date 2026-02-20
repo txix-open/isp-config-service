@@ -142,12 +142,17 @@ func (s Module) backendToDto(backend entity.Backend) (domain.Connection, error) 
 	endpointsDescriptors := make([]domain.EndpointDescriptor, 0)
 	for _, desc := range backend.Endpoints.Value {
 		endpointsDescriptors = append(endpointsDescriptors, domain.EndpointDescriptor{
-			Path:  desc.Path,
-			Inner: desc.Inner,
+			HttpMethod: desc.HttpMethod,
+			Path:       desc.Path,
+			Inner:      desc.Inner,
 		})
 	}
 	slices.SortFunc(endpointsDescriptors, func(a, b domain.EndpointDescriptor) int {
-		return cmp.Compare(a.Path, b.Path)
+		c := cmp.Compare(a.Path, b.Path)
+		if c != 0 {
+			return c
+		}
+		return cmp.Compare(a.HttpMethod, b.HttpMethod)
 	})
 
 	conn := domain.Connection{
@@ -155,6 +160,7 @@ func (s Module) backendToDto(backend entity.Backend) (domain.Connection, error) 
 		ModuleName: backend.ModuleName,
 		LibVersion: backend.LibVersion,
 		Version:    backend.Version,
+		Transport:  backend.Transport,
 		Address: domain.Address{
 			Ip:   addr.IP,
 			Port: addr.Port,

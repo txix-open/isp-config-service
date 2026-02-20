@@ -26,11 +26,13 @@ func (r Backend) Insert(ctx context.Context, backend entity.Backend) error {
 
 	query, args, err := squirrel.Insert(Table("backend")).
 		Columns("ws_connection_id", "module_id", "address",
-			"version", "lib_version", "module_name", "config_service_node_id",
-			"endpoints", "required_modules", "metrics_autodiscovery").
+			"version", "lib_version", "module_name", "transport",
+			"config_service_node_id", "endpoints", "required_modules",
+			"metrics_autodiscovery").
 		Values(backend.WsConnectionId, backend.ModuleId, backend.Address,
-			backend.Version, backend.LibVersion, backend.ModuleName, backend.ConfigServiceNodeId,
-			backend.Endpoints, backend.RequiredModules, backend.MetricsAutodiscovery,
+			backend.Version, backend.LibVersion, backend.ModuleName, backend.Transport,
+			backend.ConfigServiceNodeId, backend.Endpoints, backend.RequiredModules,
+			backend.MetricsAutodiscovery,
 		).
 		ToSql()
 	if err != nil {

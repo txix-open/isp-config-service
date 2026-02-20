@@ -209,6 +209,7 @@ func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns [
 			ModuleName:      backend.ModuleName,
 			Version:         backend.Version,
 			LibVersion:      backend.LibVersion,
+			Transport:       backend.Transport,
 			Endpoints:       backend.Endpoints.Value,
 			RequiredModules: backend.RequiredModules.Value,
 			Address:         addr,
