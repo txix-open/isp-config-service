@@ -21,7 +21,7 @@ require (
 	github.com/tidwall/gjson v1.18.0
 	github.com/txix-open/etp/v4 v4.0.1
 	github.com/txix-open/go-cmp v0.0.0-20240401171944-16b203530f60
-	github.com/txix-open/isp-kit v1.64.10
+	github.com/txix-open/isp-kit v1.64.11
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sync v0.18.0
 	google.golang.org/grpc v1.77.0
