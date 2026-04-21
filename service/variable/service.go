@@ -2,13 +2,14 @@ package variable
 
 import (
 	"context"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/pkg/errors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
-	"regexp"
-	"strings"
-	"time"
 )
 
 type Repo interface {
@@ -91,8 +92,7 @@ func (s Service) GetByName(ctx context.Context, name string) (*domain.Variable, 
 		return nil, errors.WithMessage(err, "get meta by variables")
 	}
 
-	result := s.toDto(*variable, metaByVariables)
-	return &result, nil
+	return new(s.toDto(*variable, metaByVariables)), nil
 }
 
 func (s Service) Create(ctx context.Context, req domain.CreateVariableRequest) error {

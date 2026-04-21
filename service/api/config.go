@@ -87,8 +87,7 @@ func (c Config) GetActiveConfigByModuleName(ctx context.Context, moduleName stri
 		return nil, entity.ErrConfigNotFound
 	}
 
-	result := configToDto(*config, nil)
-	return &result, nil
+	return new(configToDto(*config, nil)), nil
 }
 
 func (c Config) GetConfigsByModuleId(ctx context.Context, moduleId string) ([]domain.Config, error) {
@@ -209,8 +208,7 @@ func (c Config) GetConfigById(ctx context.Context, configId string) (*domain.Con
 		return nil, entity.ErrConfigNotFound
 	}
 
-	result := configToDto(*config, nil)
-	return &result, nil
+	return new(configToDto(*config, nil)), nil
 }
 
 func (c Config) MarkConfigAsActive(ctx context.Context, configId string) error {
