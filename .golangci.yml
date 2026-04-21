@@ -10,7 +10,6 @@ linters:
     - exhaustruct # не имеет смысла
     - godot # не актуально для swagger
     - godox # не позволяет оставлять todo
-    - gomoddirectives
     - musttag # у нас собственное правило: не используем теги, если работаем с пакетом isp-kit/json и с внутренними структурами(между нашими сервисами), при этом теги обязательный для всех внешних для нас структур
     - nlreturn # не всегда имеет смысл
     - nolintlint # Goland все равно форматирует с отступом
@@ -18,7 +17,10 @@ linters:
     - tagalign # не всегда имеет смысл
     - varnamelen # очень индивидуально (db)
     - wsl # расставление пробелов очень индивидуально
-    - wsl_v5
+    - wsl_v5 # расставление пробелов очень индивидуально
+    - godoclint # ругается на // nolint, не удобно
+    - prealloc # слишком аггресивный, в большинстве случаев не требуется
+    - gomoddirectives # в проекте осознанно захардкожены версии зависимостей
   settings:
     cyclop:
       max-complexity: 15 # по умолчанию 10 мало
@@ -55,6 +57,10 @@ linters:
       - linters:
           - wrapcheck
         path: transaction # транзакции прозрачны
+      - linters:
+          - unqueryvet
+          - prealloc
+        path: ".*_test\\.go$"
     paths:
       - third_party$
       - builtin$
