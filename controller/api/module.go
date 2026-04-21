@@ -11,6 +11,7 @@ type ModuleService interface {
 	Status(ctx context.Context) ([]domain.ModuleInfo, error)
 	Delete(ctx context.Context, id string) error
 	Connections(ctx context.Context) ([]domain.Connection, error)
+	RequiredModules(ctx context.Context) ([]domain.ModuleRelation, error)
 }
 
 type Module struct {
@@ -63,6 +64,23 @@ func (c Module) DeleteModule(ctx context.Context, identities []string) (*domain.
 	return &domain.DeleteResponse{
 		Deleted: len(identities),
 	}, nil
+}
+
+// RequiredModules
+// @Summary Метод для получения зависимостей модулей
+// @Description Возвращает список модулей с их зависимостями
+// @Tags Модули
+// @Accept  json
+// @Produce  json
+// @Success 200 {array} domain.ModuleRelation
+// @Failure 500 {object} apierrors.Error
+// @Router /module/get_required_modules [POST]
+func (c Module) RequiredModules(ctx context.Context) ([]domain.ModuleRelation, error) {
+	relations, err := c.service.RequiredModules(ctx)
+	if err != nil {
+		return nil, apierrors.NewInternalServiceError(err)
+	}
+	return relations, nil
 }
 
 // Connections
