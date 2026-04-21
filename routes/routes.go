@@ -85,7 +85,7 @@ func endpointDescriptors(c Controllers) []cluster.EndpointDescriptor {
 			Handler: c.ModuleApi.Connections,
 		}, {
 			Path:    "config/module/get_required_modules",
-			Inner:   false,
+			Inner:   true,
 			Handler: c.ModuleApi.RequiredModules,
 		},
 		// configs
