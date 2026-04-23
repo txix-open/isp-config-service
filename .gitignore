@@ -67,8 +67,8 @@ fabric.properties
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-/node_modules/
 /vendor/
+/node_modules/
 package.json
 yarn.lock
 

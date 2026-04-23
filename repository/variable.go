@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strings"
 
 	"github.com/Masterminds/squirrel"
@@ -26,18 +25,28 @@ func NewVariable(db db.DB) Variable {
 func (r Variable) All(ctx context.Context) ([]entity.Variable, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Variable.All")
 
+	// nolint:unqueryvet
+	query, args, err := squirrel.Select("*").
+		From(Table("variable")).
+		OrderBy("created_at desc").
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
 	result := make([]entity.Variable, 0)
-	query := fmt.Sprintf("SELECT * FROM %s order by created_at desc", Table("variable"))
-	err := r.db.Select(ctx, &result, query)
+	err = r.db.Select(ctx, &result, query, args...)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "select: %s", query)
 	}
+
 	return result, nil
 }
 
 func (r Variable) GetByName(ctx context.Context, name string) (*entity.Variable, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Variable.GetByName")
 
+	// nolint:unqueryvet
 	query, args, err := squirrel.Select("*").
 		From(Table("variable")).
 		Where(squirrel.Eq{"name": name}).

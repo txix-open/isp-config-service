@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
@@ -35,12 +36,25 @@ func (r Event) Insert(ctx context.Context, event entity.Event) error {
 func (r Event) Get(ctx context.Context, lastEventId int, limit int) ([]entity.Event, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Event.Get")
 
-	query := fmt.Sprintf("select * from %s where id > ? order by id limit ?", Table("event"))
+	// nolint:unqueryvet,gosec
+	query, args, err := squirrel.Select("*").
+		From(Table("event")).
+		Where(squirrel.Gt{
+			"id": lastEventId,
+		}).
+		OrderBy("id").
+		Limit(uint64(limit)).
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
 	result := make([]entity.Event, 0)
-	err := r.db.Select(ctx, &result, query, lastEventId, limit)
+	err = r.db.Select(ctx, &result, query, args...)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "select: %s", query)
 	}
+
 	return result, nil
 }
 

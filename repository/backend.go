@@ -93,6 +93,7 @@ func (r Backend) DeleteByConfigServiceNodeId(ctx context.Context, configServiceN
 func (r Backend) GetByConfigServiceNodeId(ctx context.Context, configServiceNodeId string) ([]entity.Backend, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.GetByConfigServiceNodeId")
 
+	// nolint:unqueryvet
 	query, args, err := squirrel.Select("*").
 		From(Table("backend")).
 		Where(squirrel.Eq{
@@ -116,8 +117,17 @@ func (r Backend) All(ctx context.Context) ([]entity.Backend, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.All")
 
 	result := make([]entity.Backend, 0)
-	query := fmt.Sprintf("SELECT * FROM %s order by created_at desc", Table("backend"))
-	err := r.db.Select(ctx, &result, query)
+
+	// nolint:unqueryvet
+	query, args, err := squirrel.Select("*").
+		From(Table("backend")).
+		OrderBy("created_at desc").
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
+	err = r.db.Select(ctx, &result, query, args...)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "select: %s", query)
 	}
@@ -127,6 +137,7 @@ func (r Backend) All(ctx context.Context) ([]entity.Backend, error) {
 func (r Backend) GetByModuleId(ctx context.Context, moduleId string) ([]entity.Backend, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.GetByModuleId")
 
+	// nolint:unqueryvet
 	query, args, err := squirrel.Select("*").
 		From(Table("backend")).
 		Where(squirrel.Eq{

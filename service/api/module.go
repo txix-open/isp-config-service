@@ -107,6 +107,46 @@ func (s Module) Status(ctx context.Context) ([]domain.ModuleInfo, error) {
 	return moduleInfos, nil
 }
 
+func (s Module) RequiredModules(ctx context.Context) ([]domain.ModuleRelation, error) {
+	var (
+		modules  []entity.Module
+		backends []entity.Backend
+	)
+	group, groupCtx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		var err error
+		modules, err = s.moduleRepo.All(groupCtx)
+		return errors.WithMessage(err, "get all modules")
+	})
+	group.Go(func() error {
+		var err error
+		backends, err = s.backendsRepo.All(groupCtx)
+		return errors.WithMessage(err, "get all backends")
+	})
+	err := group.Wait()
+	if err != nil {
+		return nil, errors.WithMessage(err, "wait")
+	}
+
+	moduleIdsByName := make(map[string]string, len(modules))
+	for _, module := range modules {
+		moduleIdsByName[module.Name] = module.Id
+	}
+
+	requiredNamesByModuleId := requiredModuleNamesByModuleId(backends)
+
+	result := make([]domain.ModuleRelation, 0, len(modules))
+	for _, module := range modules {
+		result = append(result, domain.ModuleRelation{
+			Id:              module.Id,
+			Name:            module.Name,
+			RequiredModules: toRequiredModuleTypes(requiredNamesByModuleId[module.Id], moduleIdsByName),
+		})
+	}
+
+	return result, nil
+}
+
 func (s Module) Delete(ctx context.Context, id string) error {
 	err := s.moduleRepo.Delete(ctx, id)
 	if err != nil {
@@ -170,4 +210,39 @@ func (s Module) backendToDto(backend entity.Backend) (domain.Connection, error) 
 	}
 
 	return conn, nil
+}
+
+func requiredModuleNamesByModuleId(backends []entity.Backend) map[string]map[string]struct{} {
+	result := make(map[string]map[string]struct{})
+	for _, backend := range backends {
+		_, ok := result[backend.ModuleId]
+		if !ok {
+			result[backend.ModuleId] = make(map[string]struct{})
+		}
+
+		for _, dep := range backend.RequiredModules.Value {
+			result[backend.ModuleId][dep.Name] = struct{}{}
+		}
+	}
+
+	return result
+}
+
+func toRequiredModuleTypes(requiredNames map[string]struct{}, moduleIdsByName map[string]string) []domain.RequiredModuleType {
+	requiredModules := make([]domain.RequiredModuleType, 0, len(requiredNames))
+
+	for requiredName := range requiredNames {
+		requiredModules = append(
+			requiredModules,
+			domain.RequiredModuleType{
+				Id:   moduleIdsByName[requiredName],
+				Name: requiredName,
+			})
+	}
+
+	slices.SortFunc(requiredModules, func(a, b domain.RequiredModuleType) int {
+		return cmp.Compare(a.Name, b.Name)
+	})
+
+	return requiredModules
 }
