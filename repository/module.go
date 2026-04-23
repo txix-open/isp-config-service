@@ -66,6 +66,7 @@ func (r Module) SetDisconnectedAtNow(
 func (r Module) GetByNames(ctx context.Context, names []string) ([]entity.Module, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Module.GetByNames")
 
+	// nolint:unqueryvet
 	query, args, err := squirrel.Select("*").
 		From(Table("module")).
 		Where(squirrel.Eq{
@@ -88,19 +89,38 @@ func (r Module) GetByNames(ctx context.Context, names []string) ([]entity.Module
 func (r Module) GetById(ctx context.Context, id string) (*entity.Module, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Module.GetById")
 
-	query := fmt.Sprintf("select * from %s where id = ?", Table("module"))
-	return selectRow[entity.Module](ctx, r.db, query, id)
+	// nolint:unqueryvet
+	query, args, err := squirrel.Select("*").
+		From(Table("module")).
+		Where(squirrel.Eq{
+			"id": id,
+		}).
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
+	return selectRow[entity.Module](ctx, r.db, query, args...)
 }
 
 func (r Module) All(ctx context.Context) ([]entity.Module, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Module.All")
 
+	// nolint:unqueryvet
+	query, args, err := squirrel.Select("*").
+		From(Table("module")).
+		OrderBy("name").
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
 	result := make([]entity.Module, 0)
-	query := fmt.Sprintf("select * from %s order by name", Table("module"))
-	err := r.db.Select(ctx, &result, query)
+	err = r.db.Select(ctx, &result, query, args...)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "select: %s", query)
 	}
+
 	return result, nil
 }
 

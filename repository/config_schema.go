@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
@@ -46,18 +45,28 @@ func (r ConfigSchema) Upsert(ctx context.Context, schema entity.ConfigSchema) er
 func (r ConfigSchema) All(ctx context.Context) ([]entity.ConfigSchema, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigSchema.All")
 
+	// nolint:unqueryvet
+	query, args, err := squirrel.Select("*").
+		From(Table("config_schema")).
+		OrderBy("created_at").
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
 	result := make([]entity.ConfigSchema, 0)
-	query := fmt.Sprintf("select * from %s order by created_at", Table("config_schema"))
-	err := r.db.Select(ctx, &result, query)
+	err = r.db.Select(ctx, &result, query, args...)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "select: %s", query)
 	}
+
 	return result, nil
 }
 
 func (r ConfigSchema) GetByModuleId(ctx context.Context, moduleId string) (*entity.ConfigSchema, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigSchema.GetByModuleId")
 
+	// nolint:unqueryvet
 	query, args, err := squirrel.Select("*").
 		From(Table("config_schema")).
 		Where(squirrel.Eq{"module_id": moduleId}).
@@ -88,7 +97,7 @@ func (r ConfigSchema) UpdateByModuleId(ctx context.Context, moduleId string, dat
 }
 
 //nolint:nilnil
-func selectRow[T any](ctx context.Context, db db.DB, query string, args ...interface{}) (*T, error) {
+func selectRow[T any](ctx context.Context, db db.DB, query string, args ...any) (*T, error) {
 	var result T
 	err := db.SelectRow(ctx, &result, query, args...)
 	if errors.Is(err, sql.ErrNoRows) {

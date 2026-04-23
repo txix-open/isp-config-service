@@ -134,6 +134,7 @@ func (s ConfigHistory) OnUpdateConfig(ctx context.Context, oldConfig entity.Conf
 		return nil
 	}
 
+	// nolint:gosec
 	go func() {
 		deletedCount, err := s.repo.DeleteOld(context.Background(), oldConfig.Id, s.keepVersions)
 		if err != nil {

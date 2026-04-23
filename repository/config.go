@@ -46,6 +46,7 @@ func (r Config) Insert(ctx context.Context, cfg entity.Config) error {
 func (r Config) GetActive(ctx context.Context, moduleId string) (*entity.Config, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Config.GetActive")
 
+	// nolint:unqueryvet
 	query, args, err := squirrel.Select("*").
 		From(Table("config")).
 		Where(squirrel.Eq{
@@ -64,6 +65,7 @@ func (r Config) GetActive(ctx context.Context, moduleId string) (*entity.Config,
 func (r Config) GetByModuleId(ctx context.Context, moduleId string) ([]entity.Config, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Config.GetByModuleId")
 
+	// nolint:unqueryvet
 	query, args, err := squirrel.Select("*").
 		From(Table("config")).
 		Where(squirrel.Eq{
@@ -86,6 +88,7 @@ func (r Config) GetByModuleId(ctx context.Context, moduleId string) ([]entity.Co
 func (r Config) GetById(ctx context.Context, id string) (*entity.Config, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Config.GetById")
 
+	// nolint:unqueryvet
 	query, args, err := squirrel.Select("*").
 		From(Table("config")).
 		Where(squirrel.Eq{

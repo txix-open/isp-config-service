@@ -24,12 +24,23 @@ func NewConfigHistory(db db.DB) ConfigHistory {
 func (r ConfigHistory) GetByConfigId(ctx context.Context, configId string) ([]entity.ConfigHistory, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "ConfigHistory.GetByConfigId")
 
-	query := fmt.Sprintf(`select * from %s where config_id = ? order by version desc`, Table("config_history"))
+	// nolint:unqueryvet
+	query, args, err := squirrel.Select("*").
+		From(Table("config_history")).
+		Where(squirrel.Eq{
+			"config_id": configId,
+		}).OrderBy("version desc").
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
 	result := make([]entity.ConfigHistory, 0)
-	err := r.db.Select(ctx, &result, query, configId)
+	err = r.db.Select(ctx, &result, query, args...)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "select: %s", query)
 	}
+
 	return result, nil
 }
 

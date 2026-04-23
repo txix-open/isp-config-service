@@ -77,3 +77,14 @@ type ConfigSchema struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+type ModuleRelation struct {
+	Id              string
+	Name            string
+	RequiredModules []RequiredModuleType
+}
+
+type RequiredModuleType struct {
+	Id   string
+	Name string
+}
