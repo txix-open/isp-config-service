@@ -4,7 +4,7 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
-	"github.com/rqlite/rqlite/v9/auth"
+	"github.com/rqlite/rqlite/v10/auth"
 	"github.com/txix-open/isp-kit/json"
 )
 
