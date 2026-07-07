@@ -6,7 +6,7 @@ replace isp-config-service => ../..
 
 require (
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/mattn/go-sqlite3 v1.14.42
+	github.com/mattn/go-sqlite3 v1.14.47
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.27.2
 	github.com/txix-open/isp-kit v1.71.1

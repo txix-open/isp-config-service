@@ -26,7 +26,7 @@ import (
 	"github.com/rqlite/rqlite/v10/auto/backup"
 	"github.com/rqlite/rqlite/v10/cluster"
 	"github.com/rqlite/rqlite/v10/cmd"
-	command "github.com/rqlite/rqlite/v10/command/proto"
+	cmdpkg "github.com/rqlite/rqlite/v10/command"
 	"github.com/rqlite/rqlite/v10/db"
 	"github.com/rqlite/rqlite/v10/db/extensions"
 	httpd "github.com/rqlite/rqlite/v10/http"
@@ -83,7 +83,7 @@ func main(ctx context.Context, r *Rqlite) error {
 	r.localHttpAddr = cfg.HTTPAddr
 
 	// Configure logging and pump out initial message.
-	log.Printf("%s starting, version %s, SQLite %s, commit %s, branch %s, compiler (toolchain) %s, compiler (command) %s",
+	log.Printf("%s starting, version %s, SQLite %s, commit %s, compiler (toolchain) %s, compiler (command) %s",
 		name, cmd.Version, db.DBVersion, cmd.Commit, runtime.Compiler, cmd.CompilerCommand)
 	log.Printf("%s, target architecture is %s, operating system target is %s", runtime.Version(),
 		runtime.GOARCH, runtime.GOOS)
@@ -151,7 +151,10 @@ func main(ctx context.Context, r *Rqlite) error {
 	if err != nil {
 		log.Fatalf("failed to create cluster client: %s", err.Error())
 	}
-	httpServ, err := startHTTPService(cfg, str, clstrClient, credStr)
+	pxy := proxy.New(str, clstrClient)
+	pxy.SetAPIAddr(cfg.HTTPAdv)
+
+	httpServ, err := startHTTPService(cfg, str, clstrClient, credStr, pxy)
 	if err != nil {
 		log.Fatalf("failed to start HTTP server: %s", err.Error())
 	}
@@ -353,9 +356,9 @@ func createStore(cfg *Config, ln *tcp.Layer, extensions []string) (*store.Store,
 	return str, nil
 }
 
-func startHTTPService(cfg *Config, str *store.Store, cltr *cluster.Client, credStr *auth.CredentialsStore) (*httpd.Service, error) {
+func startHTTPService(cfg *Config, str *store.Store, cltr *cluster.Client, credStr *auth.CredentialsStore, pxy *proxy.Proxy) (*httpd.Service, error) {
 	// Create HTTP server and load authentication information.
-	s := httpd.New(cfg.HTTPAddr, str, cltr, proxy.New(str, cltr), credStr)
+	s := httpd.New(cfg.HTTPAddr, str, cltr, pxy, credStr)
 
 	s.CACertFile = cfg.HTTPx509CACert
 	s.CertFile = cfg.HTTPx509Cert
@@ -394,7 +397,7 @@ func startNodeMux(cfg *Config, ln net.Listener) (*tcp.Mux, error) {
 		}
 		if cfg.NodeVerifyClient {
 			b.WriteString(", mutual TLS enabled")
-			mux, err = tcp.NewMutualTLSMux(ln, adv, cfg.NodeX509Cert, cfg.NodeX509Key, cfg.NodeX509CACert, "")
+			mux, err = tcp.NewMutualTLSMux(ln, adv, cfg.NodeX509Cert, cfg.NodeX509Key, cfg.NodeX509CACert, cfg.NodeVerifyCommonName)
 		} else {
 			b.WriteString(", mutual TLS disabled")
 			mux, err = tcp.NewTLSMux(ln, adv, cfg.NodeX509Cert, cfg.NodeX509Key)
@@ -469,12 +472,7 @@ func createCluster(ctx context.Context, cfg *Config, hasPeers bool, client *clus
 		leader, _ := str.LeaderAddr()
 		return leader != ""
 	}
-	clusterSuf := func() command.Suffrage {
-		if cfg.RaftNonVoter {
-			return command.Suffrage_NON_VOTER
-		}
-		return command.Suffrage_VOTER
-	}()
+	clusterSuf := cmdpkg.SuffrageNonVoterFromBool(cfg.RaftNonVoter)
 
 	joiner := cluster.NewJoiner(client, cfg.JoinAttempts, cfg.JoinInterval)
 	joiner.SetCredentials(cluster.CredentialsFor(credStr, cfg.JoinAs))
