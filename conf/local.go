@@ -3,7 +3,7 @@ package conf
 import (
 	"isp-config-service/service/rqlite"
 
-	"github.com/rqlite/rqlite/v9/auth"
+	"github.com/rqlite/rqlite/v10/auth"
 	"github.com/txix-open/isp-kit/bootstrap"
 )
 

@@ -78,6 +78,9 @@ type Config struct {
 	// If NoNodeVerify is true this field is ignored.
 	NodeVerifyServerName string
 
+	// NodeVerifyCommonName is the CommonName to verify as on the certificates returned by a node.
+	NodeVerifyCommonName string
+
 	// NodeID is the Raft ID for the node.
 	NodeID string
 
