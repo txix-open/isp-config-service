@@ -22,15 +22,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rqlite/rqlite-disco-clients/dns"
 	"github.com/rqlite/rqlite-disco-clients/dnssrv"
-	"github.com/rqlite/rqlite/v9/auth"
-	"github.com/rqlite/rqlite/v9/auto/backup"
-	"github.com/rqlite/rqlite/v9/cluster"
-	"github.com/rqlite/rqlite/v9/cmd"
-	"github.com/rqlite/rqlite/v9/db"
-	"github.com/rqlite/rqlite/v9/db/extensions"
-	httpd "github.com/rqlite/rqlite/v9/http"
-	"github.com/rqlite/rqlite/v9/store"
-	"github.com/rqlite/rqlite/v9/tcp"
+	"github.com/rqlite/rqlite/v10/auth"
+	"github.com/rqlite/rqlite/v10/auto/backup"
+	"github.com/rqlite/rqlite/v10/cluster"
+	"github.com/rqlite/rqlite/v10/cmd"
+	cmdpkg "github.com/rqlite/rqlite/v10/command"
+	"github.com/rqlite/rqlite/v10/db"
+	"github.com/rqlite/rqlite/v10/db/extensions"
+	httpd "github.com/rqlite/rqlite/v10/http"
+	"github.com/rqlite/rqlite/v10/proxy"
+	"github.com/rqlite/rqlite/v10/store"
+	"github.com/rqlite/rqlite/v10/tcp"
 	"github.com/txix-open/isp-kit/config"
 )
 
@@ -57,7 +59,6 @@ func main(ctx context.Context, r *Rqlite) error {
 	cfg, err := ParseFlags(name, desc, &BuildInfo{
 		Version:       cmd.Version,
 		Commit:        cmd.Commit,
-		Branch:        cmd.Branch,
 		SQLiteVersion: db.DBVersion,
 	})
 	if err != nil {
@@ -82,8 +83,8 @@ func main(ctx context.Context, r *Rqlite) error {
 	r.localHttpAddr = cfg.HTTPAddr
 
 	// Configure logging and pump out initial message.
-	log.Printf("%s starting, version %s, SQLite %s, commit %s, branch %s, compiler (toolchain) %s, compiler (command) %s",
-		name, cmd.Version, db.DBVersion, cmd.Commit, cmd.Branch, runtime.Compiler, cmd.CompilerCommand)
+	log.Printf("%s starting, version %s, SQLite %s, commit %s, compiler (toolchain) %s, compiler (command) %s",
+		name, cmd.Version, db.DBVersion, cmd.Commit, runtime.Compiler, cmd.CompilerCommand)
 	log.Printf("%s, target architecture is %s, operating system target is %s", runtime.Version(),
 		runtime.GOARCH, runtime.GOOS)
 	log.Printf("launch command: %s", strings.Join(os.Args, " "))
@@ -150,7 +151,10 @@ func main(ctx context.Context, r *Rqlite) error {
 	if err != nil {
 		log.Fatalf("failed to create cluster client: %s", err.Error())
 	}
-	httpServ, err := startHTTPService(cfg, str, clstrClient, credStr)
+	pxy := proxy.New(str, clstrClient)
+	pxy.SetAPIAddr(cfg.HTTPAdv)
+
+	httpServ, err := startHTTPService(cfg, str, clstrClient, credStr, pxy)
 	if err != nil {
 		log.Fatalf("failed to start HTTP server: %s", err.Error())
 	}
@@ -209,7 +213,7 @@ func main(ctx context.Context, r *Rqlite) error {
 		remover := cluster.NewRemover(clstrClient, 5*time.Second, str)
 		remover.SetCredentials(cluster.CredentialsFor(credStr, cfg.JoinAs))
 		log.Printf("initiating removal of this node from cluster before shutdown")
-		if err := remover.Do(cfg.NodeID, true); err != nil {
+		if err := remover.Do(mainCtx, cfg.NodeID, true); err != nil {
 			log.Fatalf("failed to remove this node from cluster before shutdown: %s", err.Error())
 		}
 		log.Printf("removed this node successfully from cluster before shutdown")
@@ -318,7 +322,6 @@ func createExtensionsStore(cfg *Config) (*extensions.Store, error) {
 
 func createStore(cfg *Config, ln *tcp.Layer, extensions []string) (*store.Store, error) {
 	dbConf := store.NewDBConfig()
-	dbConf.OnDiskPath = cfg.OnDiskPath
 	dbConf.FKConstraints = cfg.FKConstraints
 	dbConf.Extensions = extensions
 
@@ -353,9 +356,9 @@ func createStore(cfg *Config, ln *tcp.Layer, extensions []string) (*store.Store,
 	return str, nil
 }
 
-func startHTTPService(cfg *Config, str *store.Store, cltr *cluster.Client, credStr *auth.CredentialsStore) (*httpd.Service, error) {
+func startHTTPService(cfg *Config, str *store.Store, cltr *cluster.Client, credStr *auth.CredentialsStore, pxy *proxy.Proxy) (*httpd.Service, error) {
 	// Create HTTP server and load authentication information.
-	s := httpd.New(cfg.HTTPAddr, str, cltr, credStr)
+	s := httpd.New(cfg.HTTPAddr, str, cltr, pxy, credStr)
 
 	s.CACertFile = cfg.HTTPx509CACert
 	s.CertFile = cfg.HTTPx509Cert
@@ -367,7 +370,6 @@ func startHTTPService(cfg *Config, str *store.Store, cltr *cluster.Client, credS
 	s.DefaultQueueTx = cfg.WriteQueueTx
 	s.BuildInfo = map[string]interface{}{
 		"commit":             cmd.Commit,
-		"branch":             cmd.Branch,
 		"version":            cmd.Version,
 		"compiler_toolchain": runtime.Compiler,
 		"compiler_command":   cmd.CompilerCommand,
@@ -395,7 +397,7 @@ func startNodeMux(cfg *Config, ln net.Listener) (*tcp.Mux, error) {
 		}
 		if cfg.NodeVerifyClient {
 			b.WriteString(", mutual TLS enabled")
-			mux, err = tcp.NewMutualTLSMux(ln, adv, cfg.NodeX509Cert, cfg.NodeX509Key, cfg.NodeX509CACert)
+			mux, err = tcp.NewMutualTLSMux(ln, adv, cfg.NodeX509Cert, cfg.NodeX509Key, cfg.NodeX509CACert, cfg.NodeVerifyCommonName)
 		} else {
 			b.WriteString(", mutual TLS disabled")
 			mux, err = tcp.NewTLSMux(ln, adv, cfg.NodeX509Cert, cfg.NodeX509Key)
@@ -470,7 +472,7 @@ func createCluster(ctx context.Context, cfg *Config, hasPeers bool, client *clus
 		leader, _ := str.LeaderAddr()
 		return leader != ""
 	}
-	clusterSuf := cluster.VoterSuffrage(!cfg.RaftNonVoter)
+	clusterSuf := cmdpkg.SuffrageNonVoterFromBool(cfg.RaftNonVoter)
 
 	joiner := cluster.NewJoiner(client, cfg.JoinAttempts, cfg.JoinInterval)
 	joiner.SetCredentials(cluster.CredentialsFor(credStr, cfg.JoinAs))
