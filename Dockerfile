@@ -1,4 +1,4 @@
-FROM golang:1.26-alpine as builder
+FROM golang:1.26-alpine AS builder
 WORKDIR /build
 ARG version
 ENV version_env=$version
@@ -8,15 +8,15 @@ COPY . .
 RUN apk update && apk upgrade && apk add --no-cache gcc musl-dev
 RUN go build -ldflags="-X 'main.version=$version_env'" -o /main .
 WORKDIR cmd/migrate
-RUN CGO_ENABLED=1 go build -o /migrate .
+#RUN CGO_ENABLED=1 go build -o /migrate .
 
-FROM alpine:3.22
+FROM alpine:3.23
 
 RUN apk add --no-cache tzdata
 RUN cp /usr/share/zoneinfo/Europe/Moscow /etc/localtime
 RUN echo "Europe/Moscow" > /etc/timezone
 
-COPY --from=builder migrate /migrate/migrate
+#COPY --from=builder migrate /migrate/migrate
 COPY cmd/migrate/config.yml /migrate/config.yml
 RUN chmod 666 /migrate/config.yml
 
