@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Masterminds/squirrel"
-	"github.com/pkg/errors"
 	"isp-config-service/entity"
 	"isp-config-service/middlewares/sql_metrics"
 	"isp-config-service/service/rqlite/db"
+
+	"github.com/Masterminds/squirrel"
+	"github.com/pkg/errors"
 )
 
 type Backend struct {
@@ -21,8 +22,8 @@ func NewBackend(db db.DB) Backend {
 	}
 }
 
-func (r Backend) Insert(ctx context.Context, backend entity.Backend) error {
-	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.Insert")
+func (r Backend) Upsert(ctx context.Context, backend entity.Backend) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.Upsert")
 
 	query, args, err := squirrel.Insert(Table("backend")).
 		Columns("ws_connection_id", "module_id", "address",
@@ -34,6 +35,13 @@ func (r Backend) Insert(ctx context.Context, backend entity.Backend) error {
 			backend.ConfigServiceNodeId, backend.Endpoints, backend.RequiredModules,
 			backend.MetricsAutodiscovery,
 		).
+		Suffix(`on conflict (ws_connection_id) do update
+		set module_id = excluded.module_id, address = excluded.address,
+		version = excluded.version, lib_version = excluded.lib_version,
+		module_name = excluded.module_name, transport = excluded.transport,
+		config_service_node_id = excluded.config_service_node_id,
+		endpoints = excluded.endpoints, required_modules = excluded.required_modules,
+		metrics_autodiscovery = excluded.metrics_autodiscovery`).
 		ToSql()
 	if err != nil {
 		return errors.WithMessage(err, "build query")
