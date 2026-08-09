@@ -15,7 +15,7 @@ import (
 )
 
 type Repo interface {
-	Insert(ctx context.Context, backend entity.Backend) error
+	Upsert(ctx context.Context, backend entity.Backend) error
 	DeleteByWsConnectionIds(ctx context.Context, wsConnIds []string) error
 	GetByConfigServiceNodeId(ctx context.Context, configServiceNodeId string) ([]entity.Backend, error)
 	DeleteByConfigServiceNodeId(ctx context.Context, configServiceNodeId string) (int, error)
@@ -86,7 +86,7 @@ func (s Backend) Connect(
 		MetricsAutodiscovery: metricsAd,
 	}
 
-	err := s.backendRepo.Insert(ctx, backend)
+	err := s.backendRepo.Upsert(ctx, backend)
 	if err != nil {
 		return nil, errors.WithMessage(err, "upsert backend in store")
 	}
