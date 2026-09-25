@@ -5,8 +5,8 @@ import (
 
 	"github.com/txix-open/etp/v4"
 
-	"github.com/pkg/errors"
 	"github.com/txix-open/isp-kit/cluster"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/json"
 	"github.com/txix-open/isp-kit/log"
 	"isp-config-service/entity"

@@ -18,9 +18,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/pkg/errors"
 	"github.com/txix-open/isp-kit/app"
 	"github.com/txix-open/isp-kit/db"
+	"github.com/txix-open/isp-kit/errors"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
 	"isp-config-service/migrate/migration"

@@ -3,7 +3,7 @@ package metrics
 import (
 	"context"
 
-	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/errors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 )

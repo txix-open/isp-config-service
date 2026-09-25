@@ -153,7 +153,7 @@ func newClusterClientWith(
 			IP:   host,
 			Port: "9999",
 		},
-		Endpoints:            nil,
+		EndpointsResolver:    cluster.StaticEndpointResolver{},
 		MetricsAutodiscovery: metricsAd,
 	}, cluster.ConfigData{
 		Version: "1.0.0",

@@ -6,8 +6,8 @@ import (
 
 	"isp-config-service/repository"
 
-	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3/database"
+	"github.com/txix-open/isp-kit/errors"
 )
 
 type Store struct {

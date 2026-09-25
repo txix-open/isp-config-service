@@ -9,7 +9,7 @@ import (
 	"isp-config-service/service/rqlite/db"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/errors"
 )
 
 type Backend struct {

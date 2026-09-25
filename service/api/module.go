@@ -6,7 +6,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/json"
 	"golang.org/x/sync/errgroup"
 	"isp-config-service/domain"

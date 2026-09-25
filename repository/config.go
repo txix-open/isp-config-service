@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/errors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
