@@ -58,17 +58,26 @@ func (s Module) Status(ctx context.Context) ([]domain.ModuleInfo, error) {
 	group.Go(func() error {
 		var err error
 		modules, err = s.moduleRepo.All(ctx)
-		return errors.WithMessage(err, "get all modules")
+		if err != nil {
+			return errors.WithMessage(err, "get all modules")
+		}
+		return nil
 	})
 	group.Go(func() error {
 		var err error
 		backends, err = s.backendsRepo.All(ctx)
-		return errors.WithMessage(err, "get all backends")
+		if err != nil {
+			return errors.WithMessage(err, "get all backends")
+		}
+		return nil
 	})
 	group.Go(func() error {
 		var err error
 		schemas, err = s.schemaRepo.All(ctx)
-		return errors.WithMessage(err, "get all schemas")
+		if err != nil {
+			return errors.WithMessage(err, "get all schemas")
+		}
+		return nil
 	})
 	err := group.Wait()
 	if err != nil {
@@ -116,12 +125,18 @@ func (s Module) RequiredModules(ctx context.Context) ([]domain.ModuleRelation, e
 	group.Go(func() error {
 		var err error
 		modules, err = s.moduleRepo.All(groupCtx)
-		return errors.WithMessage(err, "get all modules")
+		if err != nil {
+			return errors.WithMessage(err, "get all modules")
+		}
+		return nil
 	})
 	group.Go(func() error {
 		var err error
 		backends, err = s.backendsRepo.All(groupCtx)
-		return errors.WithMessage(err, "get all backends")
+		if err != nil {
+			return errors.WithMessage(err, "get all backends")
+		}
+		return nil
 	})
 	err := group.Wait()
 	if err != nil {
