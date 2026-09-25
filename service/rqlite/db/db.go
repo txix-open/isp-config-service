@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/http/httpcli"
 	"github.com/txix-open/isp-kit/json"
 )

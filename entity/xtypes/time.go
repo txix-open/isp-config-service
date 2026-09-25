@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/errors"
 )
 
 type Time time.Time

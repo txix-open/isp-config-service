@@ -3,7 +3,7 @@ package controller
 import (
 	"context"
 
-	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/http/apierrors"
 	"isp-config-service/domain"
 )

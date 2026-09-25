@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/errors"
 	"isp-config-service/entity"
 	"isp-config-service/middlewares/sql_metrics"
 	"isp-config-service/service/rqlite/db"

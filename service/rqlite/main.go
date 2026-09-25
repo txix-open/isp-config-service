@@ -19,7 +19,6 @@ import (
 	"isp-config-service/service/rqlite/internal/rarchive"
 	"isp-config-service/service/rqlite/internal/rtls"
 
-	"github.com/pkg/errors"
 	"github.com/rqlite/rqlite-disco-clients/dns"
 	"github.com/rqlite/rqlite-disco-clients/dnssrv"
 	"github.com/rqlite/rqlite/v10/auth"
@@ -34,6 +33,7 @@ import (
 	"github.com/rqlite/rqlite/v10/store"
 	"github.com/rqlite/rqlite/v10/tcp"
 	"github.com/txix-open/isp-kit/config"
+	"github.com/txix-open/isp-kit/errors"
 )
 
 const name = `rqlite`
