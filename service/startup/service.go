@@ -12,12 +12,12 @@ import (
 	"isp-config-service/service/rqlite/db"
 	"isp-config-service/service/rqlite/goose_store"
 
-	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3"
 	"github.com/txix-open/isp-kit/app"
 	"github.com/txix-open/isp-kit/bootstrap"
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/dbx/migration"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/http"
 	"github.com/txix-open/isp-kit/http/httpcli"

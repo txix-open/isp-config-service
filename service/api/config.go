@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"github.com/txix-open/go-cmp/cmp"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/json"
 	"github.com/txix-open/isp-kit/log"
 	"github.com/xeipuuv/gojsonschema"

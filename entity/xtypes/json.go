@@ -3,7 +3,7 @@ package xtypes
 import (
 	"strconv"
 
-	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/json"
 )
 

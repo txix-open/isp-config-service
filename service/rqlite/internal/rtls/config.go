@@ -7,7 +7,7 @@ import (
 	"crypto/x509"
 	"os"
 
-	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/errors"
 )
 
 // MTLSState indicates whether mutual TLS is enabled or disabled.

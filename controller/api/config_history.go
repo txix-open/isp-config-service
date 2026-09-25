@@ -6,7 +6,7 @@ import (
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 
-	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/grpc/apierrors"
 )
 

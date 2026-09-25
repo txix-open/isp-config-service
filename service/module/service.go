@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"github.com/txix-open/etp/v4"
 	"github.com/txix-open/etp/v4/store"
 	"github.com/txix-open/isp-kit/cluster"
+	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/log"
 	"isp-config-service/domain"
 	"isp-config-service/entity"

@@ -16,8 +16,7 @@ func NewCompactor() Compactor {
 func (c Compactor) Compact(events []entity.Event) []entity.Event {
 	uniqueEvents := make([]entity.Event, 0, len(events))
 	uniqueEventKeys := make(map[string]bool, len(events))
-	for i := len(events) - 1; i >= 0; i-- {
-		event := events[i]
+	for _, event := range slices.Backward(events) {
 		key := event.Key()
 		if uniqueEventKeys[key] {
 			continue

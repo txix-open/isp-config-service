@@ -26,7 +26,12 @@ var (
 //go:generate swag init --parseDependency
 //go:generate rm -f docs/swagger.json docs/docs.go
 func main() {
-	boot := bootstrap.New(version, conf.Remote{}, routes.EndpointDescriptors(), cluster.GrpcTransport)
+	boot := bootstrap.New(
+		version,
+		conf.Remote{},
+		cluster.Endpoints(routes.EndpointDescriptors()),
+		cluster.GrpcTransport,
+	)
 	app := boot.App
 	logger := app.Logger()
 
