@@ -157,14 +157,10 @@ func (r Variable) UpsertLinks(ctx context.Context, configId string, links []enti
 	}
 
 	for _, variable := range links {
-		query, args, err := squirrel.Insert(Table("config_has_variable")).
-			Columns("config_id", "variable_name").
-			Values(variable.ConfigId, variable.VariableName).
-			ToSql()
-		if err != nil {
-			return errors.WithMessage(err, "build query")
-		}
-		requests = append(requests, db.Request(query, args...))
+		requests = append(requests, db.Request(
+			`insert or ignore into `+Table("config_has_variable")+` (config_id, variable_name) values (?, ?)`,
+			variable.ConfigId, variable.VariableName,
+		))
 	}
 
 	_, err = r.db.ExecTransaction(ctx, requests)

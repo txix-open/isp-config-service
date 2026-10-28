@@ -295,14 +295,14 @@ func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.Cre
 		Active:   false,
 		AdminId:  adminId,
 	}
-	err := c.configRepo.Insert(ctx, config)
-	if err != nil {
-		return domain.Config{}, errors.WithMessage(err, "insert new config")
-	}
-
+	// Check variables before insert so a config with missing variables is never persisted without links.
 	extractResult, err := c.extractAndCheckVariables(ctx, config.Id, config.Data)
 	if err != nil {
 		return domain.Config{}, err
+	}
+	err = c.configRepo.Insert(ctx, config)
+	if err != nil {
+		return domain.Config{}, errors.WithMessage(err, "insert new config")
 	}
 	err = c.variableService.SaveVariableLinks(ctx, config.Id, extractResult.VariableLinks)
 	if err != nil {
@@ -323,7 +323,7 @@ func (c Config) extractAndCheckVariables(ctx context.Context, configId string, i
 		for _, variable := range variableExtractionResult.AbsentVariables {
 			details[variable] = "variable is not defined"
 		}
-		return nil, domain.NewConfigValidationError(details)
+		return nil, errors.WithMessage(domain.NewConfigValidationError(details), "config validation")
 	}
 	return variableExtractionResult, nil
 }
@@ -345,7 +345,7 @@ func (c Config) validateConfigUpdate(ctx context.Context, moduleId string, confi
 		return nil
 	}
 
-	return domain.NewConfigValidationError(details)
+	return errors.WithMessage(domain.NewConfigValidationError(details), "config validation")
 }
 
 func (c Config) emitChangeActiveConfigEvent(ctx context.Context, moduleId string) error {

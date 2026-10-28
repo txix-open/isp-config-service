@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"slices"
 
 	"github.com/txix-open/etp/v4"
 
@@ -27,7 +28,7 @@ func EtpLogger(logger log.Logger) EtpMiddleware {
 
 //nolint:ireturn
 func EtpChain(root etp.Handler, middlewares ...EtpMiddleware) etp.Handler {
-	for i := len(middlewares) - 1; i >= 0; i-- {
+	for i := range slices.Backward(middlewares) {
 		root = middlewares[i](root)
 	}
 	return root
