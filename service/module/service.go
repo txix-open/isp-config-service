@@ -221,17 +221,18 @@ func (s Service) OnModuleConfigSchema(
 			Version:  1,
 			Active:   xtypes.Bool(true),
 		}
-		err := s.configRepo.Insert(ctx, initialConfig)
-		if err != nil {
-			return errors.WithMessage(err, "insert config in store")
-		}
 
 		result, err := s.variableService.ExtractVariables(ctx, initialConfig.Id, initialConfig.Data)
 		if err != nil {
-			return errors.WithMessage(err, "extract and save variable links in store")
+			return errors.WithMessage(err, "extract variables from initial config")
 		}
 		if len(result.AbsentVariables) > 0 {
 			return errors.Errorf("missing variables in initial config: [%s]", strings.Join(result.AbsentVariables, ","))
+		}
+
+		err = s.configRepo.Insert(ctx, initialConfig)
+		if err != nil {
+			return errors.WithMessage(err, "insert config in store")
 		}
 		err = s.variableService.SaveVariableLinks(ctx, initialConfig.Id, result.VariableLinks)
 		if err != nil {

@@ -215,9 +215,15 @@ func (s Service) RenderConfig(ctx context.Context, input []byte) ([]byte, error)
 
 func (s Service) ExtractVariables(ctx context.Context, configId string, input []byte) (*domain.VariableExtractionResult, error) {
 	matches := s.variableRegexp.FindAllStringSubmatch(string(input), -1)
-	varNames := make([]string, len(matches))
-	for i, match := range matches {
-		varNames[i] = match[1]
+	seen := make(map[string]bool, len(matches))
+	varNames := make([]string, 0, len(matches))
+	for _, match := range matches {
+		name := match[1]
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
+		varNames = append(varNames, name)
 	}
 	if len(varNames) == 0 {
 		return &domain.VariableExtractionResult{
