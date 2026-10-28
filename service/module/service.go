@@ -240,16 +240,6 @@ func (s Service) OnModuleConfigSchema(
 		}
 
 		config = &initialConfig
-	} else {
-		// Re-sync links on every connect: they are derived data and may be missing after a partially failed update.
-		result, err := s.variableService.ExtractVariables(ctx, config.Id, config.Data)
-		if err != nil {
-			return errors.WithMessage(err, "extract variables from active config")
-		}
-		err = s.variableService.SaveVariableLinks(ctx, config.Id, result.VariableLinks)
-		if err != nil {
-			return errors.WithMessage(err, "resync variable links in store")
-		}
 	}
 
 	configData, err := s.variableService.RenderConfig(ctx, config.Data)

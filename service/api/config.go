@@ -152,11 +152,6 @@ func (c Config) CreateUpdateConfig(
 		return nil, errors.WithMessage(err, "compare data configs")
 	}
 	if isMatch {
-		// Links may be missing after a partially failed update; re-save them even when data is unchanged.
-		err = c.variableService.SaveVariableLinks(ctx, req.Id, variableExtractionResult.VariableLinks)
-		if err != nil {
-			return nil, errors.WithMessage(err, "save variable links")
-		}
 		c.logger.Info(ctx, "no changes in config; skip update")
 		return &domain.CreateUpdateConfigResponse{Config: configToDto(*oldConfig, nil), IsChanged: false}, nil
 	}
@@ -328,7 +323,7 @@ func (c Config) extractAndCheckVariables(ctx context.Context, configId string, i
 		for _, variable := range variableExtractionResult.AbsentVariables {
 			details[variable] = "variable is not defined"
 		}
-		return nil, domain.NewConfigValidationError(details)
+		return nil, errors.WithMessage(domain.NewConfigValidationError(details), "config validation")
 	}
 	return variableExtractionResult, nil
 }
@@ -350,7 +345,7 @@ func (c Config) validateConfigUpdate(ctx context.Context, moduleId string, confi
 		return nil
 	}
 
-	return domain.NewConfigValidationError(details)
+	return errors.WithMessage(domain.NewConfigValidationError(details), "config validation")
 }
 
 func (c Config) emitChangeActiveConfigEvent(ctx context.Context, moduleId string) error {

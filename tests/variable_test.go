@@ -124,7 +124,7 @@ func TestVariableAcceptance(t *testing.T) {
 	require.Empty(allResponse[1].Value) // secret
 }
 
-//nolint:paralleltest
+//nolint:funlen,paralleltest
 func TestVariableLinksAfterConfigUpdate(t *testing.T) {
 	require := require.New(t)
 	logger := setupTest(t)

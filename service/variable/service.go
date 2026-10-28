@@ -20,12 +20,10 @@ type Repo interface {
 	Upsert(ctx context.Context, variables []entity.Variable) error
 	Delete(ctx context.Context, name string) (bool, error)
 	UpsertLinks(ctx context.Context, configId string, links []entity.ConfigHasVariable) error
-	InsertLinks(ctx context.Context, links []entity.ConfigHasVariable) error
 }
 
 type ConfigRepo interface {
 	GetMetaByVariables(ctx context.Context, variables []string) (map[string][]entity.ConfigMetaWithVariable, error)
-	FindIdsByVariableReference(ctx context.Context, variableName string) ([]string, error)
 }
 
 type EventRepo interface {
@@ -108,16 +106,6 @@ func (s Service) Create(ctx context.Context, req domain.CreateVariableRequest) e
 	if err != nil {
 		return errors.WithMessage(err, "insert variable")
 	}
-
-	err = s.syncVariableLinks(ctx, []string{variable.Name})
-	if err != nil {
-		return errors.WithMessage(err, "sync variable links")
-	}
-
-	err = s.syncConfigsByVariables(ctx, []string{variable.Name})
-	if err != nil {
-		return errors.WithMessage(err, "sync configs by variables")
-	}
 	return nil
 }
 
@@ -161,11 +149,6 @@ func (s Service) Upsert(ctx context.Context, req []domain.UpsertVariableRequest)
 	err := s.repo.Upsert(ctx, variables)
 	if err != nil {
 		return errors.WithMessage(err, "upsert variables")
-	}
-
-	err = s.syncVariableLinks(ctx, variableNames)
-	if err != nil {
-		return errors.WithMessage(err, "sync variable links")
 	}
 
 	err = s.syncConfigsByVariables(ctx, variableNames)
@@ -308,28 +291,6 @@ func (s Service) toDto(variable entity.Variable, metaByVariables map[string][]en
 		UpdatedAt:         time.Time(variable.UpdatedAt),
 		ContainsInConfigs: containsInConfigs,
 	}
-}
-
-func (s Service) syncVariableLinks(ctx context.Context, variableNames []string) error {
-	for _, name := range variableNames {
-		configIds, err := s.configRepo.FindIdsByVariableReference(ctx, name)
-		if err != nil {
-			return errors.WithMessagef(err, "find configs referencing variable: %s", name)
-		}
-		links := make([]entity.ConfigHasVariable, 0, len(configIds))
-		for _, configId := range configIds {
-			links = append(links, entity.ConfigHasVariable{
-				ConfigId:     configId,
-				VariableName: name,
-			})
-		}
-		err = s.repo.InsertLinks(ctx, links)
-		if err != nil {
-			return errors.WithMessagef(err, "insert links for variable: %s", name)
-		}
-	}
-
-	return nil
 }
 
 func (s Service) syncConfigsByVariables(ctx context.Context, variables []string) error {
