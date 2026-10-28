@@ -152,6 +152,11 @@ func (c Config) CreateUpdateConfig(
 		return nil, errors.WithMessage(err, "compare data configs")
 	}
 	if isMatch {
+		// Links may be missing after a partially failed update; re-save them even when data is unchanged.
+		err = c.variableService.SaveVariableLinks(ctx, req.Id, variableExtractionResult.VariableLinks)
+		if err != nil {
+			return nil, errors.WithMessage(err, "save variable links")
+		}
 		c.logger.Info(ctx, "no changes in config; skip update")
 		return &domain.CreateUpdateConfigResponse{Config: configToDto(*oldConfig, nil), IsChanged: false}, nil
 	}
@@ -295,14 +300,14 @@ func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.Cre
 		Active:   false,
 		AdminId:  adminId,
 	}
-	err := c.configRepo.Insert(ctx, config)
-	if err != nil {
-		return domain.Config{}, errors.WithMessage(err, "insert new config")
-	}
-
+	// Check variables before insert so a config with missing variables is never persisted without links.
 	extractResult, err := c.extractAndCheckVariables(ctx, config.Id, config.Data)
 	if err != nil {
 		return domain.Config{}, err
+	}
+	err = c.configRepo.Insert(ctx, config)
+	if err != nil {
+		return domain.Config{}, errors.WithMessage(err, "insert new config")
 	}
 	err = c.variableService.SaveVariableLinks(ctx, config.Id, extractResult.VariableLinks)
 	if err != nil {

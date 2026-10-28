@@ -148,6 +148,11 @@ func (d Adapter) exec(ctx context.Context, inTx bool, requests [][]any) ([]sql.R
 
 	results := make([]sql.Result, 0, len(requests))
 	for _, result := range resp.Results {
+		// rqlite reports per-statement failures in individual results with HTTP 200,
+		// and aborts the whole transaction on the first failed statement.
+		if err := catchError(nil, result); err != nil {
+			return nil, errors.WithMessagef(err, "exec transaction on statement: %v", requests[min(len(results), len(requests)-1)])
+		}
 		results = append(results, result)
 	}
 

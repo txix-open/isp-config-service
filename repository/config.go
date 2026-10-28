@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/txix-open/isp-kit/errors"
@@ -201,6 +202,37 @@ func (r Config) GetMetaByVariables(ctx context.Context, variables []string) (map
 	}
 
 	return result, nil
+}
+
+func (r Config) FindIdsByVariableReference(ctx context.Context, variableName string) ([]string, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Config.FindIdsByVariableReference")
+
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(variableName)
+	pattern := `%\_Var\(` + escaped + `)%`
+
+	// nolint:unqueryvet
+	query, args, err := squirrel.Select("id").
+		From(Table("config")).
+		Where(squirrel.Expr(`data like ? escape '\'`, pattern)).
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
+	type configIdRow struct {
+		Id string `json:"id"`
+	}
+	rows := make([]configIdRow, 0)
+	err = r.db.Select(ctx, &rows, query, args...)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+
+	ids := make([]string, 0, len(rows))
+	for _, row := range rows {
+		ids = append(ids, row.Id)
+	}
+	return ids, nil
 }
 
 func (r Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNameRequest) (bool, error) {

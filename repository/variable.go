@@ -157,17 +157,36 @@ func (r Variable) UpsertLinks(ctx context.Context, configId string, links []enti
 	}
 
 	for _, variable := range links {
-		query, args, err := squirrel.Insert(Table("config_has_variable")).
-			Columns("config_id", "variable_name").
-			Values(variable.ConfigId, variable.VariableName).
-			ToSql()
-		if err != nil {
-			return errors.WithMessage(err, "build query")
-		}
-		requests = append(requests, db.Request(query, args...))
+		requests = append(requests, db.Request(
+			`insert or ignore into `+Table("config_has_variable")+` (config_id, variable_name) values (?, ?)`,
+			variable.ConfigId, variable.VariableName,
+		))
 	}
 
 	_, err = r.db.ExecTransaction(ctx, requests)
+	if err != nil {
+		return errors.WithMessagef(err, "exec transaction: %v", requests)
+	}
+
+	return nil
+}
+
+func (r Variable) InsertLinks(ctx context.Context, links []entity.ConfigHasVariable) error {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Variable.InsertLinks")
+
+	if len(links) == 0 {
+		return nil
+	}
+
+	requests := make([][]any, 0, len(links))
+	for _, link := range links {
+		requests = append(requests, db.Request(
+			`insert or ignore into `+Table("config_has_variable")+` (config_id, variable_name) values (?, ?)`,
+			link.ConfigId, link.VariableName,
+		))
+	}
+
+	_, err := r.db.ExecTransaction(ctx, requests)
 	if err != nil {
 		return errors.WithMessagef(err, "exec transaction: %v", requests)
 	}
