@@ -1,10 +1,11 @@
 module isp-config-service
 
-go 1.26.0
+go 1.27
 
 replace (
 	github.com/armon/go-metrics => github.com/hashicorp/go-metrics v0.5.1
 	github.com/mattn/go-sqlite3 => github.com/rqlite/go-sqlite3 v1.48.0
+	github.com/txix-open/isp-kit => /Users/yankomissarov/GolandProjects/isp-kit
 )
 
 require (
