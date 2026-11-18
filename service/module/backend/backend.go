@@ -7,6 +7,7 @@ import (
 
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
+	"isp-config-service/service/module/leader"
 
 	"github.com/txix-open/etp/v4"
 	"github.com/txix-open/isp-kit/cluster"
@@ -19,6 +20,7 @@ type Repo interface {
 	DeleteByWsConnectionIds(ctx context.Context, wsConnIds []string) error
 	GetByConfigServiceNodeId(ctx context.Context, configServiceNodeId string) ([]entity.Backend, error)
 	DeleteByConfigServiceNodeId(ctx context.Context, configServiceNodeId string) (int, error)
+	GetForLeaderElection(ctx context.Context, moduleId string) ([]entity.Backend, error)
 }
 
 type EventRepo interface {
@@ -87,9 +89,19 @@ func (s Backend) Connect(
 		MetricsAutodiscovery: metricsAd,
 	}
 
-	err := s.backendRepo.Upsert(ctx, backend)
+	previousLeader, err := s.leaderAddress(ctx, moduleId)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "get leader of module %s before connect", moduleId)
+	}
+
+	err = s.backendRepo.Upsert(ctx, backend)
 	if err != nil {
 		return nil, errors.WithMessage(err, "upsert backend in store")
+	}
+
+	leaderAddress, err := s.leaderAddress(ctx, moduleId)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "get leader of module %s after connect", moduleId)
 	}
 
 	event := entity.NewEvent(entity.EventPayload{
@@ -102,16 +114,37 @@ func (s Backend) Connect(
 		return nil, errors.WithMessage(err, "insert event in store")
 	}
 
+	err = s.insertLeaderRecomputeEvent(ctx, entity.PayloadModuleLeaderRecompute{
+		ModuleId:       moduleId,
+		ModuleName:     backend.ModuleName,
+		Reason:         entity.ModuleLeaderReasonReady,
+		PreviousLeader: previousLeader,
+		Leader:         leaderAddress,
+	})
+	if err != nil {
+		return nil, errors.WithMessage(err, "insert module leader recompute event")
+	}
+
 	return &backend, nil
 }
 
 func (s Backend) Disconnect(ctx context.Context, backend entity.Backend) error {
-	err := s.backendRepo.DeleteByWsConnectionIds(ctx, []string{backend.WsConnectionId})
+	previousLeader, err := s.leaderAddress(ctx, backend.ModuleId)
+	if err != nil {
+		return errors.WithMessagef(err, "get leader of module %s before disconnect", backend.ModuleId)
+	}
+
+	err = s.backendRepo.DeleteByWsConnectionIds(ctx, []string{backend.WsConnectionId})
 	if err != nil {
 		return errors.WithMessage(err, "delete backend in store")
 	}
 
-	err = s.insertDisconnectEvent(ctx, backend.ModuleId)
+	leaderAddress, err := s.leaderAddress(ctx, backend.ModuleId)
+	if err != nil {
+		return errors.WithMessagef(err, "get leader of module %s after disconnect", backend.ModuleId)
+	}
+
+	err = s.insertDisconnectEvent(ctx, backend, previousLeader, leaderAddress)
 	if err != nil {
 		return errors.WithMessage(err, "insert disconnect event")
 	}
@@ -126,7 +159,7 @@ func (s Backend) ClearPhantomBackends(ctx context.Context) (int, error) {
 	}
 
 	toDelete := make([]string, 0)
-	modulesToDisconnect := make(map[string]bool)
+	phantoms := make(map[string]entity.Backend, len(backends))
 	for _, backend := range backends {
 		_, ok := s.rooms.Get(backend.WsConnectionId)
 		if ok {
@@ -134,11 +167,20 @@ func (s Backend) ClearPhantomBackends(ctx context.Context) (int, error) {
 		}
 
 		toDelete = append(toDelete, backend.WsConnectionId)
-		modulesToDisconnect[backend.ModuleId] = true
+		phantoms[backend.ModuleId] = backend
 	}
 
 	if len(toDelete) == 0 {
 		return 0, nil
+	}
+
+	previousLeaders := make(map[string]string, len(phantoms))
+	for moduleId := range phantoms {
+		previousLeader, err := s.leaderAddress(ctx, moduleId)
+		if err != nil {
+			return 0, errors.WithMessagef(err, "get leader of module %s before phantom cleanup", moduleId)
+		}
+		previousLeaders[moduleId] = previousLeader
 	}
 
 	err = s.backendRepo.DeleteByWsConnectionIds(ctx, toDelete)
@@ -146,8 +188,13 @@ func (s Backend) ClearPhantomBackends(ctx context.Context) (int, error) {
 		return 0, errors.WithMessage(err, "delete backends by ws connection ids")
 	}
 
-	for moduleId := range modulesToDisconnect {
-		err := s.insertDisconnectEvent(ctx, moduleId)
+	for moduleId, phantom := range phantoms {
+		leaderAddress, err := s.leaderAddress(ctx, moduleId)
+		if err != nil {
+			return 0, errors.WithMessagef(err, "get leader of module %s after phantom cleanup", moduleId)
+		}
+
+		err = s.insertDisconnectEvent(ctx, phantom, previousLeaders[moduleId], leaderAddress)
 		if err != nil {
 			return 0, errors.WithMessage(err, "insert disconnect event")
 		}
@@ -165,17 +212,60 @@ func (s Backend) DeleteOwnBackends(ctx context.Context) {
 	s.logger.Info(ctx, fmt.Sprintf("delete %d own backends", deleted))
 }
 
-func (s Backend) insertDisconnectEvent(ctx context.Context, moduleId string) error {
+func (s Backend) insertDisconnectEvent(
+	ctx context.Context,
+	backend entity.Backend,
+	previousLeader string,
+	leaderAddress string,
+) error {
 	event := entity.NewEvent(entity.EventPayload{
 		ModuleDisconnected: &entity.PayloadModuleDisconnected{
-			ModuleId: moduleId,
+			ModuleId: backend.ModuleId,
 		},
 	})
 	err := s.eventRepo.Insert(ctx, event)
 	if err != nil {
 		return errors.WithMessage(err, "insert event in store")
 	}
+
+	err = s.insertLeaderRecomputeEvent(ctx, entity.PayloadModuleLeaderRecompute{
+		ModuleId:       backend.ModuleId,
+		ModuleName:     backend.ModuleName,
+		Reason:         entity.ModuleLeaderReasonDisconnect,
+		PreviousLeader: previousLeader,
+		Leader:         leaderAddress,
+	})
+	if err != nil {
+		return errors.WithMessage(err, "insert module leader recompute event")
+	}
+
 	return nil
+}
+
+func (s Backend) insertLeaderRecomputeEvent(
+	ctx context.Context,
+	recompute entity.PayloadModuleLeaderRecompute,
+) error {
+	event := entity.NewEvent(entity.EventPayload{ModuleLeaderRecompute: &recompute})
+	err := s.eventRepo.Insert(ctx, event)
+	if err != nil {
+		return errors.WithMessage(err, "insert event in store")
+	}
+	return nil
+}
+
+func (s Backend) leaderAddress(ctx context.Context, moduleId string) (string, error) {
+	backends, err := s.backendRepo.GetForLeaderElection(ctx, moduleId)
+	if err != nil {
+		return "", errors.WithMessagef(err, "get backends by module id = %s", moduleId)
+	}
+
+	election := leader.Derive(backends)
+	if !election.Found {
+		return "", nil
+	}
+
+	return election.Leader.Address, nil
 }
 
 func (s Backend) normalizeModuleLeaderMode(
