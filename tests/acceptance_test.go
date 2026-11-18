@@ -90,6 +90,12 @@ func TestAcceptance(t *testing.T) {
 	require.EqualValues([]string{"10.2.9.1:9999"}, eventHandler.ReceivedHosts()[1])
 
 	require.Len(eventHandler.ReceivedRoutes(), 3)
+	for _, routes := range eventHandler.ReceivedRoutes() {
+		for _, declaration := range routes {
+			require.EqualValues(cluster.ModuleLeaderModeNone, declaration.ModuleLeaderMode)
+			require.False(declaration.Address.IsModuleLeader)
+		}
+	}
 
 	statusResponse := make([]domain.ModuleInfo, 0)
 	err = apiCli.Invoke("config/module/get_modules_info").
