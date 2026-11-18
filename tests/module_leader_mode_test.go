@@ -110,6 +110,11 @@ func TestModuleLeaderMode(t *testing.T) {
 
 	for _, routing := range requireReceivedRoutes(require, routes) {
 		for _, declaration := range routing {
+			// electionModule declared REQUEST_ELECTION: its leader is published with the leader flag set.
+			if declaration.ModuleName == electionModule {
+				continue
+			}
+
 			require.False(declaration.Address.IsModuleLeader)
 			require.Equal(cluster.ModuleLeaderModeNone, declaration.ModuleLeaderMode)
 		}
