@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"context"
+	"slices"
 
 	"github.com/txix-open/etp/v4"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/txix-open/isp-kit/log"
 	"isp-config-service/entity"
 	"isp-config-service/helpers"
+	"isp-config-service/service/module/leader"
 	"isp-config-service/service/rqlite/db"
 )
 
@@ -20,7 +22,7 @@ type ModuleRepo interface {
 }
 
 type BackendRepo interface {
-	GetByModuleId(ctx context.Context, moduleId string) ([]entity.Backend, error)
+	GetForLeaderElection(ctx context.Context, moduleId string) ([]entity.Backend, error)
 	All(ctx context.Context) ([]entity.Backend, error)
 }
 
@@ -173,19 +175,47 @@ func (s Service) notifyBackendsChanged(
 	conns []*etp.Conn,
 ) error {
 	ctx = db.NoneConsistency().ToContext(ctx)
-	backends, err := s.backendRepo.GetByModuleId(ctx, moduleId)
+	backends, err := s.backendRepo.GetForLeaderElection(ctx, moduleId)
 	if err != nil {
 		return errors.WithMessage(err, "get backends by module id")
 	}
 
-	addresses := make([]cluster.AddressConfiguration, 0)
-	for _, backend := range backends {
-		addr, err := helpers.SplitAddress(backend)
+	election := leader.Derive(backends)
+	if election.HasElection {
+		return s.emitLeaderAddress(ctx, moduleName, election, conns)
+	}
+
+	addresses, err := moduleAddresses(backends)
+	if err != nil {
+		return errors.WithMessage(err, "split address")
+	}
+
+	s.emitModuleConnectedEvent(ctx, conns, moduleName, addresses)
+
+	return nil
+}
+
+func (s Service) emitLeaderAddress(
+	ctx context.Context,
+	moduleName string,
+	election leader.Result,
+	conns []*etp.Conn,
+) error {
+	addresses := make([]cluster.AddressConfiguration, 0, 1)
+	leaderAddress := ""
+	if election.Found {
+		address, err := helpers.SplitAddress(election.Leader)
 		if err != nil {
 			return errors.WithMessage(err, "split address")
 		}
-		addresses = append(addresses, addr)
+		address.IsModuleLeader = true
+		addresses = append(addresses, address)
+		leaderAddress = election.Leader.Address
 	}
+
+	s.logger.Debug(ctx, "module leader election narrows the address list",
+		log.String("moduleName", moduleName),
+		log.String("leaderAddress", leaderAddress))
 
 	s.emitModuleConnectedEvent(ctx, conns, moduleName, addresses)
 
@@ -199,12 +229,26 @@ func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns [
 		return errors.WithMessage(err, "get all backends")
 	}
 
+	elections := moduleElections(backends)
+
 	routingConfig := cluster.RoutingConfig{}
 	for _, backend := range backends {
-		addr, err := helpers.SplitAddress(backend)
+		election := elections[backend.ModuleId]
+		if election.HasElection && election.Leader.WsConnectionId != backend.WsConnectionId {
+			continue
+		}
+
+		address, err := helpers.SplitAddress(backend)
 		if err != nil {
 			return errors.WithMessage(err, "split address")
 		}
+
+		if election.HasElection {
+			s.logger.Debug(ctx, "module leader election narrows the routing map",
+				log.String("moduleName", backend.ModuleName),
+				log.String("leaderAddress", backend.Address))
+		}
+
 		declaration := cluster.BackendDeclaration{
 			ModuleName:      backend.ModuleName,
 			Version:         backend.Version,
@@ -212,7 +256,11 @@ func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns [
 			Transport:       backend.Transport,
 			Endpoints:       backend.Endpoints.Value,
 			RequiredModules: backend.RequiredModules.Value,
-			Address:         addr,
+			Address: cluster.AddressConfiguration{
+				IP:             address.IP,
+				Port:           address.Port,
+				IsModuleLeader: election.HasElection,
+			},
 		}
 		routingConfig = append(routingConfig, declaration)
 	}
@@ -243,4 +291,31 @@ func (s Service) emitModuleConnectedEvent(
 			s.emitter.Emit(ctx, conn, cluster.ModuleConnectedEvent(moduleName), data)
 		}()
 	}
+}
+
+func moduleAddresses(backends []entity.Backend) ([]cluster.AddressConfiguration, error) {
+	addresses := make([]cluster.AddressConfiguration, 0, len(backends))
+	for i := range slices.Backward(backends) {
+		address, err := helpers.SplitAddress(backends[i])
+		if err != nil {
+			return nil, errors.WithMessage(err, "split address")
+		}
+		addresses = append(addresses, address)
+	}
+
+	return addresses, nil
+}
+
+func moduleElections(backends []entity.Backend) map[string]leader.Result {
+	byModule := make(map[string][]entity.Backend, len(backends))
+	for _, backend := range backends {
+		byModule[backend.ModuleId] = append(byModule[backend.ModuleId], backend)
+	}
+
+	elections := make(map[string]leader.Result, len(byModule))
+	for moduleId, moduleBackends := range byModule {
+		elections[moduleId] = leader.Derive(moduleBackends)
+	}
+
+	return elections
 }
