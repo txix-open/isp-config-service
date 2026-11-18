@@ -11,6 +11,7 @@ import (
 
 	"isp-config-service/conf"
 	"isp-config-service/domain"
+	"isp-config-service/service/rqlite/db"
 	"isp-config-service/service/startup"
 
 	"github.com/stretchr/testify/require"
@@ -146,6 +147,29 @@ func newClusterClientWith(
 	logger log.Logger,
 ) *cluster.Client {
 	t.Helper()
+	return newClusterClientFull(
+		t,
+		moduleName,
+		host,
+		config,
+		defaultRemoteConfig,
+		metricsAd,
+		cluster.ModuleLeaderModeNone,
+		logger,
+	)
+}
+
+func newClusterClientFull(
+	t *testing.T,
+	moduleName string,
+	host string,
+	config any,
+	defaultRemoteConfig []byte,
+	metricsAd *cluster.MetricsAutodiscovery,
+	moduleLeaderMode string,
+	logger log.Logger,
+) *cluster.Client {
+	t.Helper()
 	schema := schema.NewGenerator().Generate(config)
 	schemaData, err := json.Marshal(schema)
 	if err != nil {
@@ -161,6 +185,7 @@ func newClusterClientWith(
 		},
 		EndpointsResolver:    cluster.StaticEndpointResolver{},
 		MetricsAutodiscovery: metricsAd,
+		ModuleLeaderMode:     moduleLeaderMode,
 	}, cluster.ConfigData{
 		Version: "1.0.0",
 		Schema:  schemaData,
@@ -173,6 +198,14 @@ func newClusterClientWith(
 }
 
 func setupTest(t *testing.T) log.Logger {
+	t.Helper()
+
+	_, logger, _ := setupTestApp(t)
+	return logger
+}
+
+// nolint:ireturn
+func setupTestApp(t *testing.T) (*require.Assertions, log.Logger, db.DB) {
 	t.Helper()
 	require := require.New(t)
 
@@ -197,5 +230,5 @@ func setupTest(t *testing.T) log.Logger {
 	require.NoError(err)
 	time.Sleep(1 * time.Second)
 
-	return logger
+	return require, logger, startup.Db()
 }
