@@ -166,6 +166,29 @@ func (r Backend) GetByModuleId(ctx context.Context, moduleId string) ([]entity.B
 	return result, nil
 }
 
+func (r Backend) GetForLeaderElection(ctx context.Context, moduleId string) ([]entity.Backend, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.GetForLeaderElection")
+
+	// nolint:unqueryvet
+	query, args, err := squirrel.Select("*").
+		From(Table("backend")).
+		Where(squirrel.Eq{
+			"module_id": moduleId,
+		}).OrderBy("created_at asc", "ws_connection_id asc").
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
+	result := make([]entity.Backend, 0)
+	err = r.db.Select(ctx, &result, query, args...)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+
+	return result, nil
+}
+
 func (r Backend) AllMetricsAutodiscovery(ctx context.Context) ([]entity.MetricsAdWrapper, error) {
 	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.AllMetricsAutodiscovery")
 
