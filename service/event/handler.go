@@ -11,6 +11,7 @@ import (
 type SubscriptionService interface {
 	NotifyConfigChanged(ctx context.Context, moduleId string) error
 	NotifyBackendsChanged(ctx context.Context, moduleId string) error
+	NotifyModuleLeaderRecompute(ctx context.Context, recompute entity.PayloadModuleLeaderRecompute)
 	NotifyRoutingChanged(ctx context.Context) error
 }
 
@@ -33,7 +34,10 @@ func (h Handler) Handle(ctx context.Context, events []entity.Event) {
 	routingChanged := false
 	for _, event := range events {
 		payload := event.Payload.Value
-		routingChanged = routingChanged || payload.ModuleReady != nil || payload.ModuleDisconnected != nil
+		routingChanged = routingChanged ||
+			payload.ModuleReady != nil ||
+			payload.ModuleDisconnected != nil ||
+			payload.ModuleLeaderRecompute != nil
 		err := h.handleEvent(ctx, event)
 		if err != nil {
 			h.logger.Error(ctx, errors.WithMessagef(err, "handle event: %s", event.Key()))
@@ -66,6 +70,8 @@ func (h Handler) handleEvent(ctx context.Context, event entity.Event) error {
 		if err != nil {
 			return errors.WithMessage(err, "handle module disconnected event")
 		}
+	case payload.ModuleLeaderRecompute != nil:
+		h.subscriptionService.NotifyModuleLeaderRecompute(ctx, *payload.ModuleLeaderRecompute)
 	default:
 		return errors.Errorf("unknown event: %v", payload)
 	}

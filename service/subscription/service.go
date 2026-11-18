@@ -168,6 +168,18 @@ func (s Service) NotifyRoutingChanged(ctx context.Context) error {
 	return s.notifyRoutingChanged(ctx, cluster.ConfigSendRoutesChanged, conns)
 }
 
+func (s Service) NotifyModuleLeaderRecompute(ctx context.Context, recompute entity.PayloadModuleLeaderRecompute) {
+	if recompute.Leader == recompute.PreviousLeader {
+		return
+	}
+
+	s.logger.Info(ctx, "module leader changed",
+		log.String("moduleName", recompute.ModuleName),
+		log.String("previousLeaderAddress", recompute.PreviousLeader),
+		log.String("newLeaderAddress", recompute.Leader),
+		log.String("reason", recompute.Reason))
+}
+
 func (s Service) notifyBackendsChanged(
 	ctx context.Context,
 	moduleId string,
