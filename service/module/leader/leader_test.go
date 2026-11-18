@@ -110,6 +110,25 @@ func TestDerive_NoInstances(t *testing.T) {
 	require.Equal(entity.Backend{}, got.Leader)
 }
 
+func TestDeriveByModule(t *testing.T) {
+	t.Parallel()
+	require := require.New(t)
+
+	first := instance("conn-a", 100, electionMode)
+	first.ModuleId = "module-1"
+	first.ModuleName = "module-one"
+
+	second := instance("conn-b", 200, noElectionMode)
+	second.ModuleId = "module-2"
+	second.ModuleName = "module-two"
+
+	elections := leader.DeriveByModule(instances(second, first))
+
+	require.Len(elections, 2, "every module gets its own election")
+	require.Equal("conn-a", elections["module-1"].Leader.WsConnectionId)
+	require.False(elections["module-2"].HasElection, "an instance of another module must not start an election")
+}
+
 func instance(wsConnectionId string, createdAt int64, mode string) entity.Backend {
 	return entity.Backend{
 		WsConnectionId:   wsConnectionId,

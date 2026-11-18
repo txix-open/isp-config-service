@@ -32,6 +32,20 @@ func Derive(backends []entity.Backend) Result {
 	return result
 }
 
+func DeriveByModule(backends []entity.Backend) map[string]Result {
+	byModule := make(map[string][]entity.Backend, len(backends))
+	for _, backend := range backends {
+		byModule[backend.ModuleId] = append(byModule[backend.ModuleId], backend)
+	}
+
+	elections := make(map[string]Result, len(byModule))
+	for moduleId, moduleBackends := range byModule {
+		elections[moduleId] = Derive(moduleBackends)
+	}
+
+	return elections
+}
+
 func hasElection(backends []entity.Backend) bool {
 	for _, backend := range backends {
 		if backend.ModuleLeaderMode == cluster.ModuleLeaderModeRequestElection {

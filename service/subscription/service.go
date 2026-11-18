@@ -241,7 +241,7 @@ func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns [
 		return errors.WithMessage(err, "get all backends")
 	}
 
-	elections := moduleElections(backends)
+	elections := leader.DeriveByModule(backends)
 
 	routingConfig := cluster.RoutingConfig{}
 	for _, backend := range backends {
@@ -316,18 +316,4 @@ func moduleAddresses(backends []entity.Backend) ([]cluster.AddressConfiguration,
 	}
 
 	return addresses, nil
-}
-
-func moduleElections(backends []entity.Backend) map[string]leader.Result {
-	byModule := make(map[string][]entity.Backend, len(backends))
-	for _, backend := range backends {
-		byModule[backend.ModuleId] = append(byModule[backend.ModuleId], backend)
-	}
-
-	elections := make(map[string]leader.Result, len(byModule))
-	for moduleId, moduleBackends := range byModule {
-		elections[moduleId] = leader.Derive(moduleBackends)
-	}
-
-	return elections
 }
