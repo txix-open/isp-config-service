@@ -79,6 +79,7 @@ func (s Backend) Connect(
 		LibVersion:           declaration.LibVersion,
 		ModuleName:           declaration.ModuleName,
 		Transport:            declaration.Transport,
+		ModuleLeaderMode:     s.normalizeModuleLeaderMode(ctx, declaration.ModuleName, declaration.ModuleLeaderMode),
 		ConfigServiceNodeId:  s.nodeId,
 		Endpoints:            xtypes.Json[[]cluster.EndpointDescriptor]{Value: declaration.Endpoints},
 		RequiredModules:      xtypes.Json[[]cluster.ModuleDependency]{Value: declaration.RequiredModules},
@@ -175,4 +176,24 @@ func (s Backend) insertDisconnectEvent(ctx context.Context, moduleId string) err
 		return errors.WithMessage(err, "insert event in store")
 	}
 	return nil
+}
+
+func (s Backend) normalizeModuleLeaderMode(
+	ctx context.Context,
+	moduleName string,
+	moduleLeaderMode string,
+) string {
+	switch moduleLeaderMode {
+	case cluster.ModuleLeaderModeNone, cluster.ModuleLeaderModeRequestElection:
+		return moduleLeaderMode
+	}
+
+	s.logger.Warn(
+		ctx,
+		"unsupported module leader mode, stored as none",
+		log.String("moduleName", moduleName),
+		log.String("moduleLeaderMode", moduleLeaderMode),
+	)
+
+	return cluster.ModuleLeaderModeNone
 }
