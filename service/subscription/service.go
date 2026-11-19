@@ -3,6 +3,7 @@ package subscription
 import (
 	"context"
 	"slices"
+	"strings"
 
 	"github.com/txix-open/etp/v4"
 
@@ -168,18 +169,6 @@ func (s Service) NotifyRoutingChanged(ctx context.Context) error {
 	return s.notifyRoutingChanged(ctx, cluster.ConfigSendRoutesChanged, conns)
 }
 
-func (s Service) NotifyModuleLeaderRecompute(ctx context.Context, recompute entity.PayloadModuleLeaderRecompute) {
-	if recompute.Leader == recompute.PreviousLeader {
-		return
-	}
-
-	s.logger.Info(ctx, "module leader changed",
-		log.String("moduleName", recompute.ModuleName),
-		log.String("previousLeaderAddress", recompute.PreviousLeader),
-		log.String("newLeaderAddress", recompute.Leader),
-		log.String("reason", recompute.Reason))
-}
-
 func (s Service) notifyBackendsChanged(
 	ctx context.Context,
 	moduleId string,
@@ -225,7 +214,7 @@ func (s Service) emitLeaderAddress(
 		leaderAddress = election.Leader.Address
 	}
 
-	s.logger.Debug(ctx, "module leader election narrows the address list",
+	s.logger.Info(ctx, "module address list narrowed to the leader",
 		log.String("moduleName", moduleName),
 		log.String("leaderAddress", leaderAddress))
 
@@ -242,6 +231,7 @@ func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns [
 	}
 
 	elections := leader.DeriveByModule(backends)
+	moduleLeaders := make([]string, 0, len(elections))
 
 	routingConfig := cluster.RoutingConfig{}
 	for _, backend := range backends {
@@ -256,9 +246,7 @@ func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns [
 		}
 
 		if election.HasElection {
-			s.logger.Debug(ctx, "module leader election narrows the routing map",
-				log.String("moduleName", backend.ModuleName),
-				log.String("leaderAddress", backend.Address))
+			moduleLeaders = append(moduleLeaders, backend.ModuleName+"="+backend.Address)
 		}
 
 		declaration := cluster.BackendDeclaration{
@@ -276,6 +264,12 @@ func (s Service) notifyRoutingChanged(ctx context.Context, event string, conns [
 		}
 		routingConfig = append(routingConfig, declaration)
 	}
+
+	if len(moduleLeaders) > 0 {
+		s.logger.Info(ctx, "routing map publishes module leaders",
+			log.String("moduleLeaders", strings.Join(moduleLeaders, ",")))
+	}
+
 	data, err := json.Marshal(routingConfig)
 	if err != nil {
 		return errors.WithMessage(err, "marshal routing config")

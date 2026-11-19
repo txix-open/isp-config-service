@@ -102,19 +102,6 @@ func (r *backendRepoSpy) DeleteByConfigServiceNodeId(ctx context.Context, config
 	return 0, nil
 }
 
-func (r *backendRepoSpy) GetForLeaderElection(ctx context.Context, moduleId string) ([]entity.Backend, error) {
-	r.calls = append(r.calls, "leader_election")
-
-	moduleBackends := make([]entity.Backend, 0, len(r.rows))
-	for _, backend := range r.rows {
-		if backend.ModuleId == moduleId {
-			moduleBackends = append(moduleBackends, backend)
-		}
-	}
-
-	return moduleBackends, nil
-}
-
 type eventRepoSpy struct {
 	inserted []entity.Event
 }
@@ -122,17 +109,6 @@ type eventRepoSpy struct {
 func (r *eventRepoSpy) Insert(ctx context.Context, event entity.Event) error {
 	r.inserted = append(r.inserted, event)
 	return nil
-}
-
-func (r *eventRepoSpy) byKey(key string) []entity.Event {
-	found := make([]entity.Event, 0, len(r.inserted))
-	for _, event := range r.inserted {
-		if event.Key() == key {
-			found = append(found, event)
-		}
-	}
-
-	return found
 }
 
 func TestConnectNormalizesModuleLeaderMode(t *testing.T) {
@@ -209,41 +185,13 @@ func TestConnectNormalizesModuleLeaderMode(t *testing.T) {
 	}
 }
 
-func TestConnectInsertsModuleLeaderRecomputeEvent(t *testing.T) {
+func TestConnectInsertsOnlyLifecycleEvent(t *testing.T) {
 	t.Parallel()
 	require := require.New(t)
 
 	events := &eventRepoSpy{}
 	backendRepo := newBackendRepoSpy(electedInstance(leaderConnId, leaderAddress))
 	service := backend.NewBackend(backendRepo, events, testNodeId, nil, &loggerSpy{})
-
-	declaration := cluster.BackendDeclaration{
-		ModuleName: testModuleName,
-		Address:    cluster.AddressConfiguration{IP: "10.0.0.2", Port: "9000"},
-	}
-	_, err := service.Connect(t.Context(), followerConnId, testModuleId, declaration)
-
-	require.NoError(err)
-	require.Equal([]string{"leader_election", "upsert", "leader_election"}, backendRepo.calls,
-		"the leader must be derived from the stored instances before and after the connect")
-	require.Equal([]string{
-		"module_lifecycle_" + testModuleId,
-		"module_leader_" + testModuleId,
-	}, eventKeys(events), "the ready event and the leader recompute must both stay in the queue")
-
-	recompute := requireRecompute(t, events, testModuleId)
-	require.Equal(testModuleName, recompute.ModuleName)
-	require.Equal(entity.ModuleLeaderReasonReady, recompute.Reason)
-	require.Equal(leaderAddress, recompute.PreviousLeader)
-	require.Equal(leaderAddress, recompute.Leader, "the oldest instance keeps leadership")
-}
-
-func TestConnectFirstInstanceInsertsModuleLeaderRecomputeEvent(t *testing.T) {
-	t.Parallel()
-	require := require.New(t)
-
-	events := &eventRepoSpy{}
-	service := backend.NewBackend(newBackendRepoSpy(), events, testNodeId, nil, &loggerSpy{})
 
 	declaration := cluster.BackendDeclaration{
 		ModuleName:       testModuleName,
@@ -253,13 +201,13 @@ func TestConnectFirstInstanceInsertsModuleLeaderRecomputeEvent(t *testing.T) {
 	_, err := service.Connect(t.Context(), followerConnId, testModuleId, declaration)
 
 	require.NoError(err)
-	recompute := requireRecompute(t, events, testModuleId)
-	require.Equal(entity.ModuleLeaderReasonReady, recompute.Reason)
-	require.Empty(recompute.PreviousLeader, "the first instance of a module has no previous leader")
-	require.Equal(followerAddress, recompute.Leader, "the first instance is the leader")
+	require.Equal([]string{"upsert"}, backendRepo.calls,
+		"the connect path elects nobody: the leader is derived where the address list is emitted")
+	require.Equal([]string{"module_lifecycle_" + testModuleId}, eventKeys(events),
+		"one lifecycle event per connect, no dedicated leader event")
 }
 
-func TestDisconnectInsertsModuleLeaderRecomputeEvent(t *testing.T) {
+func TestDisconnectInsertsOnlyLifecycleEvent(t *testing.T) {
 	t.Parallel()
 	require := require.New(t)
 
@@ -277,44 +225,31 @@ func TestDisconnectInsertsModuleLeaderRecomputeEvent(t *testing.T) {
 	})
 
 	require.NoError(err)
-	require.Equal([]string{"leader_election", "delete", "leader_election"}, backendRepo.calls,
-		"the leader must be derived from the stored instances before and after the disconnect")
-	require.Equal([]string{
-		"module_lifecycle_" + testModuleId,
-		"module_leader_" + testModuleId,
-	}, eventKeys(events), "the disconnected event and the leader recompute must both stay in the queue")
-
-	recompute := requireRecompute(t, events, testModuleId)
-	require.Equal(entity.ModuleLeaderReasonDisconnect, recompute.Reason)
-	require.Equal(leaderAddress, recompute.PreviousLeader)
-	require.Equal(followerAddress, recompute.Leader, "leadership moved to the surviving instance")
+	require.Equal([]string{"delete"}, backendRepo.calls,
+		"the disconnect path elects nobody")
+	require.Equal([]string{"module_lifecycle_" + testModuleId}, eventKeys(events),
+		"one lifecycle event per disconnect, no dedicated leader event")
 }
 
-func TestClearPhantomBackendsInsertsModuleLeaderRecomputeEvent(t *testing.T) {
+func TestClearPhantomBackendsInsertsOneLifecycleEventPerModule(t *testing.T) {
 	t.Parallel()
 	require := require.New(t)
 
 	events := &eventRepoSpy{}
-	backendRepo := newBackendRepoSpy(electedInstance(leaderConnId, leaderAddress))
+	backendRepo := newBackendRepoSpy(
+		electedInstance(leaderConnId, leaderAddress),
+		electedInstance(followerConnId, followerAddress),
+	)
 	service := backend.NewBackend(backendRepo, events, testNodeId, &etp.Rooms{}, &loggerSpy{})
 
 	deleted, err := service.ClearPhantomBackends(t.Context())
 
 	require.NoError(err)
-	require.Equal(1, deleted)
-	require.Equal([]string{"own_node", "leader_election", "delete", "leader_election"}, backendRepo.calls,
-		"the leader must be derived from the stored instances before and after the phantom cleanup")
-	require.Equal([]string{
-		"module_lifecycle_" + testModuleId,
-		"module_leader_" + testModuleId,
-	}, eventKeys(events), "the disconnected event and the leader recompute must both stay in the queue")
-
-	recompute := requireRecompute(t, events, testModuleId)
-	require.Equal(testModuleId, recompute.ModuleId)
-	require.Equal(testModuleName, recompute.ModuleName)
-	require.Equal(entity.ModuleLeaderReasonDisconnect, recompute.Reason)
-	require.Equal(leaderAddress, recompute.PreviousLeader)
-	require.Empty(recompute.Leader, "with no instances left the module has no leader")
+	require.Equal(2, deleted)
+	require.Equal([]string{"own_node", "delete"}, backendRepo.calls,
+		"the cleanup deletes and announces, it elects nobody")
+	require.Equal([]string{"module_lifecycle_" + testModuleId}, eventKeys(events),
+		"the instances of one module are announced once")
 }
 
 func TestDeleteOwnBackendsInsertsNoEvents(t *testing.T) {
@@ -326,7 +261,7 @@ func TestDeleteOwnBackendsInsertsNoEvents(t *testing.T) {
 
 	service.DeleteOwnBackends(t.Context())
 
-	require.Empty(events.inserted, "graceful shutdown keeps its current behaviour: no leader recompute")
+	require.Empty(events.inserted, "graceful shutdown inserts no events at all")
 }
 
 func electedInstance(connId string, address string) entity.Backend {
@@ -346,30 +281,4 @@ func eventKeys(events *eventRepoSpy) []string {
 	}
 
 	return keys
-}
-
-// requireRecompute returns the single leader recompute the module produced, proving it has a compaction key
-// of its own next to the lifecycle event of the same module. Every case in this file uses one module, so the
-// module id is a parameter only to keep the assertions readable at the call site.
-// nolint:unparam
-func requireRecompute(
-	t *testing.T,
-	events *eventRepoSpy,
-	moduleId string,
-) *entity.PayloadModuleLeaderRecompute {
-	t.Helper()
-	require := require.New(t)
-
-	lifecycleKey := "module_lifecycle_" + testModuleId
-	recomputeKey := "module_leader_" + testModuleId
-	require.NotEqual(lifecycleKey, recomputeKey)
-
-	found := events.byKey(recomputeKey)
-	require.Len(found, 1, "the leader recompute must have its own compaction key")
-
-	recompute := found[0].Payload.Value.ModuleLeaderRecompute
-	require.NotNil(recompute)
-	require.Equal(testModuleId, recompute.ModuleId)
-
-	return recompute
 }
