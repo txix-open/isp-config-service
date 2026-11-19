@@ -12,6 +12,7 @@ import (
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/helpers"
+	"isp-config-service/service/module/leader"
 )
 
 type ModuleRepo interface {
@@ -84,9 +85,11 @@ func (s Module) Status(ctx context.Context) ([]domain.ModuleInfo, error) {
 		return nil, errors.WithMessage(err, "wait")
 	}
 
+	elections := leader.DeriveByModule(backends)
+
 	connections := make(map[string][]domain.Connection, len(modules))
 	for _, backend := range backends {
-		conn, err := s.backendToDto(backend)
+		conn, err := s.backendToDto(backend, isModuleLeader(elections, backend))
 		if err != nil {
 			return nil, errors.WithMessage(err, "backend to dto")
 		}
@@ -176,9 +179,11 @@ func (s Module) Connections(ctx context.Context) ([]domain.Connection, error) {
 		return nil, errors.WithMessage(err, "get all backends")
 	}
 
+	elections := leader.DeriveByModule(backends)
+
 	connections := make([]domain.Connection, 0, len(backends))
 	for _, backend := range backends {
-		conn, err := s.backendToDto(backend)
+		conn, err := s.backendToDto(backend, isModuleLeader(elections, backend))
 		if err != nil {
 			return nil, errors.WithMessage(err, "backend to dto")
 		}
@@ -188,7 +193,7 @@ func (s Module) Connections(ctx context.Context) ([]domain.Connection, error) {
 	return connections, nil
 }
 
-func (s Module) backendToDto(backend entity.Backend) (domain.Connection, error) {
+func (s Module) backendToDto(backend entity.Backend, moduleLeader bool) (domain.Connection, error) {
 	addr, err := helpers.SplitAddress(backend)
 	if err != nil {
 		return domain.Connection{}, errors.WithMessage(err, "split address")
@@ -220,11 +225,18 @@ func (s Module) backendToDto(backend entity.Backend) (domain.Connection, error) 
 			Ip:   addr.IP,
 			Port: addr.Port,
 		},
-		Endpoints:     endpointsDescriptors,
-		EstablishedAt: time.Time(backend.CreatedAt),
+		IsModuleLeader: moduleLeader,
+		Endpoints:      endpointsDescriptors,
+		EstablishedAt:  time.Time(backend.CreatedAt),
 	}
 
 	return conn, nil
+}
+
+func isModuleLeader(elections map[string]leader.Result, backend entity.Backend) bool {
+	election := elections[backend.ModuleId]
+
+	return election.Found && election.Leader.WsConnectionId == backend.WsConnectionId
 }
 
 func requiredModuleNamesByModuleId(backends []entity.Backend) map[string]map[string]struct{} {

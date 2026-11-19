@@ -28,14 +28,15 @@ type ModuleInfo struct {
 }
 
 type Connection struct {
-	Id            string
-	ModuleName    string
-	LibVersion    string
-	Version       string
-	Address       Address
-	Transport     string
-	Endpoints     []EndpointDescriptor
-	EstablishedAt time.Time
+	Id             string
+	ModuleName     string
+	LibVersion     string
+	Version        string
+	Address        Address
+	IsModuleLeader bool
+	Transport      string
+	Endpoints      []EndpointDescriptor
+	EstablishedAt  time.Time
 }
 
 type Address struct {

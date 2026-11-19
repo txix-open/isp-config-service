@@ -79,6 +79,7 @@ func (s Backend) Connect(
 		LibVersion:           declaration.LibVersion,
 		ModuleName:           declaration.ModuleName,
 		Transport:            declaration.Transport,
+		ModuleLeaderMode:     s.normalizeModuleLeaderMode(ctx, declaration.ModuleName, declaration.ModuleLeaderMode),
 		ConfigServiceNodeId:  s.nodeId,
 		Endpoints:            xtypes.Json[[]cluster.EndpointDescriptor]{Value: declaration.Endpoints},
 		RequiredModules:      xtypes.Json[[]cluster.ModuleDependency]{Value: declaration.RequiredModules},
@@ -110,7 +111,7 @@ func (s Backend) Disconnect(ctx context.Context, backend entity.Backend) error {
 		return errors.WithMessage(err, "delete backend in store")
 	}
 
-	err = s.insertDisconnectEvent(ctx, backend.ModuleId)
+	err = s.insertDisconnectEvent(ctx, backend)
 	if err != nil {
 		return errors.WithMessage(err, "insert disconnect event")
 	}
@@ -125,7 +126,7 @@ func (s Backend) ClearPhantomBackends(ctx context.Context) (int, error) {
 	}
 
 	toDelete := make([]string, 0)
-	modulesToDisconnect := make(map[string]bool)
+	phantoms := make(map[string]entity.Backend, len(backends))
 	for _, backend := range backends {
 		_, ok := s.rooms.Get(backend.WsConnectionId)
 		if ok {
@@ -133,7 +134,7 @@ func (s Backend) ClearPhantomBackends(ctx context.Context) (int, error) {
 		}
 
 		toDelete = append(toDelete, backend.WsConnectionId)
-		modulesToDisconnect[backend.ModuleId] = true
+		phantoms[backend.ModuleId] = backend
 	}
 
 	if len(toDelete) == 0 {
@@ -145,8 +146,8 @@ func (s Backend) ClearPhantomBackends(ctx context.Context) (int, error) {
 		return 0, errors.WithMessage(err, "delete backends by ws connection ids")
 	}
 
-	for moduleId := range modulesToDisconnect {
-		err := s.insertDisconnectEvent(ctx, moduleId)
+	for _, phantom := range phantoms {
+		err = s.insertDisconnectEvent(ctx, phantom)
 		if err != nil {
 			return 0, errors.WithMessage(err, "insert disconnect event")
 		}
@@ -164,15 +165,36 @@ func (s Backend) DeleteOwnBackends(ctx context.Context) {
 	s.logger.Info(ctx, fmt.Sprintf("delete %d own backends", deleted))
 }
 
-func (s Backend) insertDisconnectEvent(ctx context.Context, moduleId string) error {
+func (s Backend) insertDisconnectEvent(ctx context.Context, backend entity.Backend) error {
 	event := entity.NewEvent(entity.EventPayload{
 		ModuleDisconnected: &entity.PayloadModuleDisconnected{
-			ModuleId: moduleId,
+			ModuleId: backend.ModuleId,
 		},
 	})
 	err := s.eventRepo.Insert(ctx, event)
 	if err != nil {
 		return errors.WithMessage(err, "insert event in store")
 	}
+
 	return nil
+}
+
+func (s Backend) normalizeModuleLeaderMode(
+	ctx context.Context,
+	moduleName string,
+	moduleLeaderMode string,
+) string {
+	switch moduleLeaderMode {
+	case cluster.ModuleLeaderModeNone, cluster.ModuleLeaderModeRequestElection:
+		return moduleLeaderMode
+	}
+
+	s.logger.Warn(
+		ctx,
+		"unsupported module leader mode, stored as none",
+		log.String("moduleName", moduleName),
+		log.String("moduleLeaderMode", moduleLeaderMode),
+	)
+
+	return cluster.ModuleLeaderModeNone
 }

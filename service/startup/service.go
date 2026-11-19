@@ -42,6 +42,7 @@ type Service struct {
 
 	// initialized in Run
 	locatorConfig *assembly.Config
+	db            db.DB
 }
 
 func New(boot *bootstrap.Bootstrap) (*Service, error) {
@@ -129,6 +130,7 @@ func (s *Service) Run(ctx context.Context) error {
 	if err != nil {
 		return errors.WithMessage(err, "dial to embedded rqlite")
 	}
+	s.db = db
 
 	cfg := assembly.LocalConfig{
 		Local:         s.cfg,
@@ -207,6 +209,11 @@ func (s *Service) Closers() []app.Closer {
 		}),
 		s.rqlite,
 	}
+}
+
+// nolint:ireturn
+func (s *Service) Db() db.DB {
+	return s.db
 }
 
 func (s *Service) leaderStartup(ctx context.Context) error {
