@@ -68,6 +68,8 @@ definitions:
         type: string
       id:
         type: string
+      isModuleLeader:
+        type: boolean
       libVersion:
         type: string
       moduleName:

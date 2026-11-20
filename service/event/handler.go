@@ -33,7 +33,9 @@ func (h Handler) Handle(ctx context.Context, events []entity.Event) {
 	routingChanged := false
 	for _, event := range events {
 		payload := event.Payload.Value
-		routingChanged = routingChanged || payload.ModuleReady != nil || payload.ModuleDisconnected != nil
+		routingChanged = routingChanged ||
+			payload.ModuleReady != nil ||
+			payload.ModuleDisconnected != nil
 		err := h.handleEvent(ctx, event)
 		if err != nil {
 			h.logger.Error(ctx, errors.WithMessagef(err, "handle event: %s", event.Key()))

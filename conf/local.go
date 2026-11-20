@@ -11,7 +11,7 @@ type Local struct {
 	ConfigServiceAddress     bootstrap.ConfigServiceAddr
 	MaintenanceMode          bool
 	Credentials              []auth.Credential
-	KeepConfigVersions       int    `validate:"required"`
+	KeepConfigVersions       int
 	InternalClientCredential string `validate:"required"`
 	Rqlite                   Rqlite
 	Backup                   rqlite.Backup

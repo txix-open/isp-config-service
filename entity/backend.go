@@ -14,6 +14,7 @@ type Backend struct {
 	LibVersion           string                                     `json:"lib_version"`
 	ModuleName           string                                     `json:"module_name"`
 	Transport            string                                     `json:"transport"`
+	ModuleLeaderMode     string                                     `json:"module_leader_mode"`
 	ConfigServiceNodeId  string                                     `json:"config_service_node_id"`
 	Endpoints            xtypes.Json[[]cluster.EndpointDescriptor]  `json:"endpoints"`
 	RequiredModules      xtypes.Json[[]cluster.ModuleDependency]    `json:"required_modules"`

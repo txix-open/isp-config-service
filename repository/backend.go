@@ -28,17 +28,18 @@ func (r Backend) Upsert(ctx context.Context, backend entity.Backend) error {
 	query, args, err := squirrel.Insert(Table("backend")).
 		Columns("ws_connection_id", "module_id", "address",
 			"version", "lib_version", "module_name", "transport",
-			"config_service_node_id", "endpoints", "required_modules",
-			"metrics_autodiscovery").
+			"module_leader_mode", "config_service_node_id", "endpoints",
+			"required_modules", "metrics_autodiscovery").
 		Values(backend.WsConnectionId, backend.ModuleId, backend.Address,
 			backend.Version, backend.LibVersion, backend.ModuleName, backend.Transport,
-			backend.ConfigServiceNodeId, backend.Endpoints, backend.RequiredModules,
-			backend.MetricsAutodiscovery,
+			backend.ModuleLeaderMode, backend.ConfigServiceNodeId, backend.Endpoints,
+			backend.RequiredModules, backend.MetricsAutodiscovery,
 		).
 		Suffix(`on conflict (ws_connection_id) do update
 		set module_id = excluded.module_id, address = excluded.address,
 		version = excluded.version, lib_version = excluded.lib_version,
 		module_name = excluded.module_name, transport = excluded.transport,
+		module_leader_mode = excluded.module_leader_mode,
 		config_service_node_id = excluded.config_service_node_id,
 		endpoints = excluded.endpoints, required_modules = excluded.required_modules,
 		metrics_autodiscovery = excluded.metrics_autodiscovery`).
@@ -151,6 +152,29 @@ func (r Backend) GetByModuleId(ctx context.Context, moduleId string) ([]entity.B
 		Where(squirrel.Eq{
 			"module_id": moduleId,
 		}).OrderBy("created_at desc").
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
+	result := make([]entity.Backend, 0)
+	err = r.db.Select(ctx, &result, query, args...)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+
+	return result, nil
+}
+
+func (r Backend) GetForLeaderElection(ctx context.Context, moduleId string) ([]entity.Backend, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Backend.GetForLeaderElection")
+
+	// nolint:unqueryvet
+	query, args, err := squirrel.Select("*").
+		From(Table("backend")).
+		Where(squirrel.Eq{
+			"module_id": moduleId,
+		}).OrderBy("created_at asc", "ws_connection_id asc").
 		ToSql()
 	if err != nil {
 		return nil, errors.WithMessage(err, "build query")
