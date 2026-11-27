@@ -593,7 +593,9 @@ paths:
         "200":
           description: OK
         "400":
-          description: '`errorCode: 2002` - конфиг не найден<br/>'
+          description: '`errorCode: 2002` - конфиг не найден<br/>`errorCode: 2003`
+            - конфигурация нарушает политику секретных переменных (детали по путям
+            в `details`)<br/>'
           schema:
             $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
         "500":
@@ -657,7 +659,8 @@ paths:
             $ref: '#/definitions/domain.Config'
         "400":
           description: '`errorCode: 2001` - модуль не найден<br/>`errorCode: 2002`
-            - конфиг не найден'
+            - конфиг не найден<br/>`errorCode: 2003` - в UI-экспонируемых полях активная
+            конфигурация ссылается на секретную переменную'
           schema:
             $ref: '#/definitions/github_com_txix-open_isp-kit_grpc_apierrors.Error'
         "500":
