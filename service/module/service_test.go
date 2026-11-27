@@ -144,7 +144,7 @@ func TestFilterSecretParams(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			s := Service{
-				ConfigWriteDeny: true,
+				configWriteDeny: true,
 				configSchemaRepo: fakeSchemaRepo{
 					schema: &entity.ConfigSchema{Id: "s1", ModuleId: moduleId, Data: policyTestSchema(t)},
 				},
@@ -172,7 +172,7 @@ func TestFilterSecretParams(t *testing.T) {
 func TestFilterSecretParamsDisabled(t *testing.T) {
 	const moduleId = "m1"
 	s := Service{
-		ConfigWriteDeny: false,
+		configWriteDeny: false,
 		configSchemaRepo: fakeSchemaRepo{
 			schema: &entity.ConfigSchema{Id: "s1", ModuleId: moduleId, Data: policyTestSchema(t)},
 		},
@@ -187,7 +187,7 @@ func TestFilterSecretParamsDisabled(t *testing.T) {
 
 func TestFilterSecretParamsWithoutSchema(t *testing.T) {
 	s := Service{
-		ConfigWriteDeny:  true,
+		configWriteDeny:  true,
 		configSchemaRepo: fakeSchemaRepo{schema: nil},
 		variableRepo:     fakeVariableRepo{},
 	}
@@ -207,7 +207,7 @@ func TestFilterSecretParamsSchemaWithoutPolicyPaths(t *testing.T) {
 		t.Fatalf("marshal schema: %v", err)
 	}
 	s := Service{
-		ConfigWriteDeny: true,
+		configWriteDeny: true,
 		configSchemaRepo: fakeSchemaRepo{
 			schema: &entity.ConfigSchema{Id: "s1", ModuleId: "m1", Data: schemaData},
 		},
