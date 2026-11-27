@@ -82,7 +82,7 @@ func (r *configRepoSpy) GetActive(ctx context.Context, moduleId string) (*entity
 
 type variableServiceSpy struct{}
 
-func (s *variableServiceSpy) RenderConfig(ctx context.Context, input []byte) ([]byte, error) {
+func (s *variableServiceSpy) RenderConfig(ctx context.Context, moduleId string, input []byte) ([]byte, error) {
 	return input, nil
 }
 
