@@ -1,4 +1,4 @@
-package leader_test
+package tests_test
 
 import (
 	"slices"

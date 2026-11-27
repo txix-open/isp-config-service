@@ -1,4 +1,4 @@
-package subscription_test
+package tests_test
 
 import (
 	"context"
@@ -14,28 +14,28 @@ import (
 )
 
 const (
-	testModuleId   = "test-module-id"
-	testModuleName = "test-module"
+	subscriptionTestModuleId   = "test-module-id"
+	subscriptionTestModuleName = "test-module"
 
-	leaderConnId   = "conn-1"
-	followerConnId = "conn-2"
+	subscriptionLeaderConnId   = "conn-1"
+	subscriptionFollowerConnId = "conn-2"
 
-	leaderAddress    = "10.0.0.1:9000"
-	successorAddress = "10.0.0.2:9000"
-	plainAddress     = "10.0.0.3:9000"
+	subscriptionLeaderAddress = "10.0.0.1:9000"
+	successorAddress          = "10.0.0.2:9000"
+	plainAddress              = "10.0.0.3:9000"
 )
 
-type storedLog struct {
+type subscriptionStoredLog struct {
 	message any
 	fields  map[string]string
 }
 
-type loggerSpy struct {
-	infos []storedLog
+type subscriptionLoggerSpy struct {
+	infos []subscriptionStoredLog
 }
 
-func (l *loggerSpy) Info(ctx context.Context, message any, fields ...log.Field) {
-	entry := storedLog{
+func (l *subscriptionLoggerSpy) Info(ctx context.Context, message any, fields ...log.Field) {
+	entry := subscriptionStoredLog{
 		message: message,
 		fields:  make(map[string]string, len(fields)),
 	}
@@ -45,32 +45,32 @@ func (l *loggerSpy) Info(ctx context.Context, message any, fields ...log.Field) 
 	l.infos = append(l.infos, entry)
 }
 
-func (l *loggerSpy) Error(ctx context.Context, message any, fields ...log.Field) {}
+func (l *subscriptionLoggerSpy) Error(ctx context.Context, message any, fields ...log.Field) {}
 
-func (l *loggerSpy) Warn(ctx context.Context, message any, fields ...log.Field) {}
+func (l *subscriptionLoggerSpy) Warn(ctx context.Context, message any, fields ...log.Field) {}
 
-func (l *loggerSpy) Debug(ctx context.Context, message any, fields ...log.Field) {}
+func (l *subscriptionLoggerSpy) Debug(ctx context.Context, message any, fields ...log.Field) {}
 
 type moduleRepoSpy struct{}
 
 func (r *moduleRepoSpy) GetByNames(ctx context.Context, names []string) ([]entity.Module, error) {
-	return []entity.Module{{Id: testModuleId, Name: testModuleName}}, nil
+	return []entity.Module{{Id: subscriptionTestModuleId, Name: subscriptionTestModuleName}}, nil
 }
 
 func (r *moduleRepoSpy) GetById(ctx context.Context, id string) (*entity.Module, error) {
-	return &entity.Module{Id: testModuleId, Name: testModuleName}, nil
+	return &entity.Module{Id: subscriptionTestModuleId, Name: subscriptionTestModuleName}, nil
 }
 
-type backendRepoSpy struct {
+type subscriptionBackendRepoSpy struct {
 	forLeaderElection []entity.Backend
 	all               []entity.Backend
 }
 
-func (r *backendRepoSpy) GetForLeaderElection(ctx context.Context, moduleId string) ([]entity.Backend, error) {
+func (r *subscriptionBackendRepoSpy) GetForLeaderElection(ctx context.Context, moduleId string) ([]entity.Backend, error) {
 	return r.forLeaderElection, nil
 }
 
-func (r *backendRepoSpy) All(ctx context.Context) ([]entity.Backend, error) {
+func (r *subscriptionBackendRepoSpy) All(ctx context.Context) ([]entity.Backend, error) {
 	return r.all, nil
 }
 
@@ -96,23 +96,23 @@ func TestNotifyBackendsChangedLogsTheLeaderItPublishes(t *testing.T) {
 	t.Parallel()
 	require := require.New(t)
 
-	logger := &loggerSpy{}
+	logger := &subscriptionLoggerSpy{}
 	rooms := etp.NewServer().Rooms()
-	rooms.Join(&etp.Conn{}, subscription.BackendsChangingRoom(testModuleName))
-	service := newService(logger, rooms, &backendRepoSpy{
+	rooms.Join(&etp.Conn{}, subscription.BackendsChangingRoom(subscriptionTestModuleName))
+	service := newService(logger, rooms, &subscriptionBackendRepoSpy{
 		forLeaderElection: []entity.Backend{
-			electedInstance(leaderConnId, leaderAddress),
-			electedInstance(followerConnId, successorAddress),
+			subscriptionElectedInstance(subscriptionLeaderConnId, subscriptionLeaderAddress),
+			subscriptionElectedInstance(subscriptionFollowerConnId, successorAddress),
 		},
 	})
 
-	err := service.NotifyBackendsChanged(t.Context(), testModuleId)
+	err := service.NotifyBackendsChanged(t.Context(), subscriptionTestModuleId)
 
 	require.NoError(err)
 	require.Len(logger.infos, 1)
 	require.Equal("module address list narrowed to the leader", logger.infos[0].message)
-	require.Equal(testModuleName, logger.infos[0].fields["moduleName"])
-	require.Equal(leaderAddress, logger.infos[0].fields["leaderAddress"],
+	require.Equal(subscriptionTestModuleName, logger.infos[0].fields["moduleName"])
+	require.Equal(subscriptionLeaderAddress, logger.infos[0].fields["leaderAddress"],
 		"the logged leader is the oldest elected instance, the one the subscriber received")
 }
 
@@ -120,13 +120,13 @@ func TestNotifyRoutingChangedLogsPublishedLeaders(t *testing.T) {
 	t.Parallel()
 	require := require.New(t)
 
-	logger := &loggerSpy{}
+	logger := &subscriptionLoggerSpy{}
 	rooms := etp.NewServer().Rooms()
 	rooms.Join(&etp.Conn{}, subscription.RoutingChangingRoom())
-	service := newService(logger, rooms, &backendRepoSpy{
+	service := newService(logger, rooms, &subscriptionBackendRepoSpy{
 		all: []entity.Backend{
-			electedInstance(leaderConnId, leaderAddress),
-			electedInstance(followerConnId, successorAddress),
+			subscriptionElectedInstance(subscriptionLeaderConnId, subscriptionLeaderAddress),
+			subscriptionElectedInstance(subscriptionFollowerConnId, successorAddress),
 			plainInstance("conn-3", plainAddress),
 		},
 	})
@@ -136,7 +136,7 @@ func TestNotifyRoutingChangedLogsPublishedLeaders(t *testing.T) {
 	require.NoError(err)
 	require.Len(logger.infos, 1, "one summary line per routing rebuild")
 	require.Equal("routing map publishes module leaders", logger.infos[0].message)
-	require.Equal(testModuleName+"="+leaderAddress, logger.infos[0].fields["moduleLeaders"],
+	require.Equal(subscriptionTestModuleName+"="+subscriptionLeaderAddress, logger.infos[0].fields["moduleLeaders"],
 		"only the elected module and only its leader are published, the plain module is not listed")
 }
 
@@ -144,10 +144,10 @@ func TestNotifyRoutingChangedWithoutElectionLogsNothing(t *testing.T) {
 	t.Parallel()
 	require := require.New(t)
 
-	logger := &loggerSpy{}
+	logger := &subscriptionLoggerSpy{}
 	rooms := etp.NewServer().Rooms()
 	rooms.Join(&etp.Conn{}, subscription.RoutingChangingRoom())
-	service := newService(logger, rooms, &backendRepoSpy{
+	service := newService(logger, rooms, &subscriptionBackendRepoSpy{
 		all: []entity.Backend{plainInstance("conn-3", plainAddress)},
 	})
 
@@ -157,11 +157,11 @@ func TestNotifyRoutingChangedWithoutElectionLogsNothing(t *testing.T) {
 	require.Empty(logger.infos, "modules without election keep the previous behaviour, including the log")
 }
 
-func electedInstance(connId string, address string) entity.Backend {
+func subscriptionElectedInstance(connId string, address string) entity.Backend {
 	return entity.Backend{
 		WsConnectionId:   connId,
-		ModuleId:         testModuleId,
-		ModuleName:       testModuleName,
+		ModuleId:         subscriptionTestModuleId,
+		ModuleName:       subscriptionTestModuleName,
 		Address:          address,
 		ModuleLeaderMode: cluster.ModuleLeaderModeRequestElection,
 	}

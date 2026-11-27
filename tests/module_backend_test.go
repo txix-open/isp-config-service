@@ -1,4 +1,4 @@
-package backend_test
+package tests_test
 
 import (
 	"context"
@@ -14,28 +14,28 @@ import (
 )
 
 const (
-	testModuleName = "test-module"
-	testModuleId   = "test-module-id"
-	testConnId     = "test-conn-id"
-	testNodeId     = "test-node-id"
+	backendTestModuleName = "test-module"
+	backendTestModuleId   = "test-module-id"
+	testConnId            = "test-conn-id"
+	testNodeId            = "test-node-id"
 
-	leaderConnId    = "conn-1"
-	followerConnId  = "conn-2"
-	leaderAddress   = "10.0.0.1:9000"
-	followerAddress = "10.0.0.2:9000"
+	backendLeaderConnId   = "conn-1"
+	backendFollowerConnId = "conn-2"
+	backendLeaderAddress  = "10.0.0.1:9000"
+	followerAddress       = "10.0.0.2:9000"
 )
 
-type storedLog struct {
+type backendStoredLog struct {
 	message any
 	fields  map[string]string
 }
 
-type loggerSpy struct {
-	warns []storedLog
+type backendLoggerSpy struct {
+	warns []backendStoredLog
 }
 
-func (l *loggerSpy) Warn(ctx context.Context, message any, fields ...log.Field) {
-	entry := storedLog{
+func (l *backendLoggerSpy) Warn(ctx context.Context, message any, fields ...log.Field) {
+	entry := backendStoredLog{
 		message: message,
 		fields:  make(map[string]string, len(fields)),
 	}
@@ -45,11 +45,11 @@ func (l *loggerSpy) Warn(ctx context.Context, message any, fields ...log.Field) 
 	l.warns = append(l.warns, entry)
 }
 
-func (l *loggerSpy) Error(ctx context.Context, message any, fields ...log.Field) {}
+func (l *backendLoggerSpy) Error(ctx context.Context, message any, fields ...log.Field) {}
 
-func (l *loggerSpy) Info(ctx context.Context, message any, fields ...log.Field) {}
+func (l *backendLoggerSpy) Info(ctx context.Context, message any, fields ...log.Field) {}
 
-func (l *loggerSpy) Debug(ctx context.Context, message any, fields ...log.Field) {}
+func (l *backendLoggerSpy) Debug(ctx context.Context, message any, fields ...log.Field) {}
 
 type backendRepoSpy struct {
 	upserted []entity.Backend
@@ -155,18 +155,18 @@ func TestConnectNormalizesModuleLeaderMode(t *testing.T) {
 			t.Parallel()
 			require := require.New(t)
 
-			logger := &loggerSpy{}
+			logger := &backendLoggerSpy{}
 			backendRepo := &backendRepoSpy{}
 			service := backend.NewBackend(backendRepo, &eventRepoSpy{}, testNodeId, nil, logger)
 
 			declaration := cluster.BackendDeclaration{
-				ModuleName:       testModuleName,
+				ModuleName:       backendTestModuleName,
 				Version:          "1.0.0",
 				LibVersion:       "1.0.0",
 				Address:          cluster.AddressConfiguration{IP: "10.0.0.1", Port: "9000"},
 				ModuleLeaderMode: tt.announcedMode,
 			}
-			connected, err := service.Connect(t.Context(), testConnId, testModuleId, declaration)
+			connected, err := service.Connect(t.Context(), testConnId, backendTestModuleId, declaration)
 
 			require.NoError(err)
 			require.Len(backendRepo.upserted, 1)
@@ -179,7 +179,7 @@ func TestConnectNormalizesModuleLeaderMode(t *testing.T) {
 			}
 
 			require.Len(logger.warns, 1)
-			require.Equal(testModuleName, logger.warns[0].fields["moduleName"])
+			require.Equal(backendTestModuleName, logger.warns[0].fields["moduleName"])
 			require.Equal(tt.announcedMode, logger.warns[0].fields["moduleLeaderMode"])
 		})
 	}
@@ -190,20 +190,20 @@ func TestConnectInsertsOnlyLifecycleEvent(t *testing.T) {
 	require := require.New(t)
 
 	events := &eventRepoSpy{}
-	backendRepo := newBackendRepoSpy(electedInstance(leaderConnId, leaderAddress))
-	service := backend.NewBackend(backendRepo, events, testNodeId, nil, &loggerSpy{})
+	backendRepo := newBackendRepoSpy(backendElectedInstance(backendLeaderConnId, backendLeaderAddress))
+	service := backend.NewBackend(backendRepo, events, testNodeId, nil, &backendLoggerSpy{})
 
 	declaration := cluster.BackendDeclaration{
-		ModuleName:       testModuleName,
+		ModuleName:       backendTestModuleName,
 		Address:          cluster.AddressConfiguration{IP: "10.0.0.2", Port: "9000"},
 		ModuleLeaderMode: cluster.ModuleLeaderModeRequestElection,
 	}
-	_, err := service.Connect(t.Context(), followerConnId, testModuleId, declaration)
+	_, err := service.Connect(t.Context(), backendFollowerConnId, backendTestModuleId, declaration)
 
 	require.NoError(err)
 	require.Equal([]string{"upsert"}, backendRepo.calls,
 		"the connect path elects nobody: the leader is derived where the address list is emitted")
-	require.Equal([]string{"module_lifecycle_" + testModuleId}, eventKeys(events),
+	require.Equal([]string{"module_lifecycle_" + backendTestModuleId}, eventKeys(events),
 		"one lifecycle event per connect, no dedicated leader event")
 }
 
@@ -213,21 +213,21 @@ func TestDisconnectInsertsOnlyLifecycleEvent(t *testing.T) {
 
 	events := &eventRepoSpy{}
 	backendRepo := newBackendRepoSpy(
-		electedInstance(leaderConnId, leaderAddress),
-		electedInstance(followerConnId, followerAddress),
+		backendElectedInstance(backendLeaderConnId, backendLeaderAddress),
+		backendElectedInstance(backendFollowerConnId, followerAddress),
 	)
-	service := backend.NewBackend(backendRepo, events, testNodeId, nil, &loggerSpy{})
+	service := backend.NewBackend(backendRepo, events, testNodeId, nil, &backendLoggerSpy{})
 
 	err := service.Disconnect(t.Context(), entity.Backend{
-		WsConnectionId: leaderConnId,
-		ModuleId:       testModuleId,
-		ModuleName:     testModuleName,
+		WsConnectionId: backendLeaderConnId,
+		ModuleId:       backendTestModuleId,
+		ModuleName:     backendTestModuleName,
 	})
 
 	require.NoError(err)
 	require.Equal([]string{"delete"}, backendRepo.calls,
 		"the disconnect path elects nobody")
-	require.Equal([]string{"module_lifecycle_" + testModuleId}, eventKeys(events),
+	require.Equal([]string{"module_lifecycle_" + backendTestModuleId}, eventKeys(events),
 		"one lifecycle event per disconnect, no dedicated leader event")
 }
 
@@ -237,10 +237,10 @@ func TestClearPhantomBackendsInsertsOneLifecycleEventPerModule(t *testing.T) {
 
 	events := &eventRepoSpy{}
 	backendRepo := newBackendRepoSpy(
-		electedInstance(leaderConnId, leaderAddress),
-		electedInstance(followerConnId, followerAddress),
+		backendElectedInstance(backendLeaderConnId, backendLeaderAddress),
+		backendElectedInstance(backendFollowerConnId, followerAddress),
 	)
-	service := backend.NewBackend(backendRepo, events, testNodeId, &etp.Rooms{}, &loggerSpy{})
+	service := backend.NewBackend(backendRepo, events, testNodeId, &etp.Rooms{}, &backendLoggerSpy{})
 
 	deleted, err := service.ClearPhantomBackends(t.Context())
 
@@ -248,7 +248,7 @@ func TestClearPhantomBackendsInsertsOneLifecycleEventPerModule(t *testing.T) {
 	require.Equal(2, deleted)
 	require.Equal([]string{"own_node", "delete"}, backendRepo.calls,
 		"the cleanup deletes and announces, it elects nobody")
-	require.Equal([]string{"module_lifecycle_" + testModuleId}, eventKeys(events),
+	require.Equal([]string{"module_lifecycle_" + backendTestModuleId}, eventKeys(events),
 		"the instances of one module are announced once")
 }
 
@@ -257,18 +257,18 @@ func TestDeleteOwnBackendsInsertsNoEvents(t *testing.T) {
 	require := require.New(t)
 
 	events := &eventRepoSpy{}
-	service := backend.NewBackend(newBackendRepoSpy(), events, testNodeId, nil, &loggerSpy{})
+	service := backend.NewBackend(newBackendRepoSpy(), events, testNodeId, nil, &backendLoggerSpy{})
 
 	service.DeleteOwnBackends(t.Context())
 
 	require.Empty(events.inserted, "graceful shutdown inserts no events at all")
 }
 
-func electedInstance(connId string, address string) entity.Backend {
+func backendElectedInstance(connId string, address string) entity.Backend {
 	return entity.Backend{
 		WsConnectionId:   connId,
-		ModuleId:         testModuleId,
-		ModuleName:       testModuleName,
+		ModuleId:         backendTestModuleId,
+		ModuleName:       backendTestModuleName,
 		Address:          address,
 		ModuleLeaderMode: cluster.ModuleLeaderModeRequestElection,
 	}
