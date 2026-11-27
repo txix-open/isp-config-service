@@ -65,7 +65,7 @@ func NewService(
 		secretSkipped: metrics.GetOrRegister(metrics.DefaultRegistry,
 			prometheus.NewCounterVec(prometheus.CounterOpts{
 				Subsystem: "config",
-				Name:      "render_secret_skipped",
+				Name:      "render_secret_skipped_total",
 				Help:      "Secret variables left unrendered in UI-exposed config leaves",
 			}, []string{"module", "variable"}),
 		),
@@ -83,33 +83,6 @@ type cachedUIPaths struct {
 type uiPathsCache struct {
 	mu      sync.Mutex
 	entries map[string]cachedUIPaths
-}
-
-// uiPaths returns the canonical paths of the module's ui-exposed leaves,
-// cached per module and schema version. A module without a schema (or with a
-// schema without the keyword) yields an empty set, so rendering behaves as
-// before.
-func (s Service) uiPaths(ctx context.Context, moduleId string) ([]string, error) {
-	schemaRow, err := s.schemaRepo.GetByModuleId(ctx, moduleId)
-	if err != nil {
-		return nil, errors.WithMessage(err, "find module schema")
-	}
-	if schemaRow == nil {
-		return nil, nil
-	}
-
-	s.uiPathsCache.mu.Lock()
-	defer s.uiPathsCache.mu.Unlock()
-	if cached, ok := s.uiPathsCache.entries[moduleId]; ok && cached.version == schemaRow.ModuleVersion {
-		return cached.paths, nil
-	}
-
-	paths, err := schema.UIExposedPaths(schemaRow.Data)
-	if err != nil {
-		return nil, errors.WithMessage(err, "read ui-exposed paths")
-	}
-	s.uiPathsCache.entries[moduleId] = cachedUIPaths{version: schemaRow.ModuleVersion, paths: paths}
-	return paths, nil
 }
 
 func (s Service) All(ctx context.Context) ([]domain.Variable, error) {
@@ -332,6 +305,33 @@ func (s Service) SaveVariableLinks(ctx context.Context, configId string, links [
 	}
 
 	return nil
+}
+
+// uiPaths returns the canonical paths of the module's ui-exposed leaves,
+// cached per module and schema version. A module without a schema (or with a
+// schema without the keyword) yields an empty set, so rendering behaves as
+// before.
+func (s Service) uiPaths(ctx context.Context, moduleId string) ([]string, error) {
+	schemaRow, err := s.schemaRepo.GetByModuleId(ctx, moduleId)
+	if err != nil {
+		return nil, errors.WithMessage(err, "find module schema")
+	}
+	if schemaRow == nil {
+		return nil, nil
+	}
+
+	s.uiPathsCache.mu.Lock()
+	defer s.uiPathsCache.mu.Unlock()
+	if cached, ok := s.uiPathsCache.entries[moduleId]; ok && cached.version == schemaRow.ModuleVersion {
+		return cached.paths, nil
+	}
+
+	paths, err := schema.UIExposedPaths(schemaRow.Data)
+	if err != nil {
+		return nil, errors.WithMessage(err, "read ui-exposed paths")
+	}
+	s.uiPathsCache.entries[moduleId] = cachedUIPaths{version: schemaRow.ModuleVersion, paths: paths}
+	return paths, nil
 }
 
 func (s Service) toDto(variable entity.Variable, metaByVariables map[string][]entity.ConfigMetaWithVariable) domain.Variable {

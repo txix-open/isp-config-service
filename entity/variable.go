@@ -7,7 +7,7 @@ import (
 
 type VariableType = string
 
-var (
+const (
 	SecretType VariableType = "SECRET"
 	TextType   VariableType = "TEXT"
 )

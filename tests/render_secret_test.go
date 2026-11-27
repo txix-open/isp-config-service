@@ -22,7 +22,7 @@ type renderPolicyConfig struct {
 	Plain   string
 }
 
-//nolint:funlen,paralleltest
+//nolint:funlen,paralleltest,noctx
 func TestRenderSecretSkip(t *testing.T) {
 	require := require.New(t)
 	logger := setupTest(t)
@@ -92,7 +92,7 @@ func TestRenderSecretSkip(t *testing.T) {
 
 	// The skip is observable: a positive counter for the module and the variable.
 	recorder := httptest.NewRecorder()
-	metrics.DefaultRegistry.MetricsHandler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/internal/metrics", nil))
+	metrics.DefaultRegistry.MetricsHandler().ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/internal/metrics", nil))
 	require.Regexp(
 		fmt.Sprintf(`render_secret_skipped[^\n]*module=%q[^\n]*variable="rdVar"[^\n]* [1-9]`, active.ModuleId),
 		recorder.Body.String(),

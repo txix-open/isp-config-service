@@ -55,7 +55,7 @@ func requireBusinessError(require *require.Assertions, err error, code int) busi
 	return businessError{}
 }
 
-//nolint:funlen,paralleltest
+//nolint:funlen,paralleltest,testifylint
 func TestSecretPolicy(t *testing.T) {
 	require := require.New(t)
 	logger := setupTest(t)
@@ -113,14 +113,14 @@ func TestSecretPolicy(t *testing.T) {
 			}).
 			Do(t.Context()),
 		domain.ErrorCodeInvalidConfig)
-	require.Equal("references SECRET variable polSecret", be.Details["secrets"])
+	require.Equal("UI-экспортируемое поле не должно ссылаться на переменную с типом SECRET: polSecret", be.Details["secrets"])
 
 	err = apiCli.Invoke("config/config/get_active_config_by_module_name").
 		JsonRequestBody(domain.GetByModuleNameRequest{ModuleName: "SecretPolicyA"}).
 		JsonResponseBody(&active).
 		Do(t.Context())
 	require.NoError(err)
-	require.EqualValues(
+	require.JSONEq(
 		`{"secrets":"_Var(polText)","plain":"p","oauth":{"clients":[{"clientId":"a","loginEndpoint":"_Var(polText)"}]}}`,
 		string(active.Data))
 
@@ -137,7 +137,7 @@ func TestSecretPolicy(t *testing.T) {
 			}).
 			Do(t.Context()),
 		domain.ErrorCodeInvalidConfig)
-	require.Equal("references SECRET variable polSecret", be.Details["secrets"])
+	require.Equal("UI-экспортируемое поле не должно ссылаться на переменную с типом SECRET: polSecret", be.Details["secrets"])
 
 	// 3) Insert path (empty Id): the new config is not created.
 	be = requireBusinessError(require,
@@ -149,7 +149,7 @@ func TestSecretPolicy(t *testing.T) {
 			}).
 			Do(t.Context()),
 		domain.ErrorCodeInvalidConfig)
-	require.Equal("references SECRET variable polSecret", be.Details["secrets"])
+	require.Equal("UI-экспортируемое поле не должно ссылаться на переменную с типом SECRET: polSecret", be.Details["secrets"])
 
 	// 4) Nested array path: the detail key matches the gojsonschema field
 	// format used by schema validation errors.
@@ -164,7 +164,7 @@ func TestSecretPolicy(t *testing.T) {
 			}).
 			Do(t.Context()),
 		domain.ErrorCodeInvalidConfig)
-	require.Equal("references SECRET variable polSecret", be.Details["oauth.clients.0.loginEndpoint"])
+	require.Equal("UI-экспортируемое поле не должно ссылаться на переменную с типом SECRET: polSecret", be.Details["oauth.clients.0.loginEndpoint"])
 
 	// 5) A SECRET variable outside a UI-exposed field is allowed.
 	err = apiCli.Invoke("config/config/create_update_config").
@@ -223,12 +223,12 @@ func TestSecretPolicy(t *testing.T) {
 			JsonRequestBody(domain.SyncConfigRequest{ModuleName: "SecretPolicyA"}).
 			Do(t.Context()),
 		domain.ErrorCodeInvalidConfig)
-	require.Equal("references SECRET variable polText", be.Details["secrets"])
-	require.Equal("references SECRET variable polText", be.Details["oauth.clients.0.loginEndpoint"])
+	require.Equal("UI-экспортируемое поле не должно ссылаться на переменную с типом SECRET: polText", be.Details["secrets"])
+	require.Equal("UI-экспортируемое поле не должно ссылаться на переменную с типом SECRET: polText", be.Details["oauth.clients.0.loginEndpoint"])
 
 	time.Sleep(3 * time.Second)
 	// No extra push: the rejected sync did not emit a change event.
-	require.Equal(pushedBefore+1, len(eventHandler.ReceivedConfigs()))
+	require.Len(eventHandler.ReceivedConfigs(), pushedBefore+1)
 
 	// 8) First connection of module B: the default config references a SECRET
 	// variable in a UI-exposed field, so the initial config is not persisted.
@@ -295,8 +295,8 @@ func TestSecretPolicy(t *testing.T) {
 			JsonRequestBody(domain.IdRequest{Id: active.Id}).
 			Do(t.Context()),
 		domain.ErrorCodeInvalidConfig)
-	require.Equal("references SECRET variable polText", be.Details["secrets"])
-	require.Equal("references SECRET variable polText", be.Details["oauth.clients.0.loginEndpoint"])
+	require.Equal("UI-экспортируемое поле не должно ссылаться на переменную с типом SECRET: polText", be.Details["secrets"])
+	require.Equal("UI-экспортируемое поле не должно ссылаться на переменную с типом SECRET: polText", be.Details["oauth.clients.0.loginEndpoint"])
 
 	fetched := domain.Config{}
 	err = apiCli.Invoke("config/config/get_active_config_by_module_name").

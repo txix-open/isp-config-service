@@ -147,69 +147,7 @@ func (c Config) CreateUpdateConfig(
 			Config: newConfig, IsChanged: true}, err
 	}
 
-	variableExtractionResult, err := c.extractAndCheckVariables(ctx, req.Id, req.Data)
-	if err != nil {
-		return nil, errors.WithMessage(err, "extract variables")
-	}
-
-	oldConfig, err := c.configRepo.GetById(ctx, req.Id)
-	if err != nil {
-		return nil, errors.WithMessage(err, "get old config")
-	}
-	if oldConfig == nil {
-		return nil, entity.ErrConfigNotFound
-	}
-
-	isMatch, err := isEqualConfigs(oldConfig, req)
-	if err != nil {
-		return nil, errors.WithMessage(err, "compare data configs")
-	}
-	if isMatch {
-		c.logger.Info(ctx, "no changes in config; skip update")
-		return &domain.CreateUpdateConfigResponse{Config: configToDto(*oldConfig, nil), IsChanged: false}, nil
-	}
-
-	config := entity.Config{
-		Id:      req.Id,
-		Name:    req.Name,
-		Data:    req.Data,
-		Version: req.Version,
-		AdminId: adminId,
-	}
-	updated, err := c.configRepo.UpdateByVersion(ctx, config)
-	if err != nil {
-		return nil, errors.WithMessage(err, "update config")
-	}
-	if !updated {
-		return nil, entity.ErrConfigConflictUpdate
-	}
-
-	err = c.configHistoryService.OnUpdateConfig(ctx, *oldConfig)
-	if err != nil {
-		return nil, errors.WithMessage(err, "change config history")
-	}
-	err = c.variableService.SaveVariableLinks(ctx, config.Id, variableExtractionResult.VariableLinks)
-	if err != nil {
-		return nil, errors.WithMessage(err, "save variable links")
-	}
-
-	if oldConfig.Active {
-		err = c.emitChangeActiveConfigEvent(ctx, oldConfig.ModuleId)
-		if err != nil {
-			return nil, errors.WithMessage(err, "emit change active config event")
-		}
-	}
-
-	newConfig := entity.Config{
-		Id:       req.Id,
-		Name:     req.Name,
-		ModuleId: req.ModuleId,
-		Data:     req.Data,
-		Version:  req.Version + 1,
-		Active:   oldConfig.Active,
-	}
-	return &domain.CreateUpdateConfigResponse{
-		Config: configToDto(newConfig, nil), IsChanged: true}, nil
+	return c.updateConfig(ctx, adminId, req)
 }
 
 func (c Config) GetConfigById(ctx context.Context, configId string) (*domain.Config, error) {
@@ -315,6 +253,74 @@ func (c Config) SyncConfig(ctx context.Context, moduleName string) error {
 	}
 
 	return nil
+}
+
+// updateConfig updates an existing config version, records the history and
+// variable links, and emits the active-config change event when needed.
+func (c Config) updateConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (*domain.CreateUpdateConfigResponse, error) {
+	variableExtractionResult, err := c.extractAndCheckVariables(ctx, req.Id, req.Data)
+	if err != nil {
+		return nil, errors.WithMessage(err, "extract variables")
+	}
+
+	oldConfig, err := c.configRepo.GetById(ctx, req.Id)
+	if err != nil {
+		return nil, errors.WithMessage(err, "get old config")
+	}
+	if oldConfig == nil {
+		return nil, entity.ErrConfigNotFound
+	}
+
+	isMatch, err := isEqualConfigs(oldConfig, req)
+	if err != nil {
+		return nil, errors.WithMessage(err, "compare data configs")
+	}
+	if isMatch {
+		c.logger.Info(ctx, "no changes in config; skip update")
+		return &domain.CreateUpdateConfigResponse{Config: configToDto(*oldConfig, nil), IsChanged: false}, nil
+	}
+
+	config := entity.Config{
+		Id:      req.Id,
+		Name:    req.Name,
+		Data:    req.Data,
+		Version: req.Version,
+		AdminId: adminId,
+	}
+	updated, err := c.configRepo.UpdateByVersion(ctx, config)
+	if err != nil {
+		return nil, errors.WithMessage(err, "update config")
+	}
+	if !updated {
+		return nil, entity.ErrConfigConflictUpdate
+	}
+
+	err = c.configHistoryService.OnUpdateConfig(ctx, *oldConfig)
+	if err != nil {
+		return nil, errors.WithMessage(err, "change config history")
+	}
+	err = c.variableService.SaveVariableLinks(ctx, config.Id, variableExtractionResult.VariableLinks)
+	if err != nil {
+		return nil, errors.WithMessage(err, "save variable links")
+	}
+
+	if oldConfig.Active {
+		err = c.emitChangeActiveConfigEvent(ctx, oldConfig.ModuleId)
+		if err != nil {
+			return nil, errors.WithMessage(err, "emit change active config event")
+		}
+	}
+
+	newConfig := entity.Config{
+		Id:       req.Id,
+		Name:     req.Name,
+		ModuleId: req.ModuleId,
+		Data:     req.Data,
+		Version:  req.Version + 1,
+		Active:   oldConfig.Active,
+	}
+	return &domain.CreateUpdateConfigResponse{
+		Config: configToDto(newConfig, nil), IsChanged: true}, nil
 }
 
 func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.CreateUpdateConfigRequest) (domain.Config, error) {

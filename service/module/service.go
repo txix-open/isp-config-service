@@ -5,13 +5,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"sort"
-	"strings"
-
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
 	"isp-config-service/helpers"
+	"maps"
+	"sort"
+	"strings"
 
 	"github.com/txix-open/isp-kit/json"
 	"github.com/txix-open/isp-kit/rc"
@@ -91,7 +91,7 @@ func NewService(
 	emitter Emitter,
 	variableService VariableService,
 	variableRepo VariableRepo,
-	ConfigWriteDeny bool,
+	configWriteDeny bool,
 	logger log.Logger,
 ) Service {
 	return Service{
@@ -103,7 +103,7 @@ func NewService(
 		emitter:             emitter,
 		variableService:     variableService,
 		variableRepo:        variableRepo,
-		configWriteDeny:     ConfigWriteDeny,
+		configWriteDeny:     configWriteDeny,
 		logger:              logger,
 	}
 }
@@ -243,40 +243,10 @@ func (s Service) OnModuleConfigSchema(
 	}
 
 	if config == nil {
-		// Check the policy before the initial config is written, so a violating
-		// default config is never persisted on the first module connection.
-		err = s.FilterSecretParams(ctx, data.Config, moduleId)
+		config, err = s.storeInitialConfig(ctx, conn, moduleId, data)
 		if err != nil {
-			return errors.WithMessage(err, "filter secret params in store")
+			return err
 		}
-
-		initialConfig := entity.Config{
-			Id:       idByKey(moduleId),
-			Name:     helpers.ModuleName(conn),
-			ModuleId: moduleId,
-			Data:     data.Config,
-			Version:  1,
-			Active:   xtypes.Bool(true),
-		}
-
-		result, err := s.variableService.ExtractVariables(ctx, initialConfig.Id, initialConfig.Data)
-		if err != nil {
-			return errors.WithMessage(err, "extract variables from initial config")
-		}
-		if len(result.AbsentVariables) > 0 {
-			return errors.Errorf("missing variables in initial config: [%s]", strings.Join(result.AbsentVariables, ","))
-		}
-
-		err = s.configRepo.Insert(ctx, initialConfig)
-		if err != nil {
-			return errors.WithMessage(err, "insert config in store")
-		}
-		err = s.variableService.SaveVariableLinks(ctx, initialConfig.Id, result.VariableLinks)
-		if err != nil {
-			return errors.WithMessage(err, "save variable links in store")
-		}
-
-		config = &initialConfig
 	}
 
 	configData, err := s.variableService.RenderConfig(ctx, moduleId, config.Data)
@@ -313,57 +283,136 @@ func (s Service) FilterSecretParams(ctx context.Context, config json.RawMessage,
 		return nil
 	}
 
-	// Remember paths tagged `x-ui-exposed` and `x-sensitive`
-	uiPaths, err := schema.UIExposedPaths(moduleSchema.Data)
+	uiPaths, sensitivePaths, err := policyPaths(moduleSchema.Data)
 	if err != nil {
-		return errors.WithMessage(err, "read schema params")
-	}
-	sensitivePaths, err := schema.SensitivePaths(moduleSchema.Data)
-	if err != nil {
-		return errors.WithMessage(err, "read schema params")
+		return err
 	}
 	if len(uiPaths) == 0 && len(sensitivePaths) == 0 {
 		return nil
 	}
 
-	// Remember paths to placeholders
 	placeholders, err := rc.PlaceHolderReader(config)
 	if err != nil {
 		return errors.WithMessage(err, "read config placeholders")
 	}
 
-	// Names of variables referenced on ui-exposed and sensitive paths;
-	// refsByPath keeps the ui-exposed references for the report
-	names := make(map[string]struct{})
+	refsByPath, names, sensitiveSet := policyRefs(placeholders, uiPaths, sensitivePaths)
+	variableTypes, err := s.referencedVariableTypes(ctx, names)
+	if err != nil {
+		return err
+	}
+
+	errorDetails := uiExposedViolations(refsByPath, variableTypes)
+	if len(sensitivePaths) > 0 {
+		sensitiveDetails, err := sensitiveViolations(config, sensitiveSet, sensitivePaths, variableTypes)
+		if err != nil {
+			return err
+		}
+		maps.Copy(errorDetails, sensitiveDetails)
+	}
+
+	if len(errorDetails) == 0 {
+		return nil
+	}
+
+	return errors.WithMessage(domain.NewConfigValidationError(errorDetails), "config violates the secret policy")
+}
+
+// storeInitialConfig checks the secret write policy and persists the module's
+// initial config with its variable links. A violating default config is never
+// persisted on the first module connection.
+func (s Service) storeInitialConfig(ctx context.Context, conn *etp.Conn, moduleId string, data cluster.ConfigData) (*entity.Config, error) {
+	err := s.FilterSecretParams(ctx, data.Config, moduleId)
+	if err != nil {
+		return nil, errors.WithMessage(err, "filter secret params in store")
+	}
+
+	initialConfig := entity.Config{
+		Id:       idByKey(moduleId),
+		Name:     helpers.ModuleName(conn),
+		ModuleId: moduleId,
+		Data:     data.Config,
+		Version:  1,
+		Active:   xtypes.Bool(true),
+	}
+
+	result, err := s.variableService.ExtractVariables(ctx, initialConfig.Id, initialConfig.Data)
+	if err != nil {
+		return nil, errors.WithMessage(err, "extract variables from initial config")
+	}
+	if len(result.AbsentVariables) > 0 {
+		return nil, errors.Errorf("missing variables in initial config: [%s]", strings.Join(result.AbsentVariables, ","))
+	}
+
+	err = s.configRepo.Insert(ctx, initialConfig)
+	if err != nil {
+		return nil, errors.WithMessage(err, "insert config in store")
+	}
+	err = s.variableService.SaveVariableLinks(ctx, initialConfig.Id, result.VariableLinks)
+	if err != nil {
+		return nil, errors.WithMessage(err, "save variable links in store")
+	}
+
+	return &initialConfig, nil
+}
+
+// referencedVariableTypes resolves the types of the variables referenced on
+// the policy paths.
+func (s Service) referencedVariableTypes(ctx context.Context, names map[string]struct{}) (map[string]entity.VariableType, error) {
+	variableTypes := make(map[string]entity.VariableType, len(names))
+	if len(names) == 0 {
+		return variableTypes, nil
+	}
+
+	variables, err := s.variableRepo.GetVariablesByName(ctx, names)
+	if err != nil {
+		return nil, errors.WithMessage(err, "get variables")
+	}
+	for _, variable := range variables {
+		variableTypes[variable.Name] = variable.Type
+	}
+
+	return variableTypes, nil
+}
+
+// policyPaths reads the ui-exposed and sensitive leaf paths from the schema.
+func policyPaths(schemaData []byte) ([]string, []string, error) {
+	uiPaths, err := schema.UIExposedPaths(schemaData)
+	if err != nil {
+		return nil, nil, errors.WithMessage(err, "read schema params")
+	}
+	sensitivePaths, err := schema.SensitivePaths(schemaData)
+	if err != nil {
+		return nil, nil, errors.WithMessage(err, "read schema params")
+	}
+	return uiPaths, sensitivePaths, nil
+}
+
+// policyRefs collects the ui-exposed references (kept per path for the
+// report), the set of all referenced variable names and the sensitive paths.
+func policyRefs(placeholders map[string][]string, uiPaths, sensitivePaths []string) (map[string][]string, map[string]struct{}, map[string]struct{}) {
 	refsByPath := make(map[string][]string)
+	names := make(map[string]struct{})
+	sensitiveSet := make(map[string]struct{}, len(sensitivePaths))
 	for _, path := range uiPaths {
 		for _, name := range placeholders[path] {
 			names[name] = struct{}{}
 			refsByPath[path] = append(refsByPath[path], name)
 		}
 	}
-	sensitiveSet := make(map[string]struct{}, len(sensitivePaths))
 	for _, path := range sensitivePaths {
 		sensitiveSet[path] = struct{}{}
 		for _, name := range placeholders[path] {
 			names[name] = struct{}{}
 		}
 	}
+	return refsByPath, names, sensitiveSet
+}
 
-	variableTypes := make(map[string]entity.VariableType, len(names))
-	if len(names) > 0 {
-		variables, err := s.variableRepo.GetVariablesByName(ctx, names)
-		if err != nil {
-			return errors.WithMessage(err, "get variables")
-		}
-		for _, variable := range variables {
-			variableTypes[variable.Name] = variable.Type
-		}
-	}
-
-	errorDetails := make(map[string]string)
-
-	// ui-exposed fields must not reference SECRET variables
+// uiExposedViolations reports the ui-exposed paths that reference SECRET
+// variables.
+func uiExposedViolations(refsByPath map[string][]string, variableTypes map[string]entity.VariableType) map[string]string {
+	details := make(map[string]string)
 	for path, refs := range refsByPath {
 		secrets := make([]string, 0, len(refs))
 		for _, name := range refs {
@@ -379,39 +428,47 @@ func (s Service) FilterSecretParams(ctx context.Context, config json.RawMessage,
 		if len(secrets) > 1 {
 			plural = "переменные"
 		}
-		msg := fmt.Sprintf("UI-экспортируемое поле не должно ссылаться на %s с типом SECRET: %s", plural, strings.Join(secrets, ", "))
-		errorDetails[policyFieldPath(path)] = msg
+		message := fmt.Sprintf("UI-экспортируемое поле не должно ссылаться на %s с типом SECRET: %s", plural, strings.Join(secrets, ", "))
+		details[policyFieldPath(path)] = message
+	}
+	return details
+}
+
+// sensitiveViolations reports the sensitive paths whose value is not a single
+// reference to a SECRET variable. Composite JSON strings are report-only and
+// never rejected.
+func sensitiveViolations(
+	config json.RawMessage,
+	sensitiveSet map[string]struct{},
+	sensitivePaths []string,
+	variableTypes map[string]entity.VariableType,
+) (map[string]string, error) {
+	details := make(map[string]string)
+
+	values, err := leafValuesAt(config, sensitiveSet)
+	if err != nil {
+		return nil, err
 	}
 
-	if len(sensitivePaths) > 0 {
-		values, err := leafValuesAt(config, sensitiveSet)
-		if err != nil {
-			return errors.WithMessage(err, "read config values")
+	for _, path := range sensitivePaths {
+		value, exists := values[path]
+		if !exists || value == "" {
+			continue
 		}
-		for _, path := range sensitivePaths {
-			value, exists := values[path]
-			if !exists || value == "" {
-				continue
-			}
-			if rc.IsCompositeJSONString(value) {
-				continue
-			}
-			if name, ok := rc.SingleVariableRef(value); ok {
-				if t, known := variableTypes[name]; known && t != entity.SecretType {
-					msg := fmt.Sprintf("sensitive-поле должно ссылаться только на переменные с типом SECRET: переменная %s имеет тип %s", name, t)
-					errorDetails[policyFieldPath(path)] = msg
-				}
-				continue
-			}
-			errorDetails[policyFieldPath(path)] = "plain value in sensitive field"
+		if rc.IsCompositeJSONString(value) {
+			continue
 		}
+		if name, ok := rc.SingleVariableRef(value); ok {
+			if t, known := variableTypes[name]; known && t != entity.SecretType {
+				message := fmt.Sprintf("sensitive-поле должно ссылаться только на переменные с типом SECRET: переменная %s имеет тип %s", name, t)
+				details[policyFieldPath(path)] = message
+			}
+			continue
+		}
+		details[policyFieldPath(path)] = "plain value in sensitive field"
 	}
 
-	if len(errorDetails) == 0 {
-		return nil
-	}
-
-	return errors.WithMessage(domain.NewConfigValidationError(errorDetails), "config violates the secret policy")
+	return details, nil
 }
 
 // leafValuesAt collects the raw values of the config's string leaves located
@@ -424,7 +481,10 @@ func leafValuesAt(data []byte, paths map[string]struct{}) (map[string]string, er
 		}
 		return value
 	})
-	return values, err
+	if err != nil {
+		return nil, errors.WithMessage(err, "read config leaf values")
+	}
+	return values, nil
 }
 
 func policyFieldPath(canonical string) string {

@@ -1,4 +1,4 @@
-package variable
+package variable_test
 
 import (
 	"encoding/json"
@@ -6,18 +6,23 @@ import (
 	"testing"
 
 	"isp-config-service/entity"
+	"isp-config-service/service/variable"
 )
 
 func textVar(name, value string) entity.Variable {
 	return entity.Variable{Name: name, Type: entity.TextType, Value: value}
 }
 
-func secretVar(name, value string) entity.Variable {
-	return entity.Variable{Name: name, Type: entity.SecretType, Value: value}
+// secretVar builds a SECRET variable named "s1" (the name is fixed for all
+// the render cases below).
+func secretVar(value string) entity.Variable {
+	return entity.Variable{Name: "s1", Type: entity.SecretType, Value: value}
 }
 
 func TestRenderSubstitutesNonUI(t *testing.T) {
-	out, skipped, undefined, err := Render(
+	t.Parallel()
+
+	out, skipped, undefined, err := variable.Render(
 		[]byte(`{"a":"_Var(v1)"}`),
 		nil,
 		map[string]entity.Variable{"v1": textVar("v1", "x")},
@@ -34,10 +39,12 @@ func TestRenderSubstitutesNonUI(t *testing.T) {
 }
 
 func TestRenderKeepsSecretInUI(t *testing.T) {
-	out, skipped, undefined, err := Render(
+	t.Parallel()
+
+	out, skipped, undefined, err := variable.Render(
 		[]byte(`{"a":"_Var(s1)"}`),
 		[]string{"$.a"},
-		map[string]entity.Variable{"s1": secretVar("s1", "top")},
+		map[string]entity.Variable{"s1": secretVar("top")},
 	)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -57,10 +64,12 @@ func TestRenderKeepsSecretInUI(t *testing.T) {
 }
 
 func TestRenderSameVarUINonUI(t *testing.T) {
-	out, skipped, _, err := Render(
+	t.Parallel()
+
+	out, skipped, _, err := variable.Render(
 		[]byte(`{"ui":"_Var(s1)","plain":"_Var(s1)"}`),
 		[]string{"$.ui"},
-		map[string]entity.Variable{"s1": secretVar("s1", "top")},
+		map[string]entity.Variable{"s1": secretVar("top")},
 	)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -74,10 +83,12 @@ func TestRenderSameVarUINonUI(t *testing.T) {
 }
 
 func TestRenderMixedUILeaf(t *testing.T) {
-	out, skipped, _, err := Render(
+	t.Parallel()
+
+	out, skipped, _, err := variable.Render(
 		[]byte(`{"a":"p/_Var(t1)/_Var(s1)"}`),
 		[]string{"$.a"},
-		map[string]entity.Variable{"t1": textVar("t1", "tv"), "s1": secretVar("s1", "top")},
+		map[string]entity.Variable{"t1": textVar("t1", "tv"), "s1": secretVar("top")},
 	)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -91,10 +102,12 @@ func TestRenderMixedUILeaf(t *testing.T) {
 }
 
 func TestRenderSecretOutsideUI(t *testing.T) {
-	out, skipped, _, err := Render(
+	t.Parallel()
+
+	out, skipped, _, err := variable.Render(
 		[]byte(`{"a":"_Var(s1)"}`),
 		nil,
-		map[string]entity.Variable{"s1": secretVar("s1", "top")},
+		map[string]entity.Variable{"s1": secretVar("top")},
 	)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -108,10 +121,12 @@ func TestRenderSecretOutsideUI(t *testing.T) {
 }
 
 func TestRenderArrayPath(t *testing.T) {
-	out, skipped, _, err := Render(
+	t.Parallel()
+
+	out, skipped, _, err := variable.Render(
 		[]byte(`{"oauth":{"clients":[{"e":"_Var(s1)"},{"e":"x"}]}}`),
 		[]string{"$.oauth.clients[].e"},
-		map[string]entity.Variable{"s1": secretVar("s1", "top")},
+		map[string]entity.Variable{"s1": secretVar("top")},
 	)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -125,7 +140,9 @@ func TestRenderArrayPath(t *testing.T) {
 }
 
 func TestRenderUndefined(t *testing.T) {
-	out, skipped, undefined, err := Render(
+	t.Parallel()
+
+	out, skipped, undefined, err := variable.Render(
 		[]byte(`{"a":"_Var(ghost)"}`),
 		nil,
 		map[string]entity.Variable{},
@@ -145,9 +162,11 @@ func TestRenderUndefined(t *testing.T) {
 }
 
 func TestRenderUndefinedInUI(t *testing.T) {
+	t.Parallel()
+
 	// A variable that does not exist cannot be proven SECRET, so it is
 	// reported undefined instead of silently kept as a literal.
-	_, skipped, undefined, err := Render(
+	_, skipped, undefined, err := variable.Render(
 		[]byte(`{"a":"_Var(ghost)"}`),
 		[]string{"$.a"},
 		map[string]entity.Variable{},
@@ -164,7 +183,9 @@ func TestRenderUndefinedInUI(t *testing.T) {
 }
 
 func TestRenderToInt(t *testing.T) {
-	out, _, _, err := Render(
+	t.Parallel()
+
+	out, _, _, err := variable.Render(
 		[]byte(`{"n":"_ToInt(_Var(n1))"}`),
 		nil,
 		map[string]entity.Variable{"n1": textVar("n1", "42")},
@@ -178,10 +199,12 @@ func TestRenderToInt(t *testing.T) {
 }
 
 func TestRenderToIntSecretInUI(t *testing.T) {
-	out, skipped, _, err := Render(
+	t.Parallel()
+
+	out, skipped, _, err := variable.Render(
 		[]byte(`{"n":"_ToInt(_Var(s1))"}`),
 		[]string{"$.n"},
-		map[string]entity.Variable{"s1": secretVar("s1", "42")},
+		map[string]entity.Variable{"s1": secretVar("42")},
 	)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -195,7 +218,9 @@ func TestRenderToIntSecretInUI(t *testing.T) {
 }
 
 func TestRenderKeysUntouched(t *testing.T) {
-	out, _, _, err := Render(
+	t.Parallel()
+
+	out, _, _, err := variable.Render(
 		[]byte(`{"_Var(k)":"_Var(v1)"}`),
 		nil,
 		map[string]entity.Variable{"v1": textVar("v1", "x")},
@@ -209,10 +234,12 @@ func TestRenderKeysUntouched(t *testing.T) {
 }
 
 func TestRenderSkippedDeduped(t *testing.T) {
-	_, skipped, _, err := Render(
+	t.Parallel()
+
+	_, skipped, _, err := variable.Render(
 		[]byte(`{"a":"_Var(s1)_Var(s1)"}`),
 		[]string{"$.a"},
-		map[string]entity.Variable{"s1": secretVar("s1", "top")},
+		map[string]entity.Variable{"s1": secretVar("top")},
 	)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -223,7 +250,9 @@ func TestRenderSkippedDeduped(t *testing.T) {
 }
 
 func TestRenderNonStringUILeaf(t *testing.T) {
-	out, skipped, _, err := Render(
+	t.Parallel()
+
+	out, skipped, _, err := variable.Render(
 		[]byte(`{"n":5}`),
 		[]string{"$.n"},
 		map[string]entity.Variable{},
@@ -240,7 +269,9 @@ func TestRenderNonStringUILeaf(t *testing.T) {
 }
 
 func TestRenderInvalidJSON(t *testing.T) {
-	_, _, _, err := Render(
+	t.Parallel()
+
+	out, skipped, undefined, err := variable.Render(
 		[]byte(`{"a":`),
 		nil,
 		map[string]entity.Variable{},
@@ -248,10 +279,15 @@ func TestRenderInvalidJSON(t *testing.T) {
 	if err == nil {
 		t.Fatal("Render: want an error for invalid JSON")
 	}
+	if out != nil || len(skipped) != 0 || len(undefined) != 0 {
+		t.Fatalf("out = %s, skipped = %v, undefined = %v, want all empty", out, skipped, undefined)
+	}
 }
 
 func TestRenderEscapes(t *testing.T) {
-	out, _, _, err := Render(
+	t.Parallel()
+
+	out, _, _, err := variable.Render(
 		[]byte(`{"a":"line1\nline2 _Var(v1)"}`),
 		nil,
 		map[string]entity.Variable{"v1": textVar("v1", "x")},
@@ -265,6 +301,8 @@ func TestRenderEscapes(t *testing.T) {
 }
 
 func TestRenderCompositeInUISubstituted(t *testing.T) {
+	t.Parallel()
+
 	// a composite JSON string on a UI path is report-only: references are
 	// substituted, the secret policy does not apply
 	composite, err := json.Marshal(map[string]any{"a": "_Var(s1)"})
@@ -279,20 +317,25 @@ func TestRenderCompositeInUISubstituted(t *testing.T) {
 		t.Fatalf("marshal document: %v", err)
 	}
 
-	out, skipped, undefined, err := Render(
+	out, skipped, undefined, err := variable.Render(
 		doc,
 		[]string{"$.secrets", "$.plain"},
-		map[string]entity.Variable{"s1": secretVar("s1", "top")},
+		map[string]entity.Variable{"s1": secretVar("top")},
 	)
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
 
 	var m map[string]any
-	if err := json.Unmarshal(out, &m); err != nil {
+	err = json.Unmarshal(out, &m)
+	if err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
-	if got := m["secrets"].(string); !strings.Contains(got, "top") {
+	got, ok := m["secrets"].(string)
+	if !ok {
+		t.Fatalf("$.secrets is not a string: %v", m["secrets"])
+	}
+	if !strings.Contains(got, "top") {
 		t.Fatalf("$.secrets = %s, want the secret value substituted", got)
 	}
 	// the simple leaf on a UI path still follows the policy
@@ -308,6 +351,8 @@ func TestRenderCompositeInUISubstituted(t *testing.T) {
 }
 
 func TestRenderCompositeUndefinedCollected(t *testing.T) {
+	t.Parallel()
+
 	composite, err := json.Marshal([]any{"_Var(ghost)"})
 	if err != nil {
 		t.Fatalf("marshal composite: %v", err)
@@ -317,7 +362,7 @@ func TestRenderCompositeUndefinedCollected(t *testing.T) {
 		t.Fatalf("marshal document: %v", err)
 	}
 
-	out, skipped, undefined, err := Render(
+	out, skipped, undefined, err := variable.Render(
 		doc,
 		[]string{"$.secrets"},
 		map[string]entity.Variable{},
@@ -326,7 +371,8 @@ func TestRenderCompositeUndefinedCollected(t *testing.T) {
 		t.Fatalf("Render: %v", err)
 	}
 	var m map[string]any
-	if err := json.Unmarshal(out, &m); err != nil {
+	err = json.Unmarshal(out, &m)
+	if err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
 	if got, want := m["secrets"], string(composite); got != want {
