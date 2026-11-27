@@ -375,11 +375,12 @@ func (s Service) FilterSecretParams(ctx context.Context, config json.RawMessage,
 			continue
 		}
 		sort.Strings(secrets)
-		plural := "variable"
+		plural := "переменную"
 		if len(secrets) > 1 {
-			plural = "variables"
+			plural = "переменные"
 		}
-		errorDetails[policyFieldPath(path)] = fmt.Sprintf("UI экспортируемое поле не должно ссылаться на переменную с типом SECRET %s %s", plural, strings.Join(secrets, ", "))
+		msg := fmt.Sprintf("UI-экспортируемое поле не должно ссылаться на %s с типом SECRET: %s", plural, strings.Join(secrets, ", "))
+		errorDetails[policyFieldPath(path)] = msg
 	}
 
 	if len(sensitivePaths) > 0 {
@@ -397,7 +398,8 @@ func (s Service) FilterSecretParams(ctx context.Context, config json.RawMessage,
 			}
 			if name, ok := rc.SingleVariableRef(value); ok {
 				if t, known := variableTypes[name]; known && t != entity.SecretType {
-					errorDetails[policyFieldPath(path)] = fmt.Sprintf("sensitive поле должно ссылаться на переменную с типом SECRET в  %s", name)
+					msg := fmt.Sprintf("sensitive-поле должно ссылаться только на переменные с типом SECRET: переменная %s имеет тип %s", name, t)
+					errorDetails[policyFieldPath(path)] = msg
 				}
 				continue
 			}

@@ -62,6 +62,7 @@ func TestFilterSecretParams(t *testing.T) {
 	const moduleId = "m1"
 	varRepo := fakeVariableRepo{variables: []entity.Variable{
 		{Name: "sec_var", Type: entity.SecretType},
+		{Name: "sec_var2", Type: entity.SecretType},
 		{Name: "txt_var", Type: entity.TextType},
 	}}
 
@@ -76,7 +77,15 @@ func TestFilterSecretParams(t *testing.T) {
 			config:  `{"secrets": "_Var(sec_var)"}`,
 			wantErr: true,
 			wantDetails: map[string]string{
-				"secrets": "references SECRET variable sec_var",
+				"secrets": "UI-экспортируемое поле не должно ссылаться на переменную с типом SECRET: sec_var",
+			},
+		},
+		{
+			name:    "ui-exposed multiple secret references",
+			config:  `{"secrets": "_Var(sec_var) _Var(sec_var2)"}`,
+			wantErr: true,
+			wantDetails: map[string]string{
+				"secrets": "UI-экспортируемое поле не должно ссылаться на переменные с типом SECRET: sec_var, sec_var2",
 			},
 		},
 		{
@@ -90,7 +99,7 @@ func TestFilterSecretParams(t *testing.T) {
 			config:  `{"token": "_Var(txt_var)"}`,
 			wantErr: true,
 			wantDetails: map[string]string{
-				"token": "references non-SECRET variable txt_var",
+				"token": "sensitive-поле должно ссылаться только на переменные с типом SECRET: переменная txt_var имеет тип TEXT",
 			},
 		},
 		{
@@ -132,7 +141,7 @@ func TestFilterSecretParams(t *testing.T) {
 			config:  `{"secrets": "_Var(sec_var)", "token": "plain-pass"}`,
 			wantErr: true,
 			wantDetails: map[string]string{
-				"secrets": "references SECRET variable sec_var",
+				"secrets": "UI-экспортируемое поле не должно ссылаться на переменную с типом SECRET: sec_var",
 				"token":   "plain value in sensitive field",
 			},
 		},
