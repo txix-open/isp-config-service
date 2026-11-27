@@ -5,12 +5,13 @@ import (
 	"context"
 	"strconv"
 
+	"isp-config-service/domain"
+	"isp-config-service/entity"
+
 	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/grpc"
 	"github.com/txix-open/isp-kit/grpc/apierrors"
 	"google.golang.org/grpc/metadata"
-	"isp-config-service/domain"
-	"isp-config-service/entity"
 )
 
 type ConfigService interface {
@@ -184,12 +185,24 @@ func (c Config) GetConfigById(ctx context.Context, req domain.IdRequest) (*domai
 // @Produce json
 // @Param body body domain.IdRequest true "id конфигурации для изменения"
 // @Success 200
-// @Failure 400 {object} apierrors.Error "`errorCode: 2002` - конфиг не найден<br/>"
+// @Failure 400 {object} apierrors.Error "`errorCode: 2002` - конфиг не найден<br/>`errorCode: 2003` - конфигурация нарушает политику секретных переменных (детали по путям в `details`)<br/>"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/mark_config_as_active [POST]
 func (c Config) MarkConfigAsActive(ctx context.Context, identity domain.IdRequest) error {
 	err := c.service.MarkConfigAsActive(ctx, identity.Id)
+
+	var validationError domain.ConfigValidationError
 	switch {
+	case errors.As(err, &validationError):
+		details := map[string]any{}
+		for key, value := range validationError.Details {
+			details[key] = value
+		}
+		return apierrors.NewBusinessError(
+			domain.ErrorCodeInvalidConfig,
+			"invalid config",
+			err,
+		).WithDetails(details)
 	case errors.Is(err, entity.ErrConfigNotFound):
 		return apierrors.NewBusinessError(
 			domain.ErrorCodeConfigNotFound,
@@ -272,16 +285,34 @@ func (c Config) UpdateConfigName(ctx context.Context, req domain.UpdateConfigNam
 // @Produce json
 // @Param body body domain.SyncConfigRequest true "название модуля"
 // @Success 200 {object} domain.Config
-// @Failure 400 {object} apierrors.Error "`errorCode: 2001` - модуль не найден<br/>`errorCode: 2002` - конфиг не найден"
+// @Failure 400 {object} apierrors.Error "`errorCode: 2001` - модуль не найден<br/>`errorCode: 2002` - конфиг не найден<br/>`errorCode: 2003` - в UI-экспонируемых полях активная конфигурация ссылается на секретную переменную"
 // @Failure 500 {object} apierrors.Error
 // @Router /config/sync_config [POST]
 func (c Config) SyncConfig(ctx context.Context, req domain.SyncConfigRequest) error {
 	err := c.service.SyncConfig(ctx, req.ModuleName)
+
+	var validationError domain.ConfigValidationError
 	switch {
+	case errors.As(err, &validationError):
+		details := map[string]any{}
+		for key, value := range validationError.Details {
+			details[key] = value
+		}
+		return apierrors.NewBusinessError(
+			domain.ErrorCodeInvalidConfig,
+			"invalid config",
+			err,
+		).WithDetails(details)
 	case errors.Is(err, entity.ErrModuleNotFound):
 		return apierrors.NewBusinessError(
 			domain.ErrorCodeModuleNotFound,
 			"module not found",
+			err,
+		)
+	case errors.Is(err, entity.ErrConfigNotFound):
+		return apierrors.NewBusinessError(
+			domain.ErrorCodeConfigNotFound,
+			"config not found",
 			err,
 		)
 	case err != nil:

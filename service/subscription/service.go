@@ -32,7 +32,7 @@ type ConfigRepo interface {
 }
 
 type VariableService interface {
-	RenderConfig(ctx context.Context, input []byte) ([]byte, error)
+	RenderConfig(ctx context.Context, moduleId string, input []byte) ([]byte, error)
 }
 
 type Emitter interface {
@@ -84,7 +84,7 @@ func (s Service) NotifyConfigChanged(ctx context.Context, moduleId string) error
 	if err != nil {
 		return errors.WithMessage(err, "get active config")
 	}
-	configData, err := s.variableService.RenderConfig(ctx, config.Data)
+	configData, err := s.variableService.RenderConfig(ctx, moduleId, config.Data)
 	if err != nil {
 		return errors.WithMessage(err, "render config")
 	}

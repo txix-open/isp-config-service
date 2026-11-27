@@ -5,11 +5,12 @@ import (
 	"database/sql"
 	"strings"
 
-	"github.com/Masterminds/squirrel"
-	"github.com/txix-open/isp-kit/errors"
 	"isp-config-service/entity"
 	"isp-config-service/middlewares/sql_metrics"
 	"isp-config-service/service/rqlite/db"
+
+	"github.com/Masterminds/squirrel"
+	"github.com/txix-open/isp-kit/errors"
 )
 
 type Variable struct {
@@ -64,6 +65,35 @@ func (r Variable) GetByName(ctx context.Context, name string) (*entity.Variable,
 		return nil, errors.WithMessagef(err, "select: %s", query)
 	}
 	return &result, nil
+}
+
+func (r Variable) GetVariablesByName(ctx context.Context, names map[string]struct{}) ([]entity.Variable, error) {
+	ctx = sql_metrics.OperationLabelToContext(ctx, "Variables.GetObjectsByName")
+
+	ns := make([]string, 0, len(names))
+	for n := range names {
+		ns = append(ns, n)
+	}
+
+	if len(ns) == 0 {
+		return []entity.Variable{}, nil
+	}
+
+	query, args, err := squirrel.Select("name", "type").
+		From(Table("variable")).
+		Where(squirrel.Eq{"name": ns}).
+		ToSql()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build query")
+	}
+
+	result := make([]entity.Variable, 0)
+	err = r.db.Select(ctx, &result, query, args...)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "select: %s", query)
+	}
+
+	return result, nil
 }
 
 func (r Variable) Insert(ctx context.Context, variable entity.Variable) error {

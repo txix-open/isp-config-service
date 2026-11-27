@@ -4,7 +4,18 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
+	"sort"
 	"strings"
+
+	"isp-config-service/domain"
+	"isp-config-service/entity"
+	"isp-config-service/entity/xtypes"
+	"isp-config-service/helpers"
+
+	"github.com/txix-open/isp-kit/json"
+	"github.com/txix-open/isp-kit/rc"
+	"github.com/txix-open/isp-kit/rc/schema"
 
 	"github.com/google/uuid"
 	"github.com/txix-open/etp/v4"
@@ -12,10 +23,6 @@ import (
 	"github.com/txix-open/isp-kit/cluster"
 	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/log"
-	"isp-config-service/domain"
-	"isp-config-service/entity"
-	"isp-config-service/entity/xtypes"
-	"isp-config-service/helpers"
 )
 
 const (
@@ -38,6 +45,7 @@ type BackendService interface {
 
 type ConfigSchemaRepo interface {
 	Upsert(ctx context.Context, schema entity.ConfigSchema) error
+	GetByModuleId(ctx context.Context, moduleId string) (*entity.ConfigSchema, error)
 }
 
 type ConfigRepo interface {
@@ -45,8 +53,12 @@ type ConfigRepo interface {
 	GetActive(ctx context.Context, moduleId string) (*entity.Config, error)
 }
 
+type VariableRepo interface {
+	GetVariablesByName(ctx context.Context, names map[string]struct{}) ([]entity.Variable, error)
+}
+
 type VariableService interface {
-	RenderConfig(ctx context.Context, input []byte) ([]byte, error)
+	RenderConfig(ctx context.Context, moduleId string, input []byte) ([]byte, error)
 	ExtractVariables(ctx context.Context, configId string, input []byte) (*domain.VariableExtractionResult, error)
 	SaveVariableLinks(ctx context.Context, configId string, links []entity.ConfigHasVariable) error
 }
@@ -65,6 +77,8 @@ type Service struct {
 	subscriptionService SubscriptionService
 	emitter             Emitter
 	variableService     VariableService
+	variableRepo        VariableRepo
+	configWriteDeny     bool
 	logger              log.Logger
 }
 
@@ -76,6 +90,8 @@ func NewService(
 	subscriptionService SubscriptionService,
 	emitter Emitter,
 	variableService VariableService,
+	variableRepo VariableRepo,
+	ConfigWriteDeny bool,
 	logger log.Logger,
 ) Service {
 	return Service{
@@ -86,6 +102,8 @@ func NewService(
 		subscriptionService: subscriptionService,
 		emitter:             emitter,
 		variableService:     variableService,
+		variableRepo:        variableRepo,
+		configWriteDeny:     ConfigWriteDeny,
 		logger:              logger,
 	}
 }
@@ -212,7 +230,26 @@ func (s Service) OnModuleConfigSchema(
 	if err != nil {
 		return errors.WithMessage(err, "get active config")
 	}
+
+	configSchema := entity.ConfigSchema{
+		Id:            uuid.NewString(),
+		ModuleId:      moduleId,
+		Data:          data.Schema,
+		ModuleVersion: data.Version,
+	}
+	err = s.configSchemaRepo.Upsert(ctx, configSchema)
+	if err != nil {
+		return errors.WithMessage(err, "upsert config schema in store")
+	}
+
 	if config == nil {
+		// Check the policy before the initial config is written, so a violating
+		// default config is never persisted on the first module connection.
+		err = s.FilterSecretParams(ctx, data.Config, moduleId)
+		if err != nil {
+			return errors.WithMessage(err, "filter secret params in store")
+		}
+
 		initialConfig := entity.Config{
 			Id:       idByKey(moduleId),
 			Name:     helpers.ModuleName(conn),
@@ -242,7 +279,7 @@ func (s Service) OnModuleConfigSchema(
 		config = &initialConfig
 	}
 
-	configData, err := s.variableService.RenderConfig(ctx, config.Data)
+	configData, err := s.variableService.RenderConfig(ctx, moduleId, config.Data)
 	if err != nil {
 		return errors.WithMessage(err, "render config")
 	}
@@ -250,21 +287,145 @@ func (s Service) OnModuleConfigSchema(
 
 	s.subscriptionService.SubscribeToConfigChanges(conn, moduleId)
 
-	configSchema := entity.ConfigSchema{
-		Id:            uuid.NewString(),
-		ModuleId:      moduleId,
-		Data:          data.Schema,
-		ModuleVersion: data.Version,
-	}
-	err = s.configSchemaRepo.Upsert(ctx, configSchema)
-	if err != nil {
-		return errors.WithMessage(err, "upsert config schema in store")
-	}
-
 	return nil
 }
 
 func idByKey(key string) string {
 	hash := sha256.Sum256([]byte(key))
 	return hex.EncodeToString(hash[:])
+}
+
+// FilterSecretParams checks the config against the secret write policy:
+// ui-exposed fields must not reference SECRET variables, and sensitive fields
+// must hold only a single reference to a SECRET variable. A no-op when the
+// config write policy is disabled.
+func (s Service) FilterSecretParams(ctx context.Context, config json.RawMessage, moduleId string) error {
+	if !s.configWriteDeny {
+		return nil
+	}
+
+	moduleSchema, err := s.configSchemaRepo.GetByModuleId(ctx, moduleId)
+	if err != nil {
+		return errors.WithMessage(err, "find module schema")
+	}
+
+	if moduleSchema == nil {
+		return nil
+	}
+
+	// Remember paths tagged `x-ui-exposed` and `x-sensitive`
+	uiPaths, err := schema.UIExposedPaths(moduleSchema.Data)
+	if err != nil {
+		return errors.WithMessage(err, "read schema params")
+	}
+	sensitivePaths, err := schema.SensitivePaths(moduleSchema.Data)
+	if err != nil {
+		return errors.WithMessage(err, "read schema params")
+	}
+	if len(uiPaths) == 0 && len(sensitivePaths) == 0 {
+		return nil
+	}
+
+	// Remember paths to placeholders
+	placeholders, err := rc.PlaceHolderReader(config)
+	if err != nil {
+		return errors.WithMessage(err, "read config placeholders")
+	}
+
+	// Names of variables referenced on ui-exposed and sensitive paths;
+	// refsByPath keeps the ui-exposed references for the report
+	names := make(map[string]struct{})
+	refsByPath := make(map[string][]string)
+	for _, path := range uiPaths {
+		for _, name := range placeholders[path] {
+			names[name] = struct{}{}
+			refsByPath[path] = append(refsByPath[path], name)
+		}
+	}
+	sensitiveSet := make(map[string]struct{}, len(sensitivePaths))
+	for _, path := range sensitivePaths {
+		sensitiveSet[path] = struct{}{}
+		for _, name := range placeholders[path] {
+			names[name] = struct{}{}
+		}
+	}
+
+	variableTypes := make(map[string]entity.VariableType, len(names))
+	if len(names) > 0 {
+		variables, err := s.variableRepo.GetVariablesByName(ctx, names)
+		if err != nil {
+			return errors.WithMessage(err, "get variables")
+		}
+		for _, variable := range variables {
+			variableTypes[variable.Name] = variable.Type
+		}
+	}
+
+	errorDetails := make(map[string]string)
+
+	// ui-exposed fields must not reference SECRET variables
+	for path, refs := range refsByPath {
+		secrets := make([]string, 0, len(refs))
+		for _, name := range refs {
+			if variableTypes[name] == entity.SecretType {
+				secrets = append(secrets, name)
+			}
+		}
+		if len(secrets) == 0 {
+			continue
+		}
+		sort.Strings(secrets)
+		plural := "variable"
+		if len(secrets) > 1 {
+			plural = "variables"
+		}
+		errorDetails[policyFieldPath(path)] = fmt.Sprintf("UI экспортируемое поле не должно ссылаться на переменную с типом SECRET %s %s", plural, strings.Join(secrets, ", "))
+	}
+
+	if len(sensitivePaths) > 0 {
+		values, err := leafValuesAt(config, sensitiveSet)
+		if err != nil {
+			return errors.WithMessage(err, "read config values")
+		}
+		for _, path := range sensitivePaths {
+			value, exists := values[path]
+			if !exists || value == "" {
+				continue
+			}
+			if rc.IsCompositeJSONString(value) {
+				continue
+			}
+			if name, ok := rc.SingleVariableRef(value); ok {
+				if t, known := variableTypes[name]; known && t != entity.SecretType {
+					errorDetails[policyFieldPath(path)] = fmt.Sprintf("sensitive поле должно ссылаться на переменную с типом SECRET в  %s", name)
+				}
+				continue
+			}
+			errorDetails[policyFieldPath(path)] = "plain value in sensitive field"
+		}
+	}
+
+	if len(errorDetails) == 0 {
+		return nil
+	}
+
+	return errors.WithMessage(domain.NewConfigValidationError(errorDetails), "config violates the secret policy")
+}
+
+// leafValuesAt collects the raw values of the config's string leaves located
+// at the given canonical paths.
+func leafValuesAt(data []byte, paths map[string]struct{}) (map[string]string, error) {
+	values := make(map[string]string, len(paths))
+	_, err := rc.TransformStringLeaves(data, func(path, value string) string {
+		if _, want := paths[path]; want {
+			values[path] = value
+		}
+		return value
+	})
+	return values, err
+}
+
+func policyFieldPath(canonical string) string {
+	path := strings.TrimPrefix(canonical, "$.")
+	return strings.ReplaceAll(path, "[]", ".0")
 }

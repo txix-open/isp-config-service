@@ -15,6 +15,7 @@ type Local struct {
 	InternalClientCredential string `validate:"required"`
 	Rqlite                   Rqlite
 	Backup                   rqlite.Backup
+	ConfigWriteDeny          bool
 }
 
 type Rqlite struct {

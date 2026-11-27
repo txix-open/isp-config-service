@@ -97,6 +97,7 @@ func setupTestWithAppRun(t *testing.T) (*require.Assertions, log.Logger) {
 	dataPath := dataDir(t)
 	boot.App.Config().Set("rqlite.DataPath", dataPath)
 	boot.App.Config().Set("backup.Enable", false)
+	boot.App.Config().Set("configWriteDeny", true)
 	logger := boot.App.Logger()
 
 	startup, err := startup.New(boot)

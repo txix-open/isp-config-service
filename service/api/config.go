@@ -4,15 +4,16 @@ import (
 	"context"
 	"time"
 
+	"isp-config-service/domain"
+	"isp-config-service/entity"
+	"isp-config-service/entity/xtypes"
+
 	"github.com/google/uuid"
 	"github.com/txix-open/go-cmp/cmp"
 	"github.com/txix-open/isp-kit/errors"
 	"github.com/txix-open/isp-kit/json"
 	"github.com/txix-open/isp-kit/log"
 	"github.com/xeipuuv/gojsonschema"
-	"isp-config-service/domain"
-	"isp-config-service/entity"
-	"isp-config-service/entity/xtypes"
 )
 
 type ConfigRepo interface {
@@ -39,9 +40,14 @@ type VariableService interface {
 	SaveVariableLinks(ctx context.Context, configId string, links []entity.ConfigHasVariable) error
 }
 
+type ModuleService interface {
+	FilterSecretParams(ctx context.Context, config json.RawMessage, moduleId string) error
+}
+
 type Config struct {
 	configRepo           ConfigRepo
 	moduleRepo           ModuleRepo
+	moduleService        ModuleService
 	schemaRepo           SchemaRepo
 	eventRepo            EventRepo
 	configHistoryService ConfigHistoryService
@@ -52,6 +58,7 @@ type Config struct {
 func NewConfig(
 	configRepo ConfigRepo,
 	moduleRepo ModuleRepo,
+	moduleService ModuleService,
 	schemaRepo SchemaRepo,
 	eventRepo EventRepo,
 	configHistoryService ConfigHistoryService,
@@ -61,6 +68,7 @@ func NewConfig(
 	return Config{
 		configRepo:           configRepo,
 		moduleRepo:           moduleRepo,
+		moduleService:        moduleService,
 		schemaRepo:           schemaRepo,
 		eventRepo:            eventRepo,
 		configHistoryService: configHistoryService,
@@ -121,8 +129,13 @@ func (c Config) CreateUpdateConfig(
 	adminId int,
 	req domain.CreateUpdateConfigRequest,
 ) (*domain.CreateUpdateConfigResponse, error) {
+	err := c.moduleService.FilterSecretParams(ctx, req.Data, req.ModuleId)
+	if err != nil {
+		return nil, errors.WithMessage(err, "filter secret params")
+	}
+
 	if !req.Unsafe {
-		err := c.validateConfigUpdate(ctx, req.ModuleId, req.Data)
+		err = c.validateConfigUpdate(ctx, req.ModuleId, req.Data)
 		if err != nil {
 			return nil, errors.WithMessage(err, "validate config")
 		}
@@ -220,6 +233,11 @@ func (c Config) MarkConfigAsActive(ctx context.Context, configId string) error {
 		return entity.ErrConfigNotFound
 	}
 
+	err = c.moduleService.FilterSecretParams(ctx, cfg.Data, cfg.ModuleId)
+	if err != nil {
+		return errors.WithMessage(err, "filter secret params")
+	}
+
 	currentActiveConfig, err := c.configRepo.GetActive(ctx, cfg.ModuleId)
 	if err != nil {
 		return errors.WithMessage(err, "get active config")
@@ -277,6 +295,20 @@ func (c Config) SyncConfig(ctx context.Context, moduleName string) error {
 	}
 
 	moduleId := modules[0].Id
+
+	activeConfig, err := c.configRepo.GetActive(ctx, moduleId)
+	if err != nil {
+		return errors.WithMessage(err, "get active config")
+	}
+	if activeConfig == nil {
+		return entity.ErrConfigNotFound
+	}
+
+	err = c.moduleService.FilterSecretParams(ctx, activeConfig.Data, moduleId)
+	if err != nil {
+		return errors.WithMessage(err, "filter secret params")
+	}
+
 	err = c.emitChangeActiveConfigEvent(ctx, moduleId)
 	if err != nil {
 		return errors.WithMessage(err, "emit change active config event")
@@ -295,6 +327,12 @@ func (c Config) insertNewConfig(ctx context.Context, adminId int, req domain.Cre
 		Active:   false,
 		AdminId:  adminId,
 	}
+
+	err := c.moduleService.FilterSecretParams(ctx, req.Data, req.ModuleId)
+	if err != nil {
+		return domain.Config{}, errors.WithMessage(err, "filter secret params")
+	}
+
 	// Check variables before insert so a config with missing variables is never persisted without links.
 	extractResult, err := c.extractAndCheckVariables(ctx, config.Id, config.Data)
 	if err != nil {

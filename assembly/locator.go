@@ -96,7 +96,7 @@ func (l Locator) Config() *Config {
 	configHistoryRepo := repository.NewConfigHistory(l.db)
 	variableRepo := repository.NewVariable(l.db)
 
-	variableService := variable.NewService(variableRepo, configRepo, eventRepo)
+	variableService := variable.NewService(variableRepo, configRepo, eventRepo, configSchemaRepo, l.logger)
 	variableController := api.NewVariable(variableService)
 
 	etpSrv := etp.NewServer(
@@ -134,6 +134,8 @@ func (l Locator) Config() *Config {
 		subscriptionService,
 		emitter,
 		variableService,
+		variableRepo,
+		l.cfg.Local.ConfigWriteDeny,
 		l.logger,
 	)
 	moduleController := controller.NewModule(moduleService, l.logger)
@@ -148,6 +150,7 @@ func (l Locator) Config() *Config {
 	configApiService := apisvs.NewConfig(
 		configRepo,
 		moduleRepo,
+		moduleService,
 		configSchemaRepo,
 		eventRepo,
 		configHistoryApiService,

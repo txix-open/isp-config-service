@@ -2,14 +2,19 @@ package variable
 
 import (
 	"context"
-	"regexp"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/txix-open/isp-kit/errors"
 	"isp-config-service/domain"
 	"isp-config-service/entity"
 	"isp-config-service/entity/xtypes"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/txix-open/isp-kit/errors"
+	"github.com/txix-open/isp-kit/log"
+	"github.com/txix-open/isp-kit/metrics"
+	"github.com/txix-open/isp-kit/rc/schema"
 )
 
 type Repo interface {
@@ -30,26 +35,81 @@ type EventRepo interface {
 	Insert(ctx context.Context, event entity.Event) error
 }
 
+type SchemaRepo interface {
+	GetByModuleId(ctx context.Context, moduleId string) (*entity.ConfigSchema, error)
+}
+
 type Service struct {
-	repo              Repo
-	configRepo        ConfigRepo
-	eventRepo         EventRepo
-	stringToIntRegexp *regexp.Regexp
-	variableRegexp    *regexp.Regexp
+	repo          Repo
+	configRepo    ConfigRepo
+	eventRepo     EventRepo
+	schemaRepo    SchemaRepo
+	logger        log.Logger
+	secretSkipped *prometheus.CounterVec
+	uiPathsCache  *uiPathsCache
 }
 
 func NewService(
 	repo Repo,
 	configRepo ConfigRepo,
 	eventRepo EventRepo,
+	schemaRepo SchemaRepo,
+	logger log.Logger,
 ) Service {
 	return Service{
-		repo:              repo,
-		configRepo:        configRepo,
-		eventRepo:         eventRepo,
-		stringToIntRegexp: regexp.MustCompile(`"_ToInt\((\d+)\)"`),
-		variableRegexp:    regexp.MustCompile(`_Var\((.*?)\)`),
+		repo:       repo,
+		configRepo: configRepo,
+		eventRepo:  eventRepo,
+		schemaRepo: schemaRepo,
+		logger:     logger,
+		secretSkipped: metrics.GetOrRegister(metrics.DefaultRegistry,
+			prometheus.NewCounterVec(prometheus.CounterOpts{
+				Subsystem: "config",
+				Name:      "render_secret_skipped",
+				Help:      "Secret variables left unrendered in UI-exposed config leaves",
+			}, []string{"module", "variable"}),
+		),
+		uiPathsCache: &uiPathsCache{entries: make(map[string]cachedUIPaths)},
 	}
+}
+
+// cachedUIPaths is the module's ui-exposed leaf paths for a schema version.
+type cachedUIPaths struct {
+	version string
+	paths   []string
+}
+
+// uiPathsCache caches ui-exposed paths per module, invalidated on schema version change.
+type uiPathsCache struct {
+	mu      sync.Mutex
+	entries map[string]cachedUIPaths
+}
+
+// uiPaths returns the canonical paths of the module's ui-exposed leaves,
+// cached per module and schema version. A module without a schema (or with a
+// schema without the keyword) yields an empty set, so rendering behaves as
+// before.
+func (s Service) uiPaths(ctx context.Context, moduleId string) ([]string, error) {
+	schemaRow, err := s.schemaRepo.GetByModuleId(ctx, moduleId)
+	if err != nil {
+		return nil, errors.WithMessage(err, "find module schema")
+	}
+	if schemaRow == nil {
+		return nil, nil
+	}
+
+	s.uiPathsCache.mu.Lock()
+	defer s.uiPathsCache.mu.Unlock()
+	if cached, ok := s.uiPathsCache.entries[moduleId]; ok && cached.version == schemaRow.ModuleVersion {
+		return cached.paths, nil
+	}
+
+	paths, err := schema.UIExposedPaths(schemaRow.Data)
+	if err != nil {
+		return nil, errors.WithMessage(err, "read ui-exposed paths")
+	}
+	s.uiPathsCache.entries[moduleId] = cachedUIPaths{version: schemaRow.ModuleVersion, paths: paths}
+	return paths, nil
 }
 
 func (s Service) All(ctx context.Context) ([]domain.Variable, error) {
@@ -180,7 +240,7 @@ func (s Service) Delete(ctx context.Context, name string) error {
 }
 
 //nolint:funlen
-func (s Service) RenderConfig(ctx context.Context, input []byte) ([]byte, error) {
+func (s Service) RenderConfig(ctx context.Context, moduleId string, input []byte) ([]byte, error) {
 	variables, err := s.repo.All(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, "get all variables")
@@ -188,33 +248,38 @@ func (s Service) RenderConfig(ctx context.Context, input []byte) ([]byte, error)
 	if len(variables) == 0 {
 		return input, nil
 	}
-	varsMap := make(map[string]string, len(variables))
+	varsMap := make(map[string]entity.Variable, len(variables))
 	for _, variable := range variables {
-		varsMap[variable.Name] = variable.Value
+		varsMap[variable.Name] = variable
 	}
 
-	undefinedVariables := make([]string, 0)
-	withReplacedVars := s.variableRegexp.ReplaceAllStringFunc(string(input), func(group string) string {
-		varName := s.variableRegexp.FindStringSubmatch(group)[1]
-
-		value, ok := varsMap[varName]
-		if !ok {
-			undefinedVariables = append(undefinedVariables, varName)
-			return varName
-		}
-		return value
-	})
-	if len(undefinedVariables) > 0 {
-		return nil, errors.Errorf("undefined variables: [%s]", strings.Join(undefinedVariables, ", "))
+	uiPaths, err := s.uiPaths(ctx, moduleId)
+	if err != nil {
+		return nil, err
 	}
 
-	result := s.stringToIntRegexp.ReplaceAll([]byte(withReplacedVars), []byte("$1"))
+	out, skipped, undefined, err := Render(input, uiPaths, varsMap)
+	if err != nil {
+		return nil, errors.WithMessage(err, "render config")
+	}
+	if len(undefined) > 0 {
+		return nil, errors.Errorf("undefined variables: [%s]", strings.Join(undefined, ", "))
+	}
 
-	return result, nil
+	for _, ref := range skipped {
+		s.logger.Error(ctx, "secret variable not substituted in ui-exposed field",
+			log.String("moduleId", moduleId),
+			log.String("path", ref.Path),
+			log.String("variable", ref.Variable),
+		)
+		s.secretSkipped.WithLabelValues(moduleId, ref.Variable).Inc()
+	}
+
+	return out, nil
 }
 
 func (s Service) ExtractVariables(ctx context.Context, configId string, input []byte) (*domain.VariableExtractionResult, error) {
-	matches := s.variableRegexp.FindAllStringSubmatch(string(input), -1)
+	matches := variableRefPattern.FindAllStringSubmatch(string(input), -1)
 	seen := make(map[string]bool, len(matches))
 	varNames := make([]string, 0, len(matches))
 	for _, match := range matches {
